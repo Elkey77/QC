@@ -301,18 +301,18 @@
       margin-left: 10px;
     }
 
-    th.dom-sorted-asc::after { content: "鈻?; }
-    th.dom-sorted-desc::after { content: "鈻?; }
+    th.dom-sorted-asc::after { content: " up"; }
+    th.dom-sorted-desc::after { content: " down"; }
 
     th.sortable::after {
-      content: "鈻测柤";
+      content: " sort";
       color: var(--accent);
       font-size: 10px;
       margin-left: 10px;
     }
 
-    th.sorted-asc::after { content: "鈻? !important; margin-left: 10px; }
-    th.sorted-desc::after { content: "鈻? !important; margin-left: 10px; }
+    th.sorted-asc::after { content: " up" !important; margin-left: 10px; }
+    th.sorted-desc::after { content: " down" !important; margin-left: 10px; }
 
     .period-head {
       min-width: 380px;
@@ -1599,11 +1599,6 @@
           <div class="status" id="scanRecordStatus">Optional</div>
         </div>
         <div class="upload">
-          <label for="driverPasskey">Driver passkey <span class="subtle">Map</span></label>
-          <input id="driverPasskey" type="file" accept=".xlsx,.xls,.csv">
-          <div class="status" id="driverPasskeyStatus">Optional</div>
-        </div>
-        <div class="upload">
           <label for="waybillStatus">Waybill status <span class="subtle">Lifecycle</span></label>
           <input id="waybillStatus" type="file" accept=".xlsx,.xls,.csv" multiple>
           <div class="status" id="waybillStatusStatus">Optional</div>
@@ -1680,8 +1675,7 @@
       scanRecord: [],
       stationSplitWorkbook: [],
       traceMatchedWorkbook: [],
-      waybillStatus: [],
-      driverPasskey: []
+      waybillStatus: []
     };
 
     const sortState = {
@@ -1730,52 +1724,50 @@
       scanRecord: "scan record",
       stationSplitWorkbook: "Split Excel",
       traceMatchedWorkbook: "Trace matched Excel",
-      waybillStatus: "Waybill status",
-      driverPasskey: "Driver passkey"
+      waybillStatus: "Waybill status"
     };
 
     const aliases = {
-      date: ["鏃ユ湡", "date", "day"],
-      station: ["鍒颁欢缃戠偣", "娲句欢缃戠偣", "缃戠偣", "station", "site", "hub"],
-      prev: ["涓婁竴绔?, "previous", "prev", "last station"],
-      dueTotal: ["搴斿埌鎬荤エ鏁?, "搴斿埌 鎬荤エ鏁?, "搴斿埌", "due total", "receive total"],
-      notArrived: ["鏈埌鎬荤エ鏁?, "鏈埌", "not arrived"],
-      arrivedTotal: ["宸插埌鎬荤エ鏁?, "宸插埌", "arrived total"],
-      deliveryTotal: ["娲句欢鎬荤エ鏁?, "娲句欢鎬?, "鏈珯鏃犲彂", "delivery total", "dispatch total"],
-      signTotal: ["绛炬敹鎬荤エ鏁?, "绛炬敹", "delivered"],
-      retained: ["鏈鏀?, "鏈珯鏃犵鏀?, "鏈嚭娲?, "retained", "not signed"],
-      signRate: ["绛炬敹鐜?, "sign-off rate", "sign rate", "delivery sign-off rate"],
-      complaint: ["瀹㈣瘔", "鎶曡瘔", "customer complaint", "complaint"],
-      traceInterrupt: ["杞ㄨ抗涓柇", "淇℃伅涓柇", "tracking interruption", "trace interrupt"],
-      missingScan: ["婕忔壂", "missing scan", "鏃犵鏀?],
-      driverId: ["鍙告満id", "鍙告満ID", "鍛樺伐缂栧彿", "user id", "driver id", "driverid", "driver code", "courier id"],
-      driverName: ["鍙告満濮撳悕", "鍙告満鍚嶇О", "鍙告満濮撳悕 | Driver First & Last Name", "driver first last name", "driver name", "drivername", "courier name"],
-      driverPasskey: ["娲句欢涓氬姟鍛?, "driver passkey", "passkey", "courier passkey"],
-      needWaybill: ["杩愬崟鍙?, "waybillnumber", "waybill no", "waybill"],
-      needStation: ["娲句欢缃戠偣", "delivery station", "station"],
-      needOperationType: ["鏈€鏂版搷浣滅被鍨?, "latest operation type", "current operation type"],
-      needOperationTime: ["鏈€鏂版搷浣滄椂闂?, "latest operation time", "current operation time"],
-      needProblemType: ["鏈€鏂版搷浣滅綉鐐归棶棰樹欢绫诲瀷", "problem type", "latest problem type"],
-      needScanner: ["鎵弿鍛?, "scanner", "operator"],
-      needTimeoutType: ["瓒呮椂绫诲瀷", "timeout type", "overtime type"],
-      leaveStock: ["鐣欎粨浠?, "鐣欎粨", "left stock", "stock", "warehouse retained", "鐣欎粨绁ㄦ暟"],
-      csType: ["Type question", "type", "宸ュ崟绫诲瀷", "闂绫诲瀷"],
-      csSubType: ["Types of secondary questions", "secondary question", "浜岀骇闂", "闂鏄庣粏"],
-      csStation: ["POS of origin", "origin", "station", "缃戠偣", "绔欑偣"],
-      csResponsibleNode: ["Responsible node with forwarding orderorders", "Responsible node with forwarding order orders", "responsible node", "forwarding order", "璐ｄ换缃戠偣"],
-      csWaybill: ["Waybill Number", "Waybill", "Waybill No", "杩愬崟鍙?, "杩愬崟缂栧彿"],
-      csItemValue: ["Item Value", "item value", "璐у€?, "閲戦"],
-      csWorkOrderStatus: ["Work order status", "work order status", "宸ュ崟鐘舵€?],
-      csStatus: ["status", "宸ュ崟鐘舵€?, "澶勭悊鐘舵€?, "process status"],
-      csCheckIn: ["Check-in time", "check in time", "checkintime", "鐧昏鏃堕棿", "鍒涘缓鏃堕棿"],
-      csProblemGroup: ["Problem group", "problem", "issue", "闂缁?],
-      csProblemDescription: ["Problem Description", "problem description", "description", "issue description", "case description", "闂鎻忚堪"],
-      csAssignee: ["Assignee", "澶勭悊浜?, "璐熻矗浜?],
-      waybillNo: ["杩愬崟缂栧彿", "waybill", "waybill no", "waybill number", "tracking number"],
-      lifecycleScanType: ["褰撳墠鎵弿绫诲瀷", "current scan type", "current scantype", "current scan", "scan type", "scan event", "鎵弿绫诲瀷"],
-      lifecycleScanStation: ["褰撳墠鎵弿缃戠偣", "current scan station", "current scan site", "current station", "current site", "scan station", "鎵弿缃戠偣"],
-      lifecycleScanTime: ["褰撳墠鎵弿鏃堕棿", "current scan time", "current scantime", "current scan date", "scan time", "scan date", "鎵弿鏃堕棿"],
-      lifecycleStatus: ["褰撳墠鎵弿鐘舵€?, "current scan status", "scan status"],
+      date: ["date", "day"],
+      station: ["station", "site", "hub", "pos", "outlet", "origin"],
+      prev: ["previous", "prev", "last station"],
+      dueTotal: ["due total", "receive total", "expected", "should arrive"],
+      notArrived: ["not arrived", "missing arrival"],
+      arrivedTotal: ["arrived total", "arrived", "received"],
+      deliveryTotal: ["delivery total", "dispatch total", "dispatched", "out wh"],
+      signTotal: ["sign total", "signed", "delivered"],
+      retained: ["retained", "not signed", "left stock", "undelivered"],
+      signRate: ["sign-off rate", "sign rate", "delivery sign-off rate"],
+      complaint: ["customer complaint", "complaint"],
+      traceInterrupt: ["tracking interruption", "trace interrupt"],
+      missingScan: ["missing scan", "no scan"],
+      driverId: ["user id", "driver id", "driverid", "driver code", "courier id", "employee id"],
+      driverName: ["driver first last name", "driver name", "drivername", "courier name", "dispatcher"],
+      needWaybill: ["waybillnumber", "waybill no", "waybill", "tracking number"],
+      needStation: ["delivery station", "station"],
+      needOperationType: ["latest operation type", "current operation type", "operation type"],
+      needOperationTime: ["latest operation time", "current operation time", "operation time"],
+      needProblemType: ["problem type", "latest problem type"],
+      needScanner: ["scanner", "operator"],
+      needTimeoutType: ["timeout type", "overtime type"],
+      leaveStock: ["left stock", "stock", "warehouse retained", "retained"],
+      csType: ["Type question", "type", "question type", "work order type"],
+      csSubType: ["Types of secondary questions", "secondary question", "sub type", "subtype"],
+      csStation: ["POS of origin", "origin", "station", "site", "outlet"],
+      csResponsibleNode: ["Responsible node with forwarding orderorders", "Responsible node with forwarding order orders", "responsible node", "forwarding order"],
+      csWaybill: ["Waybill Number", "Waybill", "Waybill No", "waybill number", "tracking number"],
+      csItemValue: ["Item Value", "item value", "value", "amount"],
+      csWorkOrderStatus: ["Work order status", "work order status", "status"],
+      csStatus: ["status", "process status", "handling status", "work order status"],
+      csCheckIn: ["Check-in time", "check in time", "checkintime", "created time", "create time"],
+      csProblemGroup: ["Problem group", "problem", "issue"],
+      csProblemDescription: ["Problem Description", "problem description", "description", "issue description", "case description"],
+      csAssignee: ["Assignee", "handler", "owner", "responsible person"],
+      waybillNo: ["waybill", "waybill no", "waybill number", "tracking number"],
+      lifecycleScanType: ["current scan type", "current scantype", "current scan", "scan type", "scan event"],
+      lifecycleScanStation: ["current scan station", "current scan site", "current station", "current site", "scan station"],
+      lifecycleScanTime: ["current scan time", "current scantime", "current scan date", "scan time", "scan date"],
+      lifecycleStatus: ["current scan status", "scan status", "status"],
       dispatchWaybill: ["Waybill number", "waybillnumber", "waybill no", "waybill"],
       dispatchStation: ["Delivery outlet", "delivery outlet", "delivery station", "station"],
       dispatchTime: ["Dispatch time", "dispatch time", "out wh time", "out wh"],
@@ -1832,7 +1824,6 @@
       if (!header || header.classList.contains("sortable") || header.hasAttribute("onclick") || header.colSpan > 1) return;
       sortDomTableByHeader(header);
     });
-    loadDriverPasskeyFromProject();
     renderLifecycleSidePanel();
 
     async function readWorkbook(key, fileList) {
@@ -1851,9 +1842,7 @@
           const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
           rememberColumnPositions(key, rawRows);
           let normalized;
-          if (key === "driverPasskey") {
-            normalized = normalizeSimpleSheet(rawRows);
-          } else if (key === "hubCs") {
+          if (key === "hubCs") {
             normalized = normalizeCsSheet(rawRows);
           } else if (key === "waybillStatus") {
             normalized = normalizeWaybillStatusSheet(rawRows);
@@ -1936,45 +1925,6 @@
           }
         }, 50);
       });
-    }
-
-    async function loadDriverPasskeyFromProject() {
-      for (const name of ["DriverPassKey.xlsx", "driverpasskey.xlsx", "DriverPasskey.xlsx", "driverpasskey.xls", "driverpasskey.csv"]) {
-        try {
-          const response = await fetch(name);
-          if (!response.ok) continue;
-          const xlsxReady = await waitForXlsx();
-          if (!xlsxReady) return;
-          const buffer = await response.arrayBuffer();
-          const workbook = XLSX.read(buffer, { type: "array", cellDates: true });
-          dataStore.driverPasskey = workbook.SheetNames.flatMap(sheetName =>
-            normalizeSimpleSheet(XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: "" }))
-          );
-          console.info(`${dataStore.driverPasskey.length} driver passkey rows loaded from ${name}`);
-          buildDashboard();
-          return;
-        } catch (err) {
-          // Optional sidecar file. Single-file use should continue when local fetch is blocked or absent.
-        }
-      }
-      try {
-        const rows = window.__embeddedDriverPasskeyRows || [];
-        if (rows.length) {
-          dataStore.driverPasskey = rows.map(row => ({
-            "__col0": row.name,
-            "__col1": row.passkey,
-            "__col2": row.id,
-            "Driver Name": row.name,
-            "娲句欢涓氬姟鍛?: row.passkey,
-            "DriverID": row.id
-          }));
-          console.info(`${dataStore.driverPasskey.length} driver passkey rows loaded from embedded data`);
-          buildDashboard();
-          return;
-        }
-      } catch (err) {
-        // Optional embedded data. Keep the dashboard usable without DriverPassKey data.
-      }
     }
 
     function normalizeSheet(rows) {
@@ -2306,50 +2256,11 @@
       ]).has(clean(station));
     }
 
-    function driverMap() {
-      const map = new Map();
-      dataStore.driverPasskey.forEach(row => {
-        const id = clean(findValue(row, "driverId"));
-        const name = clean(findValue(row, "driverName"));
-        if (id) map.set(id, name || id);
-      });
-      return map;
-    }
-
-    function driverPasskeyMap() {
-      const map = new Map();
-      (window.EMBEDDED_DRIVER_PASSKEY_ROWS || []).forEach(row => {
-        const key = normalizePasskey(row.passkey);
-        if (key) map.set(key, { driverId: row.id || row.passkey, driverName: row.name || row.id || row.passkey, driverAccount: row.passkey });
-      });
-      dataStore.driverPasskey.forEach(row => {
-        if (!row) return;
-        const pkVal = clean(row.__col1);
-        const nameVal = clean(row.__col0);
-        const idVal = clean(row.__col2);
-        const passkey = pkVal || clean(findValue(row, "driverPasskey"));
-        const name = nameVal || clean(findValue(row, "driverName"));
-        const id = idVal || clean(findValue(row, "driverId"));
-        const key = normalizePasskey(passkey);
-        if (key) map.set(key, { driverId: id || passkey, driverName: name || id || passkey, driverAccount: passkey });
-      });
-      return map;
-    }
-
-    function normalizePasskey(value) {
-      return clean(value)
-        .normalize("NFKC")
-        .replace(/[\s\u00A0\u1680\u180E\u2000-\u200D\u2028\u2029\u202F\u205F\u3000\uFEFF]+/g, "");
-    }
-
-    function resolveDriver(row, passkeyMap, idMap) {
-      const passkey = clean(findValue(row, "driverPasskey"));
-      const matched = passkeyMap.get(normalizePasskey(passkey));
-      if (matched) return matched;
-      const driverId = clean(findValue(row, "driverId")) || passkey || "Unknown";
+    function resolveDriver(row) {
+      const driverId = clean(findValue(row, "driverId")) || clean(findValue(row, "driverName")) || "Unknown";
       return {
         driverId,
-        driverName: idMap.get(driverId) || clean(findValue(row, "driverName")) || driverId
+        driverName: clean(findValue(row, "driverName")) || driverId
       };
     }
 
@@ -2823,7 +2734,7 @@
       if (key.includes("涓績鍒颁欢") || key.includes("dcreceive") || key.includes("arrivalathub") || key.includes("hubarrival")) return "DC receive";
       if (key.includes("瑁呰溅") || key.includes("鍙戜欢") || key.includes("dcdeparture") || key.includes("loadingscan") || key.includes("loading")) return "DC departure";
       if (key.includes("鍑轰粨") || key.includes("outwh") || key.includes("outofwarehouse") || key.includes("outwarehouse")) return "Out WH";
-      if (key.includes("闂浠?) || key.includes("problems") || key.includes("problemscan") || key.includes("problem")) return "problems";
+      if (key.includes("problems") || key.includes("problemscan") || key.includes("problem")) return "problems";
       if (key.includes("鐣欎粨") || key.includes("inwh") || key.includes("warehousing") || key.includes("staying") || key.includes("warehouse")) return "IN WH";
       return raw || "(blank)";
     }
@@ -3098,17 +3009,17 @@
 
     function csStatusBucket(value) {
       const text = clean(value).toLowerCase();
-      if (text.includes("寰呭鏍?) || text.includes("宸插叧闂?) || text.includes("closed") || text.includes("review")) return "closed";
-      if (text.includes("澶勭悊涓?) || text.includes("寰呭垎閰?) || text.includes("handling") || text.includes("pending") || text.includes("open")) return "handling";
+      if (text.includes("closed") || text.includes("review")) return "closed";
+      if (text.includes("handling") || text.includes("pending") || text.includes("open")) return "handling";
       return "handling";
     }
 
     function csStatusDetail(value) {
       const text = clean(value).toLowerCase();
-      if (text.includes("寰呭鏍?) || text.includes("review")) return "review";
-      if (text.includes("澶勭悊涓?) || text.includes("handling") || text.includes("open")) return "handling";
-      if (text.includes("寰呭垎閰?) || text.includes("pending")) return "pending";
-      if (text.includes("宸插叧闂?) || text.includes("closed")) return "closed";
+      if (text.includes("review")) return "review";
+      if (text.includes("handling") || text.includes("open")) return "handling";
+      if (text.includes("pending")) return "pending";
+      if (text.includes("closed")) return "closed";
       return "";
     }
 
@@ -3119,8 +3030,6 @@
 
     function buildNeedReturn() {
       const latestDate = latestHubDeliveryDate();
-      const drivers = driverMap();
-      const passkeys = driverPasskeyMap();
       const stationMap = new Map();
       const driverRows = [];
       dataStore.hubDelivery.forEach(row => {
@@ -3130,7 +3039,7 @@
         const period = periodKey(dateValue);
         const station = normalizeStationName(findValue(row, "station"));
         if (!station) return;
-        const driver = resolveDriver(row, passkeys, drivers);
+        const driver = resolveDriver(row);
         const needReturn = Math.max(num(findValue(row, "retained")) - num(findValue(row, "leaveStock")), 0);
         const stationKey = `${period}|${station}`;
         add(stationMap, stationKey, { needReturn });
@@ -3791,8 +3700,6 @@
 
     function buildNeedReturn() {
       if (!dataStore.needReturnMonitor.length) return { rows: [], drivers: [], details: [], timeoutTypes: [], operationTypes: [] };
-      const passkeys = driverPasskeyMap();
-      const driversById = driverMap();
       const details = dataStore.needReturnMonitor.map(row => {
         const station = stationCodeBeforePipe(needReturnValue(row, "station"));
         if (!station) return null;
@@ -3802,14 +3709,13 @@
         const timeoutType = clean(needReturnValue(row, "timeoutType")) || "Unknown";
         if (!needReturnInFilters(operationDate, timeoutType)) return null;
         const scanner = clean(needReturnValue(row, "scanner"));
-        const driver = resolveNeedReturnDriver(scanner, passkeys, driversById);
+        const driver = resolveNeedReturnDriver(scanner);
         return {
           station,
           waybill: clean(needReturnValue(row, "waybill")),
           courier: driver.driverName || scanner || "Unknown",
           driverAccount: driver.driverAccount || scanner || "Unknown",
           driverId: driver.driverId || "",
-          matchedDriver: !!driver.matched,
           operationType: clean(needReturnValue(row, "operationType")) || "Unknown",
           operationTime: formatDateTime(operationTimeRaw),
           problemType: clean(needReturnValue(row, "problemType")),
@@ -3860,10 +3766,8 @@
       const max = Math.max(1, ...rows.flatMap(row => timeoutTypes.map(timeout => (row.cells[timeout] || {}).total || 0)));
       document.getElementById("needReturnView").innerHTML = dataStore.needReturnMonitor.length ? `
         ${needReturnFilterControls(data)}
-        <div class="formula-note">Driver passkey matched map: ${fmt(driverPasskeyMap().size)}</div>
         <div class="lifecycle-actions">
           <button class="download-btn" onclick="exportNeedReturnWorkbook()">Export NeedReturn summary</button>
-          <button class="download-btn" onclick="exportUnmatchedNeedReturnDrivers()">Export unmatched driver</button>
         </div>
         ${needReturnLegend(data.operationTypes || [])}
         ${rows.length ? `<div class="table-wrap">
@@ -3972,11 +3876,9 @@
       return value.includes("BAW") || value.includes("STR") || value.includes("STUTTGART");
     }
 
-    function resolveNeedReturnDriver(scanner, passkeyMap, idMap) {
+    function resolveNeedReturnDriver(scanner) {
       const account = clean(scanner);
-      const matched = passkeyMap.get(normalizePasskey(account));
-      if (matched) return { driverAccount: matched.driverAccount || account, driverId: matched.driverId, driverName: matched.driverName, matched: true };
-      return { driverAccount: account, driverId: "", driverName: account, matched: false };
+      return { driverAccount: account, driverId: "", driverName: account };
     }
 
     function timeoutSort(a, b) {
@@ -4007,10 +3909,10 @@
           stationcode: row.station,
           waybillnumber: row.waybill,
           courier: row.courier,
-          "鏈€鏂版搷浣滅被鍨?: row.operationType,
-          "鏈€鏂版搷浣滄椂闂?: row.operationTime,
-          "鏈€鏂伴棶棰樹欢绫诲瀷": row.problemType,
-          "瓒呮椂绫诲瀷": row.timeoutType
+          "latest operation type": row.operationType,
+          "latest operation time": row.operationTime,
+          "problem type": row.problemType,
+          "timeout type": row.timeoutType
         }));
         XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(sheetRows), safeSheetName(station));
       });
@@ -4018,27 +3920,6 @@
       XLSX.writeFile(workbook, "needreturn_summary.xlsx");
     }
     window.exportNeedReturnWorkbook = exportNeedReturnWorkbook;
-
-    function exportUnmatchedNeedReturnDrivers() {
-      const data = buildNeedReturn();
-      const seen = new Set();
-      const rows = [];
-      (data.details || []).forEach(row => {
-        if (row.matchedDriver) return;
-        const key = `${row.station}|${normalizePasskey(row.scanner)}`;
-        if (seen.has(key)) return;
-        seen.add(key);
-        rows.push({
-          stationcode: row.station,
-          waybillnumber: row.waybill,
-          "鎵弿鍛?: row.scanner
-        });
-      });
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "unmatched driver");
-      XLSX.writeFile(workbook, "needreturn_unmatched_driver.xlsx");
-    }
-    window.exportUnmatchedNeedReturnDrivers = exportUnmatchedNeedReturnDrivers;
 
     function safeSheetName(name) {
       return clean(name).replace(/[\\/?*[\]:]/g, "_").slice(0, 31) || "Sheet";
@@ -4321,8 +4202,8 @@
         <div class="lifecycle-title">${title}<span class="subtle"> Total ${fmt(tableTotal)}</span></div>
         <table class="lifecycle-table">
           <thead>
-            <tr><th>褰撳墠鐘舵€?/ 褰撳墠鎵弿缃戠偣</th><th colspan="${types.length + 1}">褰撳墠鎵弿绫诲瀷</th></tr>
-            <tr><th>${idPrefix === "noupdate" ? "NoUpdate" : "褰撳墠鐘舵€?}</th>${types.map(type => `<th>${escapeHtml(type)}</th>`).join("")}<th>Grand Total</th></tr>
+            <tr><th>Status / Station</th><th colspan="${types.length + 1}">Current scan type</th></tr>
+            <tr><th>${idPrefix === "noupdate" ? "NoUpdate" : "Current status"}</th>${types.map(type => `<th>${escapeHtml(type)}</th>`).join("")}<th>Grand Total</th></tr>
           </thead>
           <tbody>${groups.map(group => {
             const safeId = cssSafe(`${idPrefix}-${group}`);
@@ -5665,28 +5546,28 @@
     }
 
     function trend(change) {
-      if (change > 0) return `<span class="trend up">鈻?${change}</span>`;
-      if (change < 0) return `<span class="trend down">鈻?${Math.abs(change)}</span>`;
-      return `<span class="trend flat">鈥?/span>`;
+      if (change > 0) return `<span class="trend up">up ${change}</span>`;
+      if (change < 0) return `<span class="trend down">down ${Math.abs(change)}</span>`;
+      return `<span class="trend flat">-</span>`;
     }
 
     function smallTrend(change) {
       const value = Number(change) || 0;
-      if (value > 0) return `<span class="trend up">鈻?${value.toFixed(1)}%</span>`;
-      if (value < 0) return `<span class="trend down">鈻?${Math.abs(value).toFixed(1)}%</span>`;
+      if (value > 0) return `<span class="trend up">up ${value.toFixed(1)}%</span>`;
+      if (value < 0) return `<span class="trend down">down ${Math.abs(value).toFixed(1)}%</span>`;
       return `<span class="trend flat">-</span>`;
     }
 
     function trend(change) {
-      if (change > 0) return `<span class="trend up">鈻?${change}</span>`;
-      if (change < 0) return `<span class="trend down">鈻?${Math.abs(change)}</span>`;
+      if (change > 0) return `<span class="trend up">up ${change}</span>`;
+      if (change < 0) return `<span class="trend down">down ${Math.abs(change)}</span>`;
       return `<span class="trend flat">-</span>`;
     }
 
     function smallTrend(change) {
       const value = Number(change) || 0;
-      if (value > 0) return `<span class="trend up">鈻?${value.toFixed(1)}%</span>`;
-      if (value < 0) return `<span class="trend down">鈻?${Math.abs(value).toFixed(1)}%</span>`;
+      if (value > 0) return `<span class="trend up">up ${value.toFixed(1)}%</span>`;
+      if (value < 0) return `<span class="trend down">down ${Math.abs(value).toFixed(1)}%</span>`;
       return `<span class="trend flat">-</span>`;
     }
 
@@ -5840,17 +5721,11 @@
 
     function buildTraceSummary() {
       const rows = dataStore.hubTrace || [];
-      const passkeys = driverPasskeyMap();
       const scanDrivers = scanRecordDriverMap();
       
       const processed = rows.map(row => {
         const rawStation = clean(row.__col2);
         const station = rawStation ? rawStation.split("|")[0].trim() : "Unknown Station";
-        
-        const rawPasskey = clean(row.__col19);
-        const normalizedKey = normalizePasskey(rawPasskey);
-        const matchedDriver = passkeys.get(normalizedKey);
-        
         const rawDate = row.__col17;
         const formattedDate = formatLastScanDate(rawDate);
         
@@ -5859,14 +5734,12 @@
         
         const waybill = getWaybillFromRow(row);
         const scanDriverName = scanDrivers.get(waybill) || "";
-        const driverName = scanDriverName || (matchedDriver ? matchedDriver.driverName : "");
+        const driverName = scanDriverName || clean(row.__col19);
         const overtimeNumber = traceOverTimeNumber(rawOvertime);
         
         return {
           station,
           driverName,
-          driverPasskey: rawPasskey,
-          matchedDriver: !!scanDriverName || !!matchedDriver,
           date: formattedDate,
           overtime: traceOverTimeLabel(overtimeNumber, rawOvertime),
           overtimeNumber,
@@ -5879,7 +5752,7 @@
     }
 
     function traceDriverDisplayName(row) {
-      return clean(row.driverName) || clean(row["driver name"]) || clean(row.driver) || clean(row.driverPasskey) || clean(row["driver passkey"]) || "Unmatched";
+      return clean(row.driverName) || clean(row["driver name"]) || clean(row.driver) || "Unmatched";
     }
 
     function groupTraceSummaryForUi(processedRows) {
@@ -5964,7 +5837,7 @@
               ${grouped.map((g, index) => {
                 return `
                   <tr class="trace-parent-row" onclick="const btn = this.querySelector('.trace-toggle-btn'); toggleTraceParentRow(btn, ${index})">
-                    <td><span class="trace-toggle-btn" id="btn-trace-${index}">鈻?/span>${escapeHtml(g.station)}</td>
+                    <td><span class="trace-toggle-btn" id="btn-trace-${index}">+</span>${escapeHtml(g.station)}</td>
                     <td>${escapeHtml(g.driverName)}</td>
                     <td>-</td>
                     <td>-</td>
@@ -5997,11 +5870,11 @@
       const isExpanded = btn.classList.contains("expanded");
       if (isExpanded) {
         btn.classList.remove("expanded");
-        btn.textContent = "鈻?;
+        btn.textContent = "+";
         childRows.forEach(row => row.classList.remove("expanded"));
       } else {
         btn.classList.add("expanded");
-        btn.textContent = "鈻?;
+        btn.textContent = "-";
         childRows.forEach(row => row.classList.add("expanded"));
       }
     }
@@ -6106,7 +5979,6 @@
       const maxAll = Math.max(1, ...stationRows.map(row => row.All));
       view.innerHTML = `
         <button class="download-btn" onclick="downloadTraceWorkbook()">Export willClose</button>
-        <button class="download-btn" onclick="exportTraceDriverPasskey()">export driverPasskey</button>
         <div class="table-wrap willclose-table">
           <table>
             <thead>
@@ -6311,8 +6183,6 @@
       return (rows || []).map(row => ({
         station: clean(row.station),
         "driver name": clean(row.driverName || row["driver name"] || row.driver),
-        "driver passkey": clean(row.driverPasskey || row["driver passkey"]),
-        "matched driver": row.matchedDriver ? "Y" : "",
         date: clean(row.date),
         overTime: traceOverTimeLabel(row.overtimeNumber, row.overtime || row["over time"]),
         overTimeNumber: Number(row.overtimeNumber) || traceOverTimeNumber(row.overtime || row["over time"]),
@@ -6335,32 +6205,6 @@
 
     function traceWillCloseFileName() {
       return `${toDateKey(addDays(new Date(), 1))}willClose.xlsx`;
-    }
-
-    function exportTraceDriverPasskey() {
-      const rows = traceDriverPasskeyRows(buildTraceSummary());
-      if (!rows.length) {
-        alert("No matched driver/passkey found.");
-        return;
-      }
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "driverPasskey");
-      XLSX.writeFile(workbook, "trace_driverPasskey.xlsx");
-    }
-
-    function traceDriverPasskeyRows(rows) {
-      const map = new Map();
-      (rows || []).forEach(row => {
-        const driverName = traceDriverDisplayName(row);
-        const passkey = clean(row.driverPasskey || row["driver passkey"]);
-        if (!row.matchedDriver || !driverName || driverName === "Unmatched") return;
-        const key = `${driverName}|${passkey}`;
-        if (!map.has(key)) map.set(key, { DriverName: driverName, Passkey: passkey });
-      });
-      return [...map.values()].sort((a, b) =>
-        a.DriverName.localeCompare(b.DriverName, undefined, { numeric: true }) ||
-        a.Passkey.localeCompare(b.Passkey, undefined, { numeric: true })
-      );
     }
 
     function normalizeTraceMatchedWorkbook(workbook) {
@@ -6395,8 +6239,6 @@
       return {
         station: value(["station", "Station", "stationcode", "Station Code"]),
         driverName: value(["driver name", "Driver Name", "driver", "Driver", "courier", "Courier"]),
-        driverPasskey: value(["driver passkey", "Driver Passkey", "passkey", "Passkey"]),
-        matchedDriver: value(["matched driver", "Matched Driver"]),
         date: value(["date", "Date"]),
         overtime: traceOverTimeLabel(0, value(["overTime", "over time", "Over Time", "overtime", "Overtime"])),
         overtimeNumber: traceOverTimeNumber(value(["overTime", "over time", "Over Time", "overtime", "Overtime"])),
@@ -6602,7 +6444,6 @@
 
     window.toggleTraceParentRow = toggleTraceParentRow;
     window.downloadTraceWorkbook = downloadTraceWorkbook;
-    window.exportTraceDriverPasskey = exportTraceDriverPasskey;
     window.copyWillCloseDetailTable = copyWillCloseDetailTable;
     window.exportWillCloseDetailTable = exportWillCloseDetailTable;
     window.exportWillCloseDetailImage = exportWillCloseDetailImage;
