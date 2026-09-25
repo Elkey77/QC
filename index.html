@@ -587,6 +587,10 @@
                             <input type="checkbox" class="scan-time-chk" value="multiple-transfer-over-5" onchange="toggleScanTimeOpt()">
                             Multiple Transfer Over 5
                         </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="scan-time-chk" value="noupdate-more-than-5" onchange="toggleScanTimeOpt()">
+                            NoUpdate more than 5
+                        </label>
                     </div>
 
                     <!-- Scan Type Options -->
@@ -615,11 +619,18 @@
                         <li>Maps to exported table format:
                             <ul id="scanrecords-rules-columns">
                                 <li><code>waybill</code> (Column A)</li>
+                                <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
                                 <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                                 <li><code>last scan type</code> (Column E)</li>
                                 <li><code>last scan station</code> (Column G)</li>
                                 <li><code>Previous/Next Stop</code> (Column H)</li>
                                 <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
+                            </ul>
+                        </li>
+                        <li><strong>NoUpdate more than 5 Option Logic</strong>:
+                            <ul>
+                                <li>When <code>NoUpdate more than 5</code> is checked, adds a column <code>NoUpdate more than 5</code> to <code>export scan record</code> with values <code>yes</code> or <code>no</code>.</li>
+                                <li>For each unique waybill, sorts all scan records ascending by <strong>Scanning Time</strong>. If the time interval between any two adjacent scans is &ge; 5 days (120 hours), the value is <code>yes</code>, otherwise <code>no</code> (if only 1 scan record exists, value is <code>no</code>).</li>
                             </ul>
                         </li>
                         <li><strong>NoUpdate Data Cleaning Logic</strong>:
@@ -2218,6 +2229,14 @@
             }
             if (waybillIdx === -1) waybillIdx = 0;
 
+            // Find "Client"
+            const clientHeaders = ["client", "客户", "customer", "channel"];
+            let clientIdx = -1;
+            for (const ch of clientHeaders) {
+                clientIdx = headers.findIndex(h => h === ch || h.includes(ch));
+                if (clientIdx !== -1) break;
+            }
+
             // Find "Scanning Time"
             const scanTimeHeaders = ["scanning time", "scan time", "扫描时间", "scan date", "time", "date", "时间"];
             let scanTimeIdx = -1;
@@ -2354,6 +2373,26 @@
                 return stationVal;
             };
 
+            const getClientValue = (waybill, row) => {
+                if (clientIdx !== -1 && row && row[clientIdx] !== undefined) {
+                    const rawClient = String(row[clientIdx]).trim();
+                    if (rawClient !== '') return rawClient;
+                }
+                return getWaybillClient(waybill);
+            };
+
+            const getNoUpdateMoreThan5 = (group) => {
+                if (!group || group.length < 2) return "no";
+                const sorted = [...group].sort((a, b) => a.date - b.date);
+                for (let j = 0; j < sorted.length - 1; j++) {
+                    const diffDays = (sorted[j + 1].date - sorted[j].date) / (1000 * 60 * 60 * 24);
+                    if (diffDays >= 5) {
+                        return "yes";
+                    }
+                }
+                return "no";
+            };
+
             const extractScanItemData = (item) => {
                 if (!item) {
                     return {
@@ -2451,6 +2490,9 @@
             const selectedTimeOpts = selectedTimeCheckboxes.map(c => c.value);
             const selectedTypeOpts = selectedTypeCheckboxes.map(c => c.value);
             const totalSelected = selectedTimeOpts.length + selectedTypeOpts.length;
+            const hasNoUpdateMoreThan5 = selectedTimeOpts.includes("noupdate-more-than-5");
+            const effectiveTimeOpts = selectedTimeOpts.filter(o => o !== "noupdate-more-than-5");
+            const effectiveScanSelected = effectiveTimeOpts.length + selectedTypeOpts.length;
 
             const noUpdateRecords = [];
             const processedRecords = [];
@@ -2522,69 +2564,104 @@
                 return;
             }
 
-            const isSingle = (totalSelected === 1);
+            if (effectiveScanSelected === 0 && hasNoUpdateMoreThan5) {
+                sheetName = "NoUpdateMoreThan5";
+                fileName = "NoUpdateMoreThan5.xlsx";
+                exportHeaders = ["waybill", "client", "NoUpdate more than 5"];
 
-            if (isSingle) {
-                const singleOpt = selectedTimeOpts.length === 1 ? selectedTimeOpts[0] : selectedTypeOpts[0];
+                for (const waybill in waybillGroups) {
+                    const group = waybillGroups[waybill];
+                    const clientVal = getClientValue(waybill, group[0].row);
+                    const noUpdateVal = getNoUpdateMoreThan5(group);
+                    processedRecords.push({
+                        "waybill": waybill,
+                        "client": clientVal,
+                        "NoUpdate more than 5": noUpdateVal
+                    });
+                }
+            } else if (effectiveScanSelected === 1) {
+                const singleOpt = effectiveTimeOpts.length === 1 ? effectiveTimeOpts[0] : selectedTypeOpts[0];
 
                 if (singleOpt === 'latest') {
                     sheetName = "LatestScanRecords";
                     fileName = "LatestScanRecord.xlsx";
-                    exportHeaders = ["waybill", "last scan date", "last scan type", "last scan station", "Previous/Next Stop", "Scanner"];
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat(["last scan date", "last scan type", "last scan station", "Previous/Next Stop", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
                         const d = extractScanItemData(group[0]);
-                        processedRecords.push({
+                        const rowObj = {
                             "waybill": waybill,
-                            "last scan date": d.date,
-                            "last scan type": d.scanType,
-                            "last scan station": d.station,
-                            "Previous/Next Stop": d.prevNext,
-                            "Scanner": d.scanner
-                        });
+                            "client": getClientValue(waybill, group[0].row)
+                        };
+                        if (hasNoUpdateMoreThan5) {
+                            rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                        }
+                        rowObj["last scan date"] = d.date;
+                        rowObj["last scan type"] = d.scanType;
+                        rowObj["last scan station"] = d.station;
+                        rowObj["Previous/Next Stop"] = d.prevNext;
+                        rowObj["Scanner"] = d.scanner;
+                        processedRecords.push(rowObj);
                     }
                 } else if (singleOpt === 'second-latest') {
                     sheetName = "SecondLatestScanRecords";
                     fileName = "LatestSecondScanRecord.xlsx";
-                    exportHeaders = ["waybill", "latest second scan date", "latest second scan type", "latest second scan station", "Previous/Next Stop", "Scanner"];
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat(["latest second scan date", "latest second scan type", "latest second scan station", "Previous/Next Stop", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
                         if (group.length >= 2) {
                             const d = extractScanItemData(group[1]);
-                            processedRecords.push({
+                            const rowObj = {
                                 "waybill": waybill,
-                                "latest second scan date": d.date,
-                                "latest second scan type": d.scanType,
-                                "latest second scan station": d.station,
-                                "Previous/Next Stop": d.prevNext,
-                                "Scanner": d.scanner
-                            });
+                                "client": getClientValue(waybill, group[1].row)
+                            };
+                            if (hasNoUpdateMoreThan5) {
+                                rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                            }
+                            rowObj["latest second scan date"] = d.date;
+                            rowObj["latest second scan type"] = d.scanType;
+                            rowObj["latest second scan station"] = d.station;
+                            rowObj["Previous/Next Stop"] = d.prevNext;
+                            rowObj["Scanner"] = d.scanner;
+                            processedRecords.push(rowObj);
                         }
                     }
                 } else if (singleOpt === 'first') {
                     sheetName = "FirstScanRecords";
                     fileName = "FirstScanRecord.xlsx";
-                    exportHeaders = ["waybill", "first scan date", "first scan type", "first scan station", "Previous/Next Stop", "Scanner"];
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat(["first scan date", "first scan type", "first scan station", "Previous/Next Stop", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
                         const d = extractScanItemData(group[group.length - 1]);
-                        processedRecords.push({
+                        const rowObj = {
                             "waybill": waybill,
-                            "first scan date": d.date,
-                            "first scan type": d.scanType,
-                            "first scan station": d.station,
-                            "Previous/Next Stop": d.prevNext,
-                            "Scanner": d.scanner
-                        });
+                            "client": getClientValue(waybill, group[group.length - 1].row)
+                        };
+                        if (hasNoUpdateMoreThan5) {
+                            rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                        }
+                        rowObj["first scan date"] = d.date;
+                        rowObj["first scan type"] = d.scanType;
+                        rowObj["first scan station"] = d.station;
+                        rowObj["Previous/Next Stop"] = d.prevNext;
+                        rowObj["Scanner"] = d.scanner;
+                        processedRecords.push(rowObj);
                     }
                 } else if (singleOpt === 'multiple-transfer-over-5') {
                     sheetName = "MutipleTransferOver5";
                     fileName = "MutipleTransferOver5.xlsx";
-                    exportHeaders = [
-                        "waybill",
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat([
                         "other scan station",
                         "other scan date",
                         "other scan type",
@@ -2593,7 +2670,7 @@
                         "oldest STR scan type",
                         "Mutiple Transfer Over 5",
                         "lifecycle"
-                    ];
+                    ]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
@@ -2641,17 +2718,22 @@
                                     lifecycleVal = Math.round(lifecycleDays);
                                 }
 
-                                processedRecords.push({
+                                const rowObj = {
                                     "waybill": waybill,
-                                    "other scan station": otherStation,
-                                    "other scan date": formatDateToYYYYMMDD(oldestOther.date),
-                                    "other scan type": String(oldestOther.row[scanTypeIdx] !== undefined ? oldestOther.row[scanTypeIdx] : '').trim(),
-                                    "oldest STR scan station": strStation,
-                                    "oldest STR scan date": formatDateToYYYYMMDD(oldestStr.date),
-                                    "oldest STR scan type": String(oldestStr.row[scanTypeIdx] !== undefined ? oldestStr.row[scanTypeIdx] : '').trim(),
-                                    "Mutiple Transfer Over 5": Math.round(diffDays),
-                                    "lifecycle": lifecycleVal
-                                });
+                                    "client": getClientValue(waybill, oldestOther.row)
+                                };
+                                if (hasNoUpdateMoreThan5) {
+                                    rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                                }
+                                rowObj["other scan station"] = otherStation;
+                                rowObj["other scan date"] = formatDateToYYYYMMDD(oldestOther.date);
+                                rowObj["other scan type"] = String(oldestOther.row[scanTypeIdx] !== undefined ? oldestOther.row[scanTypeIdx] : '').trim();
+                                rowObj["oldest STR scan station"] = strStation;
+                                rowObj["oldest STR scan date"] = formatDateToYYYYMMDD(oldestStr.date);
+                                rowObj["oldest STR scan type"] = String(oldestStr.row[scanTypeIdx] !== undefined ? oldestStr.row[scanTypeIdx] : '').trim();
+                                rowObj["Mutiple Transfer Over 5"] = Math.round(diffDays);
+                                rowObj["lifecycle"] = lifecycleVal;
+                                processedRecords.push(rowObj);
                             }
                         }
                     }
@@ -2660,28 +2742,34 @@
                     const typeName = singleOpt;
                     sheetName = typeName.replace(/\s+/g, '');
                     fileName = `${sheetName}Record.xlsx`;
-                    exportHeaders = [
-                        "waybill",
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat([
                         `${typeName}-scan date`,
                         `${typeName}-scan station`,
                         `${typeName}-scan type`,
                         `${typeName}-Previous/Next Stop`,
                         `${typeName}-Scanner`
-                    ];
+                    ]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
                         const matched = extractScanTypeRecord(group, typeName);
                         if (matched) {
                             const d = extractScanItemData(matched);
-                            processedRecords.push({
+                            const rowObj = {
                                 "waybill": waybill,
-                                [`${typeName}-scan date`]: d.date,
-                                [`${typeName}-scan station`]: d.station,
-                                [`${typeName}-scan type`]: d.scanType,
-                                [`${typeName}-Previous/Next Stop`]: d.prevNext,
-                                [`${typeName}-Scanner`]: d.scanner
-                            });
+                                "client": getClientValue(waybill, matched.row)
+                            };
+                            if (hasNoUpdateMoreThan5) {
+                                rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                            }
+                            rowObj[`${typeName}-scan date`] = d.date;
+                            rowObj[`${typeName}-scan station`] = d.station;
+                            rowObj[`${typeName}-scan type`] = d.scanType;
+                            rowObj[`${typeName}-Previous/Next Stop`] = d.prevNext;
+                            rowObj[`${typeName}-Scanner`] = d.scanner;
+                            processedRecords.push(rowObj);
                         }
                     }
                 }
@@ -2692,7 +2780,7 @@
                 // Build descriptors list
                 let optDescriptors = [];
 
-                selectedTimeOpts.forEach(tOpt => {
+                effectiveTimeOpts.forEach(tOpt => {
                     let prefix = "latest scan";
                     if (tOpt === "second-latest") prefix = "latest second scan";
                     else if (tOpt === "first") prefix = "first scan";
@@ -2726,7 +2814,10 @@
                 optDescriptors.sort((a, b) => getOptionPriority(a) - getOptionPriority(b));
 
                 // Build export headers according to sorted descriptors
-                exportHeaders = ["waybill"];
+                exportHeaders = ["waybill", "client"];
+                if (hasNoUpdateMoreThan5) {
+                    exportHeaders.push("NoUpdate more than 5");
+                }
                 optDescriptors.forEach(desc => {
                     if (desc.isMultiTransfer) {
                         const multiCols = [
@@ -2755,7 +2846,11 @@
                 // Extract combined row data for each waybill
                 for (const waybill in waybillGroups) {
                     const group = waybillGroups[waybill];
-                    const rowObj = { "waybill": waybill };
+                    const clientVal = getClientValue(waybill, group[0].row);
+                    const rowObj = { "waybill": waybill, "client": clientVal };
+                    if (hasNoUpdateMoreThan5) {
+                        rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                    }
                     let hasAnyMatchedData = false;
 
                     optDescriptors.forEach(desc => {
@@ -2877,15 +2972,34 @@
             const descElem = document.getElementById('scanrecords-rules-desc');
             const columnsElem = document.getElementById('scanrecords-rules-columns');
 
-            if (isSingle) {
-                const singleOpt = selectedTimeOpts.length === 1 ? selectedTimeOpts[0] : selectedTypeOpts[0];
+            const getBaseColumnsHtml = () => {
+                let html = `<li><code>waybill</code> (Column A)</li>\n<li><code>client</code> (Identified by waybill prefix or raw client column)</li>`;
+                if (hasNoUpdateMoreThan5) {
+                    html += `\n<li><code>NoUpdate more than 5</code> (<code>yes</code> if any 2 adjacent scan times gap &ge; 5 days, else <code>no</code>)</li>`;
+                }
+                return html;
+            };
+
+            if (effectiveScanSelected === 0 && hasNoUpdateMoreThan5) {
+                if (tabScanRecords) tabScanRecords.textContent = "NoUpdate more than 5 record";
+                if (titleElem) titleElem.innerHTML = "NoUpdate more than 5 Data Cleaning Logic";
+                if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, checks all scan records sorted by Scanning Time ascending. If the gap between any two adjacent scan times is &ge; 5 days, sets <strong>NoUpdate more than 5</strong> to <code>yes</code>, otherwise <code>no</code>.";
+                if (columnsElem) {
+                    columnsElem.innerHTML = `
+                        <li><code>waybill</code> (Column A)</li>
+                        <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
+                        <li><code>NoUpdate more than 5</code> (<code>yes</code> if any 2 adjacent scan times gap &ge; 5 days, else <code>no</code>)</li>
+                    `;
+                }
+            } else if (effectiveScanSelected === 1) {
+                const singleOpt = effectiveTimeOpts.length === 1 ? effectiveTimeOpts[0] : selectedTypeOpts[0];
                 if (singleOpt === 'latest') {
                     if (tabScanRecords) tabScanRecords.textContent = "latest Scan record";
                     if (titleElem) titleElem.innerHTML = "latest Scan record Data Cleaning Logic";
                     if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, retains only the record with the latest <strong>scan date (Column F)</strong>.";
                     if (columnsElem) {
                         columnsElem.innerHTML = `
-                            <li><code>waybill</code> (Column A)</li>
+                            ${getBaseColumnsHtml()}
                             <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>last scan type</code> (Column E)</li>
                             <li><code>last scan station</code> (Column G)</li>
@@ -2899,7 +3013,7 @@
                     if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, retains only the record with the latest second <strong>scan date (Column F)</strong>.";
                     if (columnsElem) {
                         columnsElem.innerHTML = `
-                            <li><code>waybill</code> (Column A)</li>
+                            ${getBaseColumnsHtml()}
                             <li><code>latest second scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>latest second scan type</code> (Column E)</li>
                             <li><code>latest second scan station</code> (Column G)</li>
@@ -2913,7 +3027,7 @@
                     if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, retains only the record with the first <strong>scan date (Column F)</strong>.";
                     if (columnsElem) {
                         columnsElem.innerHTML = `
-                            <li><code>waybill</code> (Column A)</li>
+                            ${getBaseColumnsHtml()}
                             <li><code>first scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>first scan type</code> (Column E)</li>
                             <li><code>first scan station</code> (Column G)</li>
@@ -2927,7 +3041,7 @@
                     if (descElem) descElem.innerHTML = "For each unique <strong>waybill</strong>, filters trajectories: oldest other region scan (Scanning Site not containing BAW/ST) and oldest STR scan (Scanning Site containing ST/BAW). If oldest STR scan date - oldest other region scan date >= 5 days, keeps the waybill.";
                     if (columnsElem) {
                         columnsElem.innerHTML = `
-                            <li><code>waybill</code></li>
+                            ${getBaseColumnsHtml()}
                             <li><code>other scan station</code> (last scan station of the oldest other region scan)</li>
                             <li><code>other scan date</code> (last scan date of the oldest other region scan, formatted as yyyy/mm/dd)</li>
                             <li><code>other scan type</code> (last scan type of the oldest other region scan)</li>
@@ -3042,6 +3156,7 @@
             if (columnsElem) {
                 columnsElem.innerHTML = `
                     <li><code>waybill</code> (Column A)</li>
+                    <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
                     <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                     <li><code>last scan type</code> (Column E)</li>
                     <li><code>last scan station</code> (Column G)</li>
