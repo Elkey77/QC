@@ -410,6 +410,17 @@
                 <div class="upload-status success" id="status-scanrecords"></div>
             </div>
 
+            <!-- Return scan upload group -->
+            <div class="upload-group">
+                <div class="upload-label" style="color: #b82525;">Return scan</div>
+                <div class="file-input-wrapper" style="border-color: #ebdcdc;">
+                    <button class="file-input-btn" style="background-color: #fff0f0;" onclick="document.getElementById('file-returnscan').click()">Choose file</button>
+                    <span class="file-name" id="name-returnscan">No file chosen</span>
+                </div>
+                <input type="file" id="file-returnscan" style="display:none;" accept=".xlsx, .xls, .csv" onchange="handleReturnScanFile(this)">
+                <div class="upload-status success" id="status-returnscan"></div>
+            </div>
+
             <!-- 48h Shipping records upload group -->
             <div class="upload-group">
                 <div class="upload-label" style="color: #b82525;">48h Shipping records</div>
@@ -610,6 +621,7 @@
                 <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
                     <button class="btn-primary" id="btn-export-scanrecords" onclick="exportScanRecords()" disabled>export scan record</button>
                     <button class="btn-primary" id="btn-export-noupdate" onclick="exportNoUpdate()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate</button>
+                    <button class="btn-primary" id="btn-export-lost-appeal" onclick="exportLostAppeal()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export lost appeal</button>
                 </div>
                 <div class="rules-card">
                     <h3 id="scanrecords-rules-title">latest Scan record Data Cleaning Logic</h3>
@@ -633,6 +645,17 @@
                                 <li>For each unique waybill, sorts all scan records ascending by <strong>Scanning Time</strong>. If the time interval between any two adjacent scans is &ge; 5 days (120 hours), the value is <code>yes</code>, otherwise <code>no</code> (if only 1 scan record exists, value is <code>no</code>).</li>
                             </ul>
                         </li>
+                        <li><strong>SLA Option Logic (latest scan + first scan)</strong>:
+                            <ul>
+                                <li>When both <code>latest scan</code> and <code>first scan</code> are checked, an <code>SLA</code> column is added.</li>
+                                <li><strong>SLA Rule</strong>:
+                                    <ul>
+                                        <li>If <code>latest scan-scan type</code> contains <code>"signed"</code> &rarr; <code>=IF(D2-C2&le;IF(B2="TT",7,10),"in SLA","Over")</code> (i.e. latest scan date - first scan date &le; (client is "TT" ? 7 : 10)).</li>
+                                        <li>If <code>latest scan-scan type</code> is any other value &rarr; <code>=IF(today()-C2&le;IF(B2="TT",7,10),"in SLA","Over")</code> (i.e. today - first scan date &le; (client is "TT" ? 7 : 10)).</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
                         <li><strong>NoUpdate Data Cleaning Logic</strong>:
                             <ul>
                                 <li>For each unique <strong>waybill</strong>, sorts all its scan records ascending (A-Z) by <strong>Scanning Time</strong>.</li>
@@ -647,6 +670,21 @@
                                 </li>
                                 <li>Retains the details from the latest scan record for the other columns.</li>
                                 <li>Exports as <code>NoUpdate.xlsx</code> with columns: <code>waybill</code>, <code>last scan date</code>, <code>last scan type</code>, <code>last scan station</code>, <code>NoUpdate</code>, <code>Previous/Next Stop</code>, <code>Scanner</code>.</li>
+                            </ul>
+                        </li>
+                        <li><strong>export lost appeal Logic</strong>:
+                            <ul>
+                                <li><strong>File Requirements</strong>: Requires <strong>Scan records</strong> and <strong>Return scan</strong>. (If Return scan is missing when clicked, alerts user to upload it).</li>
+                                <li><strong>Base Extraction & Matching</strong>: Extracts <code>waybill</code>, <code>AscanDate</code> (earliest scan date), <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code> from Scan records. Matches <code>waybill</code> against <strong>Return scan</strong>; if matched:
+                                    <ul>
+                                        <li><code>last scan type</code> = <code>Return registration</code></li>
+                                        <li><code>last scan date</code> = <code>Application time</code> from Return scan (formatted as <code>yyyy/mm/dd</code>)</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SLA</strong>: If <code>last scan type</code> contains <code>"Signed"</code> or <code>"Return"</code> &rarr; <code>last scan date - AscanDate</code> (days difference); otherwise &rarr; <code>today() - AscanDate</code>.</li>
+                                <li><strong>Appeal</strong>: If <code>SLA &le; (client == "TT" ? 7 : 10)</code> &rarr; <code>"in SLA"</code>; otherwise &rarr; <code>"Over"</code>.</li>
+                                <li><strong>reason</strong>: If <code>Appeal == "in SLA"</code> &rarr; <code>client + SLA + last scan type</code> (e.g. <code>TT5Parcel Signed</code> or <code>TT4Return registration</code>); otherwise empty.</li>
+                                <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> (Sheet: <code>LostAppeal</code>) with columns: <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>.</li>
                             </ul>
                         </li>
                     </ol>
@@ -871,7 +909,7 @@
                         <li><strong>Filter valid Signing time</strong>: 首先过滤掉所有 <strong>Signing time 为空</strong> 的数据（剔除未签收或时间缺失的无效行后，再进行后续的随机抽样与异常分析）。</li>
                         <li>Filters rows from Driver signed where <strong>Delivery outlet</strong> represents Station.</li>
                         <li>Column F (index 5) is treated as the <strong>courier ID / driver ID</strong>.</li>
-                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE2</code> / <code>JTDE0</code> &rarr; <code>TT</code>, <code>JTDE1</code> &rarr; <code>TEMU</code>, <code>JTDE9</code> &rarr; <code>SF</code>, <code>JTDE8</code> &rarr; <code>Shein</code>, <code>JTDE3</code> &rarr; <code>speed</code>, others &rarr; <code>Others</code>).</li>
+                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE2</code> / <code>JTDE0</code> &rarr; <code>TT</code>, <code>JTDE1</code> &rarr; <code>TEMU</code>, <code>JTDE9</code> &rarr; <code>SF</code>, <code>JTDE8</code> / <code>JDTE8</code> &rarr; <code>Shein</code>, <code>JTDE3</code> &rarr; <code>speed</code>, others &rarr; <code>Others</code>).</li>
                         <li><strong>优先抽检与总单量控制 (Special Driver & Total SpotCheck)</strong>:
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li>若填入了 <strong>special driver</strong>：系统优先筛选 F 列 Courier ID 匹配该名单的司机，并按配置的配额（<code>TT Signed per driver</code> 与 <code>Others Signed per driver</code>）在对应包裹池中通过 Fisher-Yates 随机抽取。</li>
@@ -910,9 +948,9 @@
                         </li>
                         <li><strong>export delivery</strong>: 结合 <strong>delivery import</strong> (HUB Delivery) 与 <strong>arrive import</strong> 导出 <code>delivery.xlsx</code>，包含 3 个 Sheet：
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
-                                <li><strong>dispatch_hub_courier</strong>: 各网点、各日期派件员派件明细（dispatched, signed, IN WH, Problems, NoSigned, Signed%）。</li>
-                                <li><strong>dispatch_Hub_day%</strong>: 网点日维度汇总。matched with received volume from arrive import (B列含 BAW 的各 station 对应 D 列数值之和)，dispatched, courier number, signed, signed%, SPR。</li>
-                                <li><strong>dispatch_DC_day%</strong>: DC 日维度汇总。B 列包含 BAW 的全属于该 DC，其 received 数量为当日 D 列数值对应总和。</li>
+                                <li><strong>dispatch_hub_courier</strong>: 各网点、各日期派件员派件明细（station, date, courier, Dispatched, Dispatch Signed, IN WH, Problems, DispatchNoSigned, Dispatch Signed%）。其中 <code>Dispatch Signed%</code> 取值自源表的 <code>Delivery Success Rate</code>。</li>
+                                <li><strong>dispatch_Hub_day%</strong>: 网点日维度汇总。列顺序：<code>station</code>, <code>date</code>, <code>received</code>, <code>Dispatched</code>, <code>courier number</code>, <code>Dispatch Signed</code>, <code>Dispatched signed%</code>, <code>Dispatched SPR</code>, <code>Daily Signed%</code>, <code>No Dispatch</code>。包含日清签收率（<code>IF(DispatchSigned/received>=DispatchSigned%,DispatchSigned%,DispatchSigned/received)</code>）与未派件量（<code>received-dispatched</code>）。</li>
+                                <li><strong>dispatch_DC_day%</strong>: DC 日维度汇总。B 列包含 BAW 的全属于该 DC，其 received 数量为当日 D 列数值对应总和（date, received, Dispatched, courier number, Dispatch Signed, Dispatched signed%, Dispatched SPR）。</li>
                             </ul>
                         </li>
                     </ol>
@@ -932,6 +970,7 @@
         let currentScanRecordsFileName = "LatestScanRecord.xlsx";
         let finalNoUpdateData = [];
         let rawScanRecordsRows = [];
+        let rawReturnScanRows = [];
         let scanRecordsFileCount = 0;
         let scanRecordsDuplicateCount = 0;
         let finalShippingData = [];
@@ -947,6 +986,50 @@
         let rawDeliveryTimesRows = [];
         let rawArriveImportRows = [];
         let rawDeliveryImportRows = [];
+
+        // Global Client Configuration & Rules
+        const CLIENT_CONFIG = {
+            // Prefix to Client Mapping (matching upper-cased 5-character waybill prefix)
+            prefixMap: {
+                "JTDE1": "TEMU",
+                "JTDE9": "SF",
+                "JTDE2": "TT",
+                "JTDE0": "TT",
+                "JTDE8": "Shein",
+                "JDTE8": "Shein", // tolerate common J&T typo
+                "JTDE3": "speed"
+            },
+            defaultClient: "Others",
+            // SLA thresholds in days by client
+            slaThresholds: {
+                "TT": 7,
+                "default": 10
+            },
+            // Standard headers to detect client column in uploaded sheets
+            headerKeywords: ["client", "客户", "customer", "channel"]
+        };
+
+        // Global Helper: Get client by waybill number prefix
+        function getWaybillClient(waybill) {
+            if (!waybill) return CLIENT_CONFIG.defaultClient;
+            const prefix5 = String(waybill).trim().substring(0, 5).toUpperCase();
+            return CLIENT_CONFIG.prefixMap[prefix5] || CLIENT_CONFIG.defaultClient;
+        }
+
+        // Global Helper: Get SLA threshold days for a client
+        function getClientSlaThreshold(client) {
+            const clientUpper = String(client || '').trim().toUpperCase();
+            return CLIENT_CONFIG.slaThresholds[clientUpper] || CLIENT_CONFIG.slaThresholds.default;
+        }
+
+        // Global Helper: Resolve client value with fallback to waybill prefix rule
+        function resolveClientValue(waybill, row, clientColIdx) {
+            if (clientColIdx !== undefined && clientColIdx !== -1 && row && row[clientColIdx] !== undefined) {
+                const rawClient = String(row[clientColIdx]).trim();
+                if (rawClient !== '') return rawClient;
+            }
+            return getWaybillClient(waybill);
+        }
 
         // Tab Navigation switching
         function switchTab(targetTab) {
@@ -2230,9 +2313,8 @@
             if (waybillIdx === -1) waybillIdx = 0;
 
             // Find "Client"
-            const clientHeaders = ["client", "客户", "customer", "channel"];
             let clientIdx = -1;
-            for (const ch of clientHeaders) {
+            for (const ch of CLIENT_CONFIG.headerKeywords) {
                 clientIdx = headers.findIndex(h => h === ch || h.includes(ch));
                 if (clientIdx !== -1) break;
             }
@@ -2373,13 +2455,7 @@
                 return stationVal;
             };
 
-            const getClientValue = (waybill, row) => {
-                if (clientIdx !== -1 && row && row[clientIdx] !== undefined) {
-                    const rawClient = String(row[clientIdx]).trim();
-                    if (rawClient !== '') return rawClient;
-                }
-                return getWaybillClient(waybill);
-            };
+            const getClientValue = (waybill, row) => resolveClientValue(waybill, row, clientIdx);
 
             const getNoUpdateMoreThan5 = (group) => {
                 if (!group || group.length < 2) return "no";
@@ -2493,6 +2569,7 @@
             const hasNoUpdateMoreThan5 = selectedTimeOpts.includes("noupdate-more-than-5");
             const effectiveTimeOpts = selectedTimeOpts.filter(o => o !== "noupdate-more-than-5");
             const effectiveScanSelected = effectiveTimeOpts.length + selectedTypeOpts.length;
+            const hasBothFirstAndLatest = effectiveTimeOpts.includes("latest") && effectiveTimeOpts.includes("first");
 
             const noUpdateRecords = [];
             const processedRecords = [];
@@ -2561,6 +2638,8 @@
                 document.getElementById('status-scanrecords').textContent = `Please select at least one scan record time or scan type option.`;
                 document.getElementById('btn-export-scanrecords').disabled = true;
                 document.getElementById('btn-export-noupdate').disabled = false;
+                const btnLostAppealEarly = document.getElementById('btn-export-lost-appeal');
+                if (btnLostAppealEarly) btnLostAppealEarly.disabled = false;
                 return;
             }
 
@@ -2843,6 +2922,10 @@
                     }
                 });
 
+                if (hasBothFirstAndLatest) {
+                    exportHeaders.push("SLA");
+                }
+
                 // Extract combined row data for each waybill
                 for (const waybill in waybillGroups) {
                     const group = waybillGroups[waybill];
@@ -2949,6 +3032,40 @@
                         }
                     });
 
+                    if (hasBothFirstAndLatest) {
+                        const latestItem = group[0];
+                        const firstItem = group[group.length - 1];
+
+                        if (firstItem && firstItem.date) {
+                            const slaThreshold = getClientSlaThreshold(clientVal);
+
+                            const latestScanType = (latestItem && latestItem.row && latestItem.row[scanTypeIdx] !== undefined)
+                                ? String(latestItem.row[scanTypeIdx]).trim()
+                                : '';
+                            const isSigned = latestScanType.toLowerCase().includes("signed") || latestScanType.includes("签收");
+
+                            const firstUTC = Date.UTC(firstItem.date.getUTCFullYear(), firstItem.date.getUTCMonth(), firstItem.date.getUTCDate());
+
+                            let diffDays = 0;
+                            if (isSigned) {
+                                if (latestItem && latestItem.date) {
+                                    const latestUTC = Date.UTC(latestItem.date.getUTCFullYear(), latestItem.date.getUTCMonth(), latestItem.date.getUTCDate());
+                                    diffDays = Math.round((latestUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                                } else {
+                                    diffDays = 0;
+                                }
+                            } else {
+                                const now = new Date();
+                                const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+                                diffDays = Math.round((todayUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                            }
+
+                            rowObj["SLA"] = (diffDays <= slaThreshold) ? "in SLA" : "Over";
+                        } else {
+                            rowObj["SLA"] = "";
+                        }
+                    }
+
                     if (hasAnyMatchedData) {
                         processedRecords.push(rowObj);
                     }
@@ -2965,6 +3082,8 @@
             document.getElementById('status-scanrecords').textContent = `${fileCountInfo}${finalScanRecordsData.length} records processed (Filtered out: ${deHqFilteredCount} DE-HQ, ${stuttgartFilteredCount} STUTTGART)${dupInfo}`;
             document.getElementById('btn-export-scanrecords').disabled = false;
             document.getElementById('btn-export-noupdate').disabled = false;
+            const btnLostAppeal = document.getElementById('btn-export-lost-appeal');
+            if (btnLostAppeal) btnLostAppeal.disabled = false;
 
             // Update Tab and Rules Display
             const tabScanRecords = document.getElementById('tab-scanrecords');
@@ -3077,7 +3196,13 @@
             } else {
                 if (tabScanRecords) tabScanRecords.textContent = "scan record";
                 if (titleElem) titleElem.innerHTML = "Scan Records Multi-Dimension Cleaning & Export Logic";
-                if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, dynamically extracts and horizontally aligns all selected scan time and scan type records in sequential order.";
+                if (descElem) {
+                    let descHtml = "For each unique <strong>waybill (Column A)</strong>, dynamically extracts and horizontally aligns all selected scan time and scan type records in sequential order.";
+                    if (hasBothFirstAndLatest) {
+                        descHtml += `<br><span style="color: #b82525; font-weight: 600;">SLA Rule:</span> If <code>latest scan-scan type</code> contains <code>signed</code> &rarr; <code>(latest scan date - first scan date &le; (client == 'TT' ? 7 : 10)) ? 'in SLA' : 'Over'</code>; otherwise &rarr; <code>(today - first scan date &le; (client == 'TT' ? 7 : 10)) ? 'in SLA' : 'Over'</code>.`;
+                    }
+                    descElem.innerHTML = descHtml;
+                }
                 if (columnsElem) {
                     columnsElem.innerHTML = exportHeaders.map(h => `<li><code>${h}</code></li>`).join('');
                 }
@@ -3135,6 +3260,8 @@
             document.getElementById('status-scanrecords').textContent = '';
             document.getElementById('btn-export-scanrecords').disabled = true;
             document.getElementById('btn-export-noupdate').disabled = true;
+            const btnLostAppeal = document.getElementById('btn-export-lost-appeal');
+            if (btnLostAppeal) btnLostAppeal.disabled = true;
             document.getElementById('tab-scanrecords').textContent = 'latest Scan record';
 
             // Reset checkboxes: 'latest' checked, others unchecked
@@ -3169,6 +3296,315 @@
             if (typeof checkCSBtn === 'function') checkCSBtn();
             if (typeof checkDriverSignedBtn === 'function') checkDriverSignedBtn();
             if (typeof checkNoUpdateRecordBtns === 'function') checkNoUpdateRecordBtns();
+        }
+
+        // Return scan file handler
+        function handleReturnScanFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            document.getElementById('name-returnscan').textContent = file.name;
+            document.getElementById('status-returnscan').textContent = "Loading...";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+                    if (!rawRows || rawRows.length <= 1) {
+                        alert("The selected Return scan file is empty.");
+                        resetReturnScan();
+                        return;
+                    }
+
+                    rawReturnScanRows = rawRows;
+                    document.getElementById('status-returnscan').textContent = `${rawRows.length - 1} records loaded.`;
+                } catch (error) {
+                    alert('Failed to parse Return scan file. Error: ' + error.message);
+                    resetReturnScan();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function resetReturnScan() {
+            rawReturnScanRows = [];
+            const fileInput = document.getElementById('file-returnscan');
+            if (fileInput) fileInput.value = '';
+            const nameElem = document.getElementById('name-returnscan');
+            if (nameElem) nameElem.textContent = 'No file chosen';
+            const statusElem = document.getElementById('status-returnscan');
+            if (statusElem) statusElem.textContent = '';
+        }
+
+        function exportLostAppeal() {
+            if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) {
+                alert('Please upload Scan records file first.');
+                return;
+            }
+            if (!rawReturnScanRows || rawReturnScanRows.length <= 1) {
+                alert('Please upload Return scan file first.');
+                return;
+            }
+
+            // 1. Parse Return scan map (waybill -> Application time)
+            const returnHeaders = rawReturnScanRows[0].map(h => String(h).trim().toLowerCase());
+            
+            const waybillHeaders = ["waybill", "waybill number", "运单号", "运单", "tracking number", "tracking", "单号"];
+            let returnWaybillIdx = -1;
+            for (const wbh of waybillHeaders) {
+                returnWaybillIdx = returnHeaders.findIndex(h => h === wbh || h.includes(wbh));
+                if (returnWaybillIdx !== -1) break;
+            }
+            if (returnWaybillIdx === -1) returnWaybillIdx = 0;
+
+            const appTimeHeaders = [
+                "application time", "application_time", "apply time", "apply_time",
+                "申请时间", "登记时间", "return time", "退件时间", "退件申请时间",
+                "申请日期", "return date", "application date"
+            ];
+            let appTimeIdx = -1;
+            for (const ath of appTimeHeaders) {
+                appTimeIdx = returnHeaders.findIndex(h => h === ath || h.includes(ath));
+                if (appTimeIdx !== -1) break;
+            }
+            if (appTimeIdx === -1) {
+                appTimeIdx = returnHeaders.findIndex(h => h.includes("application") || h.includes("申请"));
+            }
+            if (appTimeIdx === -1) {
+                appTimeIdx = returnHeaders.findIndex(h => h.includes("time") || h.includes("date") || h.includes("时间") || h.includes("日期"));
+            }
+            if (appTimeIdx === -1) appTimeIdx = 1;
+
+            const returnMap = {};
+            const returnDataRows = rawReturnScanRows.slice(1);
+            for (let i = 0; i < returnDataRows.length; i++) {
+                const r = returnDataRows[i];
+                if (!r || r.length === 0) continue;
+                const wb = String(r[returnWaybillIdx] !== undefined ? r[returnWaybillIdx] : '').trim();
+                if (!wb) continue;
+
+                const rawDate = r[appTimeIdx];
+                const dateObj = getJSDate(rawDate);
+                const dateStr = dateObj ? formatDateToYYYYMMDD(dateObj) : (rawDate ? String(rawDate).trim() : '');
+                const cleanWb = wb.toUpperCase();
+
+                if (!returnMap[cleanWb]) {
+                    returnMap[cleanWb] = { date: dateObj, dateStr: dateStr };
+                } else if (dateObj && (!returnMap[cleanWb].date || dateObj > returnMap[cleanWb].date)) {
+                    returnMap[cleanWb] = { date: dateObj, dateStr: dateStr };
+                }
+            }
+
+            // 2. Parse Scan records
+            const scanHeaderRow = rawScanRecordsRows[0];
+            const scanDataRows = rawScanRecordsRows.slice(1);
+            const headers = scanHeaderRow.map(h => String(h).trim().toLowerCase());
+
+            let scanWaybillIdx = -1;
+            for (const wbh of waybillHeaders) {
+                scanWaybillIdx = headers.findIndex(h => h === wbh || h.includes(wbh));
+                if (scanWaybillIdx !== -1) break;
+            }
+            if (scanWaybillIdx === -1) scanWaybillIdx = 0;
+
+            let clientIdx = -1;
+            for (const ch of CLIENT_CONFIG.headerKeywords) {
+                clientIdx = headers.findIndex(h => h === ch || h.includes(ch));
+                if (clientIdx !== -1) break;
+            }
+
+            const scanTimeHeaders = ["scanning time", "scan time", "扫描时间", "scan date", "time", "date", "时间"];
+            let scanTimeIdx = -1;
+            for (const sth of scanTimeHeaders) {
+                scanTimeIdx = headers.findIndex(h => h === sth || h.includes(sth));
+                if (scanTimeIdx !== -1) break;
+            }
+            if (scanTimeIdx === -1) scanTimeIdx = 5;
+
+            const scanTypeHeaders = ["scan type", "scanning type", "last scan type", "latest scan type", "扫描类型", "操作类型"];
+            let scanTypeIdx = -1;
+            for (const sth of scanTypeHeaders) {
+                scanTypeIdx = headers.findIndex(h => h === sth || h.includes(sth));
+                if (scanTypeIdx !== -1) break;
+            }
+            if (scanTypeIdx === -1) scanTypeIdx = 4;
+
+            const scanningSiteHeaders = [
+                "scanning site", "scanning_site", "scan site", "扫描站点", "扫描站", "站点", 
+                "last scan station", "latest scanning point", "scanning point", "scan station", 
+                "扫描点", "扫描网点", "网点"
+            ];
+            let scanningSiteIdx = -1;
+            for (const ssh of scanningSiteHeaders) {
+                scanningSiteIdx = headers.findIndex(h => h === ssh || h.includes(ssh));
+                if (scanningSiteIdx !== -1) break;
+            }
+            if (scanningSiteIdx === -1) scanningSiteIdx = 6;
+
+            const dispRecHeaders = ["dispatcher or receiver", "dispatcher/receiver", "dispatcher or receiver name", "派送员或接收员", "收发员"];
+            let dispRecIdx = -1;
+            for (const drh of dispRecHeaders) {
+                dispRecIdx = headers.findIndex(h => h.includes(drh));
+                if (dispRecIdx !== -1) break;
+            }
+
+            const scannerNumberHeaders = ["scanner number", "scanner no", "扫描枪编号", "扫描枪", "扫描号"];
+            let scannerNumberIdx = -1;
+            for (const snh of scannerNumberHeaders) {
+                scannerNumberIdx = headers.findIndex(h => h === snh);
+                if (scannerNumberIdx !== -1) break;
+            }
+            if (scannerNumberIdx === -1) scannerNumberIdx = 24;
+
+            const scannerHeaders = ["scanner", "扫码员", "扫码人"];
+            let scannerIdx = -1;
+            for (const sh of scannerHeaders) {
+                scannerIdx = headers.findIndex(h => h === sh);
+                if (scannerIdx !== -1) break;
+            }
+            if (scannerIdx === -1) scannerIdx = scannerNumberIdx;
+
+            const getScannerValue = (row) => {
+                if (!row) return '';
+                if (dispRecIdx !== -1) {
+                    const rawDispRec = String(row[dispRecIdx] !== undefined ? row[dispRecIdx] : '').trim();
+                    if (rawDispRec !== '') return rawDispRec;
+                }
+                return String(row[scannerIdx] !== undefined ? row[scannerIdx] : '').trim();
+            };
+
+            const getStationValue = (row, scannerVal) => {
+                if (!row) return '';
+                let stationVal = scanningSiteIdx !== -1 ? String(row[scanningSiteIdx] !== undefined ? row[scanningSiteIdx] : '').trim() : '';
+                if (!stationVal && row[6] !== undefined) stationVal = String(row[6]).trim();
+                if (scannerVal && scannerVal.toLowerCase().includes("backup")) stationVal = "BackUp";
+                return stationVal;
+            };
+
+            const getClientValue = (waybill, row) => resolveClientValue(waybill, row, clientIdx);
+
+            // Group by waybill with global filters applied
+            const waybillGroups = {};
+            for (let i = 0; i < scanDataRows.length; i++) {
+                const row = scanDataRows[i];
+                if (!row || row.length === 0) continue;
+
+                const cleanSite = (val) => String(val !== undefined ? val : '').replace(/\s+/g, '').toUpperCase();
+                const siteG = cleanSite(row[6]);
+                const siteCustom = scanningSiteIdx !== -1 ? cleanSite(row[scanningSiteIdx]) : '';
+                if (siteG === "STUTTGART" || siteG === "DE-HQ" || siteCustom === "STUTTGART" || siteCustom === "DE-HQ") {
+                    continue;
+                }
+
+                const st = String(row[scanTypeIdx] !== undefined ? row[scanTypeIdx] : '').trim();
+                const sn = String(row[scannerNumberIdx] !== undefined ? row[scannerNumberIdx] : '').trim();
+                if ((st.toLowerCase().includes("problem scan") || st.includes("问题")) && (sn === "02500088" || sn === "02500029")) {
+                    continue;
+                }
+
+                const waybill = String(row[scanWaybillIdx] !== undefined ? row[scanWaybillIdx] : (row[0] !== undefined ? row[0] : '')).trim();
+                if (waybill === '') continue;
+
+                const dateVal = (scanTimeIdx !== -1 && row[scanTimeIdx] !== undefined) ? row[scanTimeIdx] : row[5];
+                const date = getJSDate(dateVal);
+                if (!date) continue;
+
+                if (!waybillGroups[waybill]) waybillGroups[waybill] = [];
+                waybillGroups[waybill].push({ date: date, row: row });
+            }
+
+            const exportRows = [];
+            const now = new Date();
+            const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+
+            for (const waybill in waybillGroups) {
+                const group = waybillGroups[waybill];
+                group.sort((a, b) => b.date - a.date);
+
+                const latestItem = group[0];
+                const firstItem = group[group.length - 1];
+                const clientVal = getClientValue(waybill, latestItem.row);
+
+                const ascanDate = formatDateToYYYYMMDD(firstItem.date);
+                const scannerVal = getScannerValue(latestItem.row);
+                const lastScanStation = getStationValue(latestItem.row, scannerVal);
+
+                let lastScanType = String(latestItem.row[scanTypeIdx] !== undefined ? latestItem.row[scanTypeIdx] : '').trim();
+                let lastScanDate = formatDateToYYYYMMDD(latestItem.date);
+                let lastScanDateObj = latestItem.date;
+
+                // Match with return scan
+                const matchedReturn = returnMap[waybill.toUpperCase()];
+                if (matchedReturn) {
+                    lastScanType = "Return registration";
+                    if (matchedReturn.dateStr) {
+                        lastScanDate = matchedReturn.dateStr;
+                    }
+                    if (matchedReturn.date) {
+                        lastScanDateObj = matchedReturn.date;
+                    }
+                }
+
+                // 1. SLA Calculation:
+                // 如果last scan type包含Signed或者Return ，则=last scan date-AscanDate; 如果last scan type为其他，则=today()-AscanDate
+                const lstLower = lastScanType.toLowerCase();
+                const isSignedOrReturn = lstLower.includes("signed") || lstLower.includes("return") || lastScanType.includes("签收") || lastScanType.includes("退件");
+
+                const firstUTC = Date.UTC(firstItem.date.getUTCFullYear(), firstItem.date.getUTCMonth(), firstItem.date.getUTCDate());
+                let sla = 0;
+
+                if (isSignedOrReturn) {
+                    if (lastScanDateObj) {
+                        const lastUTC = Date.UTC(lastScanDateObj.getUTCFullYear(), lastScanDateObj.getUTCMonth(), lastScanDateObj.getUTCDate());
+                        sla = Math.round((lastUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                    } else {
+                        sla = 0;
+                    }
+                } else {
+                    sla = Math.round((todayUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                }
+
+                // 2. Appeal Calculation:
+                // 如果last scan type包含Signed或者Return ，则=IF(last scan date-AscanDate<=IF(client="TT",7,10),"in SLA","Over"); 如果last scan type为其他，则=IF(today()-AscanDate<=IF(client="TT",7,10),"in SLA","Over")
+                const threshold = getClientSlaThreshold(clientVal);
+                const appeal = (sla <= threshold) ? "in SLA" : "Over";
+
+                // 3. Reason Calculation:
+                // if Appeal=in SLA，则reason=client+{{SLA}}+{{last scan type}}
+                let reason = "";
+                if (appeal === "in SLA") {
+                    reason = `${clientVal}${sla}${lastScanType}`;
+                }
+
+                exportRows.push({
+                    "waybill": waybill,
+                    "client": clientVal,
+                    "AscanDate": ascanDate,
+                    "last scan station": lastScanStation,
+                    "last scan type": lastScanType,
+                    "last scan date": lastScanDate,
+                    "SLA": sla,
+                    "Appeal": appeal,
+                    "reason": reason
+                });
+            }
+
+            if (exportRows.length === 0) {
+                alert('No scan records found to export.');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "SLA", "Appeal", "reason"]
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "LostAppeal");
+            XLSX.writeFile(wb, "LostAppeal.xlsx");
         }
 
         // Shipping-Signed Logic
@@ -4614,23 +5050,6 @@
             if (btn) {
                 btn.disabled = !(hasDriver && hasScan);
             }
-        }
-
-        function getWaybillClient(waybill) {
-            if (!waybill) return "Others";
-            const prefix5 = String(waybill).trim().substring(0, 5).toUpperCase();
-            if (prefix5 === "JTDE1") {
-                return "TEMU";
-            } else if (prefix5 === "JTDE9") {
-                return "SF";
-            } else if (prefix5 === "JTDE2" || prefix5 === "JTDE0") {
-                return "TT";
-            } else if (prefix5 === "JTDE8") {
-                return "Shein";
-            } else if (prefix5 === "JTDE3") {
-                return "speed";
-            }
-            return "Others";
         }
 
         function getFilteredDriverRecords() {
@@ -6218,15 +6637,12 @@
         function normalizeReceiveSheet(rows) {
             const headerIndex = rows.findIndex(row => row && row.some(cell => {
                 const value = receiveClean(cell);
-                return value.includes("日期") || value.toLowerCase() === "date";
+                return value.includes("日期") || value.toLowerCase() === "date" || value.toLowerCase().includes("delivery success rate") || value.toLowerCase().includes("station") || value.includes("网点");
             }));
             if (headerIndex < 0) return [];
-            const headerRows = rows.slice(Math.max(0, headerIndex - 1), headerIndex + 2);
-            const width = Math.max(...headerRows.map(r => r ? r.length : 0));
-            const headers = Array.from({ length: width }, (_, col) => {
-                const parts = headerRows.map(row => row ? receiveClean(row[col]) : "").filter(Boolean);
-                return [...new Set(parts)].join(" ");
-            });
+            const headerRow = rows[headerIndex] || [];
+            const width = Math.max(headerRow.length, ...rows.slice(headerIndex + 1).map(r => r ? r.length : 0));
+            const headers = Array.from({ length: width }, (_, col) => receiveClean(headerRow[col]));
 
             return rows.slice(headerIndex + 1)
                 .filter(row => row && row.some(cell => receiveClean(cell) !== ""))
@@ -6255,22 +6671,77 @@
                 });
         }
 
-        function getSignedRate(dispatched, signed, rawVal) {
-            if (rawVal !== undefined && rawVal !== null && rawVal !== "") {
-                if (typeof rawVal === "number") {
-                    const pct = rawVal > 1 ? rawVal : rawVal * 100;
-                    return `${pct.toFixed(2)}%`;
-                }
-                const cleanStr = String(rawVal).trim();
-                if (cleanStr.includes("%")) return cleanStr;
-                const valNum = parseFloat(cleanStr);
-                if (!isNaN(valNum)) {
-                    const pct = valNum > 1 ? valNum : valNum * 100;
-                    return `${pct.toFixed(2)}%`;
-                }
-                return cleanStr;
+        function formatDeliveryRate(val) {
+            if (val === undefined || val === null || String(val).trim() === "") {
+                return "0.00%";
             }
-            return dispatched ? `${((signed / dispatched) * 100).toFixed(2)}%` : "0.00%";
+            if (typeof val === "number") {
+                if (!Number.isFinite(val)) return "0.00%";
+                const pct = val <= 1 ? val * 100 : val;
+                return `${Math.min(100, Math.max(0, pct)).toFixed(2)}%`;
+            }
+            const str = String(val).trim();
+            if (str.includes("%")) {
+                const num = parseFloat(str.replace(/%/g, "").trim());
+                if (!isNaN(num)) {
+                    return `${Math.min(100, Math.max(0, num)).toFixed(2)}%`;
+                }
+                return str;
+            }
+            const num = parseFloat(str);
+            if (!isNaN(num)) {
+                const pct = num <= 1 ? num * 100 : num;
+                return `${Math.min(100, Math.max(0, pct)).toFixed(2)}%`;
+            }
+            return str;
+        }
+
+        function getDeliverySuccessRate(row) {
+            if (!row) return "0.00%";
+
+            // 1. Highest Priority: exact or partial match for Delivery Success Rate in headers
+            for (const key of Object.keys(row)) {
+                if (key.startsWith("__col")) continue;
+                const norm = receiveNormalizeLookupKey(key);
+                if (norm === "deliverysuccessrate" || norm.includes("deliverysuccessrate")) {
+                    const val = row[key];
+                    if (val !== undefined && val !== null && String(val).trim() !== "") {
+                        return formatDeliveryRate(val);
+                    }
+                }
+            }
+
+            // 2. Priority: success rate or Chinese aliases
+            const successAliases = ["successrate", "妥投率", "派送成功率", "deliverysignoffrate", "signoffrate", "signrate", "签收率"];
+            for (const key of Object.keys(row)) {
+                if (key.startsWith("__col")) continue;
+                const norm = receiveNormalizeLookupKey(key);
+                for (const alias of successAliases) {
+                    const normAlias = receiveNormalizeLookupKey(alias);
+                    if (normAlias && (norm === normAlias || norm.includes(normAlias))) {
+                        const val = row[key];
+                        if (val !== undefined && val !== null && String(val).trim() !== "") {
+                            return formatDeliveryRate(val);
+                        }
+                    }
+                }
+            }
+
+            // 3. Fallback: column 9 (Column J in Excel) or scan columns for percentage
+            if (row["__col9"] !== undefined && row["__col9"] !== null && String(row["__col9"]).trim() !== "") {
+                return formatDeliveryRate(row["__col9"]);
+            }
+            for (let c = 15; c >= 0; c--) {
+                const val = row[`__col${c}`];
+                if (val !== undefined && val !== null) {
+                    const s = String(val).trim();
+                    if (s.includes("%")) {
+                        return formatDeliveryRate(val);
+                    }
+                }
+            }
+
+            return "0.00%";
         }
 
         function buildReceiveTabRows() {
@@ -6376,21 +6847,19 @@
                     const inWh = receiveNum(getDeliveryRowValue(row, ["left stock", "stock", "warehouse retained", "retained", "stranded packages", "stranded", "留仓量", "留仓", "在库"], 6));
                     const problems = receiveNum(getDeliveryRowValue(row, ["problem shipment", "problem", "problems", "问题件", "异常件"], 7));
                     const noSigned = receiveNum(getDeliveryRowValue(row, ["not signed", "nosigned", "未签收"], 8));
-                    const rawSignedPct = getDeliveryRowValue(row, ["sign-off rate", "sign rate", "delivery sign-off rate", "signed%", "签收率"], 9);
-
-                    const signedPct = getSignedRate(dispatched, signed, rawSignedPct);
+                    const signedPct = getDeliverySuccessRate(row);
 
                     // 1. dispatch_hub_courier
                     dispatch_hub_courier.push({
                         station,
                         date: dateStr,
                         courier,
-                        dispatched,
-                        signed,
+                        Dispatched: dispatched,
+                        "Dispatch Signed": signed,
                         "IN WH": inWh,
                         Problems: problems,
-                        NoSigned: noSigned,
-                        "Signed%": signedPct
+                        DispatchNoSigned: noSigned,
+                        "Dispatch Signed%": signedPct
                     });
 
                     // 2. Aggregate for dispatch_Hub_day%
@@ -6496,15 +6965,31 @@
                 const signedPct = group.dispatched ? `${((group.signed / group.dispatched) * 100).toFixed(2)}%` : "0.00%";
                 const spr = courierCount ? Math.round(group.signed / courierCount) : 0;
                 const received = getHubReceivedVolume(group.date, group.station);
+
+                // Daily Signed% = IF(DispatchSigned/received>=DispatchSigned%,DispatchSigned%,DispatchSigned/received)
+                const dispatchSignedRatio = group.dispatched > 0 ? (group.signed / group.dispatched) : 0;
+                let dailyRatio = dispatchSignedRatio;
+                if (received > 0) {
+                    const receiveSignedRatio = group.signed / received;
+                    dailyRatio = receiveSignedRatio >= dispatchSignedRatio ? dispatchSignedRatio : receiveSignedRatio;
+                }
+                const dailySignedPct = `${(dailyRatio * 100).toFixed(2)}%`;
+
+                // No Dispatch = received - dispatched, 如果为负数直接填0
+                const rawNoDispatch = received - group.dispatched;
+                const noDispatch = rawNoDispatch < 0 ? 0 : rawNoDispatch;
+
                 return {
                     station: group.station,
                     date: group.date,
                     received: received,
-                    dispatched: group.dispatched,
+                    Dispatched: group.dispatched,
                     "courier number": courierCount,
-                    signed: group.signed,
-                    "signed%": signedPct,
-                    SPR: spr
+                    "Dispatch Signed": group.signed,
+                    "Dispatched signed%": signedPct,
+                    "Dispatched SPR": spr,
+                    "Daily Signed%": dailySignedPct,
+                    "No Dispatch": noDispatch
                 };
             }).sort((a, b) =>
                 a.date.localeCompare(b.date) ||
@@ -6536,11 +7021,11 @@
                 return {
                     date: group.date,
                     received: dcReceived,
-                    dispatched: group.dispatched,
+                    Dispatched: group.dispatched,
                     "courier number": courierCount,
-                    signed: group.signed,
-                    "signed%": signedPct,
-                    SPR: spr
+                    "Dispatch Signed": group.signed,
+                    "Dispatched signed%": signedPct,
+                    "Dispatched SPR": spr
                 };
             }).sort((a, b) => a.date.localeCompare(b.date));
 
