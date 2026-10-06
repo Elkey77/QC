@@ -477,6 +477,17 @@
                 <div class="upload-status success" id="status-deliverytimes"></div>
             </div>
 
+            <!-- STR HUB Warehousing upload group -->
+            <div class="upload-group">
+                <div class="upload-label" style="color: #b82525;">STR HUB Warehousing</div>
+                <div class="file-input-wrapper" style="border-color: #ebdcdc;">
+                    <button class="file-input-btn" style="background-color: #fff0f0;" onclick="document.getElementById('file-strhubwarehousing').click()">Choose file</button>
+                    <span class="file-name" id="name-strhubwarehousing">No file chosen</span>
+                </div>
+                <input type="file" id="file-strhubwarehousing" style="display:none;" accept=".xlsx, .xls, .csv" onchange="handleStrHubWarehousingFile(this)">
+                <div class="upload-status success" id="status-strhubwarehousing"></div>
+            </div>
+
             <!-- Driver signed upload group -->
             <div class="upload-group">
                 <div class="upload-label" style="color: #b82525;">Driver signed</div>
@@ -524,6 +535,7 @@
                     <div class="tab" id="tab-pending" onclick="switchTab('pending')">Pending</div>
                     <div class="tab" id="tab-driversigned" onclick="switchTab('driversigned')">Driver signed</div>
                     <div class="tab" id="tab-receive" onclick="switchTab('receive')">Receive</div>
+                    <div class="tab" id="tab-addproblem" onclick="switchTab('addproblem')">add problem</div>
                 </div>
             </div>
 
@@ -683,8 +695,8 @@
                                 </li>
                                 <li><strong>SLA</strong>: If <code>last scan type</code> contains <code>"Signed"</code> or <code>"Return"</code> &rarr; <code>last scan date - AscanDate</code> (days difference); otherwise &rarr; <code>today() - AscanDate</code>.</li>
                                 <li><strong>Appeal</strong>: If <code>SLA &le; (client == "TT" ? 7 : 10)</code> &rarr; <code>"in SLA"</code>; otherwise &rarr; <code>"Over"</code>.</li>
-                                <li><strong>reason</strong>: If <code>Appeal == "in SLA"</code> &rarr; <code>client + SLA + last scan type</code> (e.g. <code>TT5Parcel Signed</code> or <code>TT4Return registration</code>); otherwise empty.</li>
-                                <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> (Sheet: <code>LostAppeal</code>) with columns: <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>.</li>
+                                <li><strong>reason</strong>: 不管 <code>Appeal</code> 列的值如何均有值，格式为 <code>=client &amp; " " &amp; SLA &amp; " days " &amp; last scan type</code>（例如 <code>TT 5 days Parcel Signed</code> 或 <code>TEMU 12 days Return registration</code>）。</li>
+                                <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> (Sheet: <code>LostAppeal</code>) with columns: <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
                             </ul>
                         </li>
                     </ol>
@@ -703,7 +715,7 @@
                     <h3>Shipping-Signed Data Cleaning Logic</h3>
                     <ol>
                         <li>Filters rows where <strong>Delivery outlet</strong> contains <code>"BAW"</code>.</li>
-                        <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM).</li>
+                        <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM)。<strong>所有包含 AscanDate 列的导出均严格按 AscanDate 从小到大升序排序</strong>。</li>
                         <li><strong>Station Mapping</strong>:
                             <ul>
                                 <li>If <code>Latest scanning point</code> contains "BAW" &rarr; Latest scanning point.</li>
@@ -738,7 +750,7 @@
                             <ul>
                                 <li>Filters rows where <code>Delivery outlet</code> contains <code>"BAW"</code>, <code>Sign for identification</code> does not contain <code>"Signed"</code> and is not <code>"Normally Delivered"</code>, <code>Transfer and return identification</code> is <code>"未退件"</code> (if present), and <code>Latest problem reason</code> does not contain <code>"lost"</code> (if present).</li>
                                 <li>Excludes any <code>"Parcel Signed"</code> (all dates).</li>
-                                <li>Excludes <code>"Out of warehouse scan"</code> and <code>"Problem scan"</code> only if latest scan time is today (<code>lastScanDate === todayStr</code>).</li>
+                                <li>Excludes <code>"Out of warehouse scan"</code> and <code>"Problem scan"</code> only if latest scan time is in recently working two days (Deliver work days: Monday–Saturday).</li>
                                 <li>Maps <code>Station</code>: if latest scan type is <code>"Shipping HUB"</code> or <code>"Outgoing Scan"</code> &rarr; <code>Delivery outlet</code>; else &rarr; <code>Latest scanning point</code> (with STUTTGART/DE-HQ fallback to Delivery outlet).</li>
                                 <li>Exports as <code>TodayNodispatch.xlsx</code> (Sheet: <code>TodayNodispatch</code>) with columns: <code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>postcode</code>.</li>
                             </ul>
@@ -824,13 +836,13 @@
                         </li>
                         <li><strong>Today Nodispatch & Historical</strong>:
                             <ul>
-                                <li><code>export today Nodispatch</code>: AscanDate (Entry time) range is what is imported; excludes any <code>"Parcel Signed"</code>, and excludes <code>"Out of warehouse scan"</code> or <code>"Problem scan"</code> only if latest scan time is today.</li>
-                                <li><code>export get lastest scan</code>: AscanDate is not today.</li>
+                                <li><code>export today Nodispatch</code>: AscanDate (Entry time) range is what is imported; excludes any <code>"Parcel Signed"</code>, and excludes <code>"Out of warehouse scan"</code> or <code>"Problem scan"</code> only if latest scan time is in recently working two days (Deliver work days: Monday–Saturday)（严格按 <code>AscanDate</code> 从小到大升序排序导出）。</li>
+                                <li><code>export get lastest scan</code>: AscanDate is not today（严格按 <code>AscanDate</code> 从小到大升序排序导出）。</li>
                             </ul>
                         </li>
-                        <li><strong>Driver Matching (for Historical Pending Last)</strong>:
+                        <li><strong>Driver Matching (for Historical Pending Last / Historical Pending Hub)</strong>:
                             <ul>
-                                <li>If both <code>scan records</code> and <code>pending records</code> are uploaded, matches by Waybill.</li>
+                                <li>If both <code>scan records</code> and <code>pending records</code> are uploaded, matches by Waybill。导出的表格均严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                                 <li>Matches for all historical pending records (AscanDate is not today).</li>
                                 <li>Updates the fields from the latest scan record as follows:
                                     <ul>
@@ -849,8 +861,8 @@
                                 <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
                                 <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
                                 <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
-                                <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped.</li>
-                                <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger.</li>
+                                <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
+                                <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                             </ul>
                         </li>
                     </ol>
@@ -956,6 +968,68 @@
                     </ol>
                 </div>
             </div>
+
+            <!-- 9. Add Problem Panel -->
+            <div class="tab-panel" id="panel-addproblem">
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                    <!-- Client Selection Option -->
+                    <div class="options-group" style="align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span class="options-label" style="font-weight: 600; color: #2b1111;">client:</span>
+                        <select id="select-addproblem-client" style="padding: 6px 12px; border: 1px solid #ebdcdc; border-radius: 6px; font-size: 13px; color: #2b1111; background-color: #ffffff; cursor: pointer; outline: none;">
+                            <option value="">All (全部客户)</option>
+                            <option value="TEMU">TEMU</option>
+                            <option value="SF">SF</option>
+                            <option value="TT">TT</option>
+                            <option value="Shein">Shein</option>
+                            <option value="speed">speed</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <button class="btn-primary" id="btn-export-to-get-problem" onclick="exportToGetProblem()" disabled>export to get problem</button>
+                        <button class="btn-primary" id="btn-export-to-add-problem" onclick="exportToAddProblem()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export to add problem</button>
+                    </div>
+
+                    <!-- Rules Card -->
+                    <div class="rules-card">
+                        <h3>Add Problem Data Cleaning Logic</h3>
+                        <ol>
+                            <li><strong>File Requirements</strong>:
+                                <ul>
+                                    <li><code>export to get problem</code>: Requires <strong>STR HUB Warehousing</strong> file.</li>
+                                    <li><code>export to add problem</code>: Requires <strong>STR HUB Warehousing</strong>, <strong>Scan records</strong>, and <strong>Delivery times</strong> files.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Client Filter</strong>:
+                                <ul>
+                                    <li><code>client</code> 取值来源于全局参数（根据运单号前缀匹配规则识别），不从表里取值。上传的 STR HUB Warehousing 表里的 <code>waybill</code> 先用 client 全局规则处理后，再参与 client 筛选。</li>
+                                    <li>可选客户：<code>TEMU</code>, <code>SF</code>, <code>TT</code>, <code>Shein</code>, <code>speed</code>, <code>Others</code>。</li>
+                                    <li>若选择了某个 client，只导出该客户；若未选（默认 <code>All</code>），则包含全部客户。</li>
+                                </ul>
+                            </li>
+                            <li><strong>export to get problem</strong>:
+                                <ul>
+                                    <li>筛选条件：<strong>符合筛选的客户 + Scanning DSP = "Stuttgart HUB"</strong>。</li>
+                                    <li><code>warehouse Time</code> = STR HUB Warehousing 表里的 <strong>Scanning Time</strong>。</li>
+                                    <li><code>warehouse station</code> = STR HUB Warehousing 表里的 <strong>Scanning DSP</strong>。</li>
+                                    <li>导出为 <code>GetProblem.xlsx</code>（Sheet: <code>GetProblem</code>），表头：<code>waybill</code>, <code>client</code>, <code>warehouse Time</code>, <code>warehouse station</code>。</li>
+                                </ul>
+                            </li>
+                            <li><strong>export to add problem</strong>:
+                                <ul>
+                                    <li>基于经过 client 筛选的 STR HUB Warehousing 数据，关联 <strong>Scan records</strong>。</li>
+                                    <li>按每个包裹的最新扫描记录（<code>latest scan</code>）处理，<strong>只保留 latest scan station = "Stuttgart HUB"</strong> 的包裹。</li>
+                                    <li>再以 <code>waybill</code> 为主键比对关联 <strong>Delivery times</strong> 文件，提取 <code>Delivery count</code> 与 <code>Latest issue type</code>。</li>
+                                    <li><strong>add 判定与筛选规则</strong>：<code>Latest issue type</code> 无值或者包含 <code>"delivery failed"</code>（忽略大小写）则判定 <code>add = "yes"</code>，否则为 <code>"no"</code>。<strong>仅导出 add = "yes" 的包裹</strong>。</li>
+                                    <li>导出为 <code>AddProblem.xlsx</code>（Sheet: <code>AddProblem</code>），表头：<code>waybill</code>, <code>client</code>, <code>latest scan date</code>, <code>latest scan type</code>, <code>latest scan station</code>, <code>warehouse Time</code>, <code>Delivery count</code>, <code>Latest issue type</code>, <code>add</code>。</li>
+                                </ul>
+                            </li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -986,6 +1060,7 @@
         let rawDeliveryTimesRows = [];
         let rawArriveImportRows = [];
         let rawDeliveryImportRows = [];
+        let rawStrHubWarehousingRows = [];
 
         // Global Client Configuration & Rules
         const CLIENT_CONFIG = {
@@ -1031,10 +1106,64 @@
             return getWaybillClient(waybill);
         }
 
+        // Global Helper: Parse Ascan date string or Date object to sortable numeric timestamp/weight
+        function parseAscanDateForSort(val, rawDate) {
+            if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+                return rawDate.getTime();
+            }
+            if (val instanceof Date && !isNaN(val.getTime())) {
+                return val.getTime();
+            }
+            if (typeof val === 'number') {
+                return val;
+            }
+            const str = String(val || '').trim();
+            if (!str) return Infinity;
+
+            const parts = str.split(/[\/\-\.]/);
+            if (parts.length >= 3) {
+                let y, m, d;
+                if (parts[0].length === 4) {
+                    y = parseInt(parts[0], 10);
+                    m = parseInt(parts[1], 10);
+                    d = parseInt(parts[2], 10);
+                } else if (parts[2].length === 4) {
+                    d = parseInt(parts[0], 10);
+                    m = parseInt(parts[1], 10);
+                    y = parseInt(parts[2], 10);
+                } else {
+                    y = 2000 + parseInt(parts[0], 10);
+                    m = parseInt(parts[1], 10);
+                    d = parseInt(parts[2], 10);
+                }
+                const dt = new Date(y, m - 1, d);
+                if (!isNaN(dt.getTime())) return dt.getTime();
+            } else if (parts.length === 2) {
+                // MM/DD format
+                const m = parseInt(parts[0], 10);
+                const d = parseInt(parts[1], 10);
+                if (!isNaN(m) && !isNaN(d)) {
+                    return m * 100 + d;
+                }
+            }
+            const parsed = Date.parse(str);
+            if (!isNaN(parsed)) return parsed;
+            return str;
+        }
+
+        // Global Helper: Comparator for Ascan dates (ascending: smallest to largest)
+        function compareAscanDateAsc(aDate, bDate, aRaw, bRaw) {
+            const sortA = parseAscanDateForSort(aDate, aRaw);
+            const sortB = parseAscanDateForSort(bDate, bRaw);
+            if (sortA < sortB) return -1;
+            if (sortA > sortB) return 1;
+            return String(aDate || '').localeCompare(String(bDate || ''));
+        }
+
         // Tab Navigation switching
         function switchTab(targetTab) {
             // Only allow switching to active tab or enabled placeholders
-            if (targetTab !== 'cs' && targetTab !== 'scanrecords' && targetTab !== 'shipping' && targetTab !== 'signedshipping' && targetTab !== 'pending' && targetTab !== 'driversigned' && targetTab !== 'receive') {
+            if (targetTab !== 'cs' && targetTab !== 'scanrecords' && targetTab !== 'shipping' && targetTab !== 'signedshipping' && targetTab !== 'pending' && targetTab !== 'driversigned' && targetTab !== 'receive' && targetTab !== 'addproblem') {
                 return;
             }
 
@@ -3213,6 +3342,7 @@
             if (typeof checkCSBtn === 'function') checkCSBtn();
             if (typeof checkDriverSignedBtn === 'function') checkDriverSignedBtn();
             if (typeof checkNoUpdateRecordBtns === 'function') checkNoUpdateRecordBtns();
+            if (typeof checkAddProblemBtns === 'function') checkAddProblemBtns();
         }
 
         function exportScanRecords() {
@@ -3296,6 +3426,7 @@
             if (typeof checkCSBtn === 'function') checkCSBtn();
             if (typeof checkDriverSignedBtn === 'function') checkDriverSignedBtn();
             if (typeof checkNoUpdateRecordBtns === 'function') checkNoUpdateRecordBtns();
+            if (typeof checkAddProblemBtns === 'function') checkAddProblemBtns();
         }
 
         // Return scan file handler
@@ -3574,11 +3705,8 @@
                 const appeal = (sla <= threshold) ? "in SLA" : "Over";
 
                 // 3. Reason Calculation:
-                // if Appeal=in SLA，则reason=client+{{SLA}}+{{last scan type}}
-                let reason = "";
-                if (appeal === "in SLA") {
-                    reason = `${clientVal}${sla}${lastScanType}`;
-                }
+                // 不管appeal列的值如何，reason列总有值，格式为 =client&" "&SLA&" days "&last scan type
+                const reason = `${clientVal} ${sla} days ${lastScanType}`;
 
                 exportRows.push({
                     "waybill": waybill,
@@ -3589,7 +3717,8 @@
                     "last scan date": lastScanDate,
                     "SLA": sla,
                     "Appeal": appeal,
-                    "reason": reason
+                    "reason": reason,
+                    _ascanTs: firstItem.date ? firstItem.date.getTime() : 0
                 });
             }
 
@@ -3597,6 +3726,9 @@
                 alert('No scan records found to export.');
                 return;
             }
+
+            // Sort by AscanDate from smallest to largest (ascending)
+            exportRows.sort((a, b) => compareAscanDateAsc(a.AscanDate, b.AscanDate, a._ascanTs, b._ascanTs));
 
             const ws = XLSX.utils.json_to_sheet(exportRows, {
                 header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "SLA", "Appeal", "reason"]
@@ -3770,6 +3902,7 @@
 
                 const record = {
                     ascanDate: ascanDate,
+                    ascanRawDate: entryTime,
                     station: station,
                     waybillNumber: waybillNum,
                     entryTime: formatDateTimeStr(entryTime),
@@ -3808,10 +3941,10 @@
                 if (latestScanTime) {
                     lastScanDate = formatDateToMMDD(latestScanTime);
                 }
-                const isLastScanToday = (lastScanDate === todayStr);
-                const isTodayOutOrProblem = (lstLower === "out of warehouse scan" || lstLower === "problem scan") && isLastScanToday;
+                const isRecentScan = isScanInRecentWorkingDays(latestScanTime, lastScanDate);
+                const isRecentOutOrProblem = (lstLower === "out of warehouse scan" || lstLower === "problem scan") && isRecentScan;
 
-                if (!isReturn && !isLost && !isSignedIdent && !isParcelSigned && !isTodayOutOrProblem) {
+                if (!isReturn && !isLost && !isSignedIdent && !isParcelSigned && !isRecentOutOrProblem) {
                     let nodispatchStation = "";
                     if (latestScanType === "Shipping HUB" || latestScanType === "Outgoing Scan") {
                         nodispatchStation = deliveryOutlet;
@@ -3831,8 +3964,10 @@
                     shippingTodayNodispatchList.push({
                         waybill: waybillNum,
                         ascanDate: ascanDate,
+                        ascanRawDate: entryTime,
                         station: nodispatchStation,
                         lastScanDate: lastScanDate,
+                        lastScanRawDate: latestScanTime,
                         lastScanType: latestScanType,
                         postcode: postcodeVal
                     });
@@ -3887,8 +4022,16 @@
                 "entry time": item.entryTime,
                 "Latest scan time": item.latestScanTime,
                 "Timeline": item.timeline !== null ? item.timeline : "",
-                "Sign for identification": item.signForIdentification
+                "Sign for identification": item.signForIdentification,
+                _entryTimeTs: item.ascanRawDate ? item.ascanRawDate.getTime() : 0
             }));
+
+            // Sort by AscanDate from smallest to largest (ascending), then entry time
+            finalAscanSignedData.sort((a, b) => {
+                const diff = compareAscanDateAsc(a.AscanDate, b.AscanDate, a._entryTimeTs, b._entryTimeTs);
+                if (diff !== 0) return diff;
+                return (a._entryTimeTs || 0) - (b._entryTimeTs || 0);
+            });
 
             function calculateSummaryRow(timeKey, stationName, records) {
                 const total = records.length;
@@ -3981,7 +4124,7 @@
 
             // Calculate Day Summary Rows
             const summaryRows = [];
-            const sortedDates = Object.keys(groups).sort();
+            const sortedDates = Object.keys(groups).sort((a, b) => compareAscanDateAsc(a, b));
 
             for (const ascanDate of sortedDates) {
                 const dateGroup = groups[ascanDate];
@@ -4069,6 +4212,8 @@
                 }
             });
             finalShippingTodayNodispatchData = Array.from(uniqueTodayNodispatchMap.values());
+            // Sort by AscanDate from smallest to largest (ascending)
+            finalShippingTodayNodispatchData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed`;
             document.getElementById('btn-export-shipping').disabled = false;
@@ -4121,6 +4266,13 @@
                 return;
             }
 
+            // Sort by AscanDate from smallest to largest (ascending), then entry time
+            finalAscanSignedData.sort((a, b) => {
+                const diff = compareAscanDateAsc(a.AscanDate, b.AscanDate, a._entryTimeTs, b._entryTimeTs);
+                if (diff !== 0) return diff;
+                return (a._entryTimeTs || 0) - (b._entryTimeTs || 0);
+            });
+
             const ws = XLSX.utils.json_to_sheet(finalAscanSignedData, {
                 header: ["AscanDate", "Station", "Waybill Number", "entry time", "Latest scan time", "Timeline", "Sign for identification"]
             });
@@ -4135,6 +4287,9 @@
                 alert('No Today Nodispatch records found in the uploaded Shipping records.');
                 return;
             }
+
+            // Sort by AscanDate from smallest to largest (ascending)
+            finalShippingTodayNodispatchData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             const aoa = [
                 ["waybill", "AscanDate", "station", "last scan date", "last scan type", "postcode"]
@@ -4363,6 +4518,14 @@
         }
 
         function getTodayMMDD() {
+            if (typeof getBerlinNowDate === 'function') {
+                try {
+                    const b = getBerlinNowDate();
+                    const month = String(b.getUTCMonth() + 1).padStart(2, '0');
+                    const day = String(b.getUTCDate()).padStart(2, '0');
+                    return `${month}/${day}`;
+                } catch (e) {}
+            }
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const day = String(now.getDate()).padStart(2, '0');
@@ -4374,6 +4537,95 @@
             const month = String(date.getUTCMonth() + 1).padStart(2, '0');
             const day = String(date.getUTCDate()).padStart(2, '0');
             return `${month}/${day}`;
+        }
+
+        function getRecentWorkingDaysInfo(numWorkingDays = 2, refDate = null) {
+            let now;
+            if (refDate instanceof Date) {
+                now = new Date(refDate.getTime());
+            } else if (typeof getBerlinNowDate === 'function') {
+                try {
+                    now = getBerlinNowDate();
+                } catch (e) {
+                    const d = new Date();
+                    now = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds()));
+                }
+            } else {
+                const d = new Date();
+                now = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), d.getSeconds()));
+            }
+
+            const validDatesMMDD = new Set();
+            const cur = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+
+            // Today is always included in the recent window
+            const todayM = String(cur.getUTCMonth() + 1).padStart(2, '0');
+            const todayD = String(cur.getUTCDate()).padStart(2, '0');
+            validDatesMMDD.add(`${todayM}/${todayD}`);
+
+            // Deliver work days: Monday (1) to Saturday (6). Non-working day: Sunday (0).
+            let workingDaysCount = 0;
+            const temp = new Date(cur.getTime());
+            while (workingDaysCount < numWorkingDays) {
+                const dayOfWeek = temp.getUTCDay();
+                const m = String(temp.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(temp.getUTCDate()).padStart(2, '0');
+                validDatesMMDD.add(`${m}/${d}`);
+
+                if (dayOfWeek >= 1 && dayOfWeek <= 6) {
+                    workingDaysCount++;
+                }
+
+                if (workingDaysCount >= numWorkingDays) {
+                    break;
+                }
+
+                temp.setUTCDate(temp.getUTCDate() - 1);
+            }
+
+            // Cutoff timestamp is 00:00:00 UTC on the earliest working day reached
+            const cutoffTimestamp = temp.getTime();
+
+            return {
+                validDatesMMDD,
+                cutoffTimestamp,
+                cutoffDate: new Date(temp.getTime())
+            };
+        }
+
+        function isScanInRecentWorkingDays(scanRawDate, scanDateMMDD, numWorkingDays = 2) {
+            const info = getRecentWorkingDaysInfo(numWorkingDays);
+
+            let mmdd = scanDateMMDD;
+            let scanTime = null;
+
+            if (scanRawDate) {
+                if (scanRawDate instanceof Date) {
+                    scanTime = scanRawDate.getTime();
+                    if (!mmdd) mmdd = formatDateToMMDD(scanRawDate);
+                } else if (typeof scanRawDate === 'number') {
+                    scanTime = scanRawDate;
+                    if (!mmdd) mmdd = formatDateToMMDD(new Date(scanRawDate));
+                } else if (typeof scanRawDate === 'string') {
+                    const parsed = getJSDate(scanRawDate);
+                    if (parsed) {
+                        scanTime = parsed.getTime();
+                        if (!mmdd) mmdd = formatDateToMMDD(parsed);
+                    }
+                }
+            }
+
+            // 1. If timestamp is available, verify it is at or after the cutoff timestamp
+            if (scanTime !== null && !isNaN(scanTime)) {
+                return scanTime >= info.cutoffTimestamp;
+            }
+
+            // 2. Fallback to MM/DD check
+            if (mmdd) {
+                return info.validDatesMMDD.has(mmdd);
+            }
+
+            return false;
         }
 
         function checkHistoricalPendingLastBtn() {
@@ -4477,14 +4729,18 @@
                 processed.push({
                     waybill: waybillVal,
                     ascanDate: ascanDate,
+                    ascanRawDate: entryTime,
                     station: station,
                     lastScanDate: lastScanDate,
+                    lastScanRawDate: latestScanTime,
                     lastScanType: latestScanType,
                     postcode: postcodeVal,
                     deliveryOutlet: deliveryOutlet
                 });
             }
 
+            // Sort by AscanDate from smallest to largest (ascending)
+            processed.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
             finalPendingRecords = processed;
 
             document.getElementById('status-pending').textContent = `${finalPendingRecords.length} records processed`;
@@ -4711,18 +4967,17 @@
                 return;
             }
 
-            const todayStr = getTodayMMDD();
             const noDispatchRecords = finalPendingRecords.filter(r => {
                 const lst = (r.lastScanType || '').trim().toLowerCase();
-                const isLastScanToday = (r.lastScanDate === todayStr);
+                const isRecentScan = isScanInRecentWorkingDays(r.lastScanRawDate, r.lastScanDate);
 
                 // 任何一天的 Parcel Signed 都排除
                 if (lst === "parcel signed") {
                     return false;
                 }
 
-                // "Out of warehouse scan" 与 "Problem scan" 只排除今日做的
-                if ((lst === "out of warehouse scan" || lst === "problem scan") && isLastScanToday) {
+                // "Out of warehouse scan" 与 "Problem scan" 仅在最新扫描时间处于最近两个工作日（周一至周六）时排除
+                if ((lst === "out of warehouse scan" || lst === "problem scan") && isRecentScan) {
                     return false;
                 }
 
@@ -4730,9 +4985,12 @@
             });
 
             if (noDispatchRecords.length === 0) {
-                alert('No records found matching the criteria (Excludes all "Parcel Signed", and excludes "Out of warehouse scan" / "Problem scan" only if latest scan time is today).');
+                alert('No records found matching the criteria (Excludes all "Parcel Signed", and excludes "Out of warehouse scan" / "Problem scan" only if latest scan time is in recently working two days).');
                 return;
             }
+
+            // Sort by AscanDate from smallest to largest (ascending)
+            noDispatchRecords.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             const aoa = [
                 ["waybill", "AscanDate", "station", "last scan date", "last scan type", "postcode"]
@@ -4772,6 +5030,9 @@
                 return;
             }
 
+            // Sort by AscanDate from smallest to largest (ascending)
+            historicalRecords.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+
             const aoa = [
                 ["waybill", "AscanDate", "station", "last scan date", "last scan type", "postcode"]
             ];
@@ -4804,6 +5065,9 @@
                 alert('No historical pending records found (AscanDate <> today).');
                 return;
             }
+
+            // Sort by AscanDate from smallest to largest (ascending)
+            historicalRecords.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             const aoa = [
                 ["waybill", "AscanDate", "station", "last scan date", "last scan type", "driver", "postcode"]
@@ -4872,6 +5136,8 @@
             // For each station group:
             for (const station in stationGroups) {
                 const records = stationGroups[station];
+                // Sort by AscanDate from smallest to largest (ascending)
+                records.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
                 const wb = XLSX.utils.book_new();
 
                 // === Sheet: Drivers ===
@@ -5523,6 +5789,7 @@
 
             rawDeliveryTimesRows = rawRows;
             document.getElementById('status-deliverytimes').textContent = `${rawDeliveryTimesRows.length - 1} records loaded`;
+            checkAddProblemBtns();
             switchTab('pending');
         }
 
@@ -5534,6 +5801,7 @@
             if (nameEl) nameEl.textContent = 'No file chosen';
             const statusEl = document.getElementById('status-deliverytimes');
             if (statusEl) statusEl.textContent = '';
+            checkAddProblemBtns();
         }
 
         function checkNoUpdateRecordBtns() {
@@ -6065,6 +6333,14 @@
             }
             if (countIdx === -1) countIdx = 7; // Column H is index 7 (0-indexed)
 
+            // Find Latest issue type column (first check issue type / problem type keywords, fallback to reason)
+            const issueTypeHeaders = ["latest issue type", "issue type", "latest problem type", "problem type", "issue", "问题类型", "最新问题类型"];
+            let issueTypeIdx = -1;
+            for (const ith of issueTypeHeaders) {
+                issueTypeIdx = headersLower.findIndex(h => h.includes(ith));
+                if (issueTypeIdx !== -1) break;
+            }
+
             // Find Last problem reason column (Column U, index 20)
             const reasonHeaders = ["last problem reason", "problem reason", "last problem", "reason", "问题原因", "最新问题原因", "原因"];
             let reasonIdx = -1;
@@ -6074,6 +6350,10 @@
             }
             if (reasonIdx === -1) reasonIdx = 20; // Column U is index 20 (0-indexed)
 
+            if (issueTypeIdx === -1) {
+                issueTypeIdx = reasonIdx;
+            }
+
             for (let i = 0; i < dataRows.length; i++) {
                 const row = dataRows[i];
                 if (!row || row.length === 0) continue;
@@ -6081,10 +6361,14 @@
                 if (!wb) continue;
                 const countVal = row[countIdx] !== undefined ? row[countIdx] : '';
                 const reasonVal = row[reasonIdx] !== undefined ? row[reasonIdx] : '';
-                map[wb] = {
+                const issueTypeVal = (issueTypeIdx !== -1 && row[issueTypeIdx] !== undefined) ? row[issueTypeIdx] : reasonVal;
+                const infoObj = {
                     deliveryCount: countVal,
-                    lastProblemReason: reasonVal
+                    lastProblemReason: reasonVal,
+                    latestIssueType: issueTypeVal
                 };
+                map[wb] = infoObj;
+                map[wb.toUpperCase()] = infoObj;
             }
 
             return map;
@@ -6207,7 +6491,8 @@
                     "client": client,
                     "Delivery count": deliveryCount,
                     "OverDays": overDays,
-                    "last problem reason": lastProblemReason
+                    "last problem reason": lastProblemReason,
+                    _ascanRawDate: ascanRawDate
                 });
 
                 // Calculate calendar day difference: (Now - AscanDate)
@@ -6295,6 +6580,13 @@
 
             for (const stName of sortedStations) {
                 const group = stationGroupMap[stName];
+                const sortSec = (arr) => arr.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate));
+                sortSec(group.sec1);
+                sortSec(group.sec2);
+                sortSec(group.sec3);
+                sortSec(group.sec4);
+                sortSec(group.sec5);
+
                 const regSections = [];
                 const ttSections = [];
 
@@ -6372,6 +6664,9 @@
                     });
                 }
             }
+
+            // Sort exportData by AscanDate from smallest to largest (ascending)
+            exportData.sort((a, b) => compareAscanDateAsc(a.AscanDate, b.AscanDate, a._ascanRawDate, b._ascanRawDate));
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
                 header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "driver", "client", "Delivery count", "OverDays", "last problem reason"]
@@ -7063,6 +7358,491 @@
                 console.error("Export delivery error:", error);
                 alert("导出 delivery 失败 (Export failed): " + error.message);
             }
+        }
+
+        // ==========================================
+        // STR HUB Warehousing & Add Problem Logic
+        // ==========================================
+
+        function handleStrHubWarehousingFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            document.getElementById('name-strhubwarehousing').textContent = file.name;
+            document.getElementById('status-strhubwarehousing').textContent = "Loading...";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rawRows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+                    processStrHubWarehousing(rawRows);
+                } catch (error) {
+                    alert('Failed to parse STR HUB Warehousing file. Error: ' + error.message);
+                    resetStrHubWarehousing();
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processStrHubWarehousing(rawRows) {
+            if (!rawRows || rawRows.length === 0) {
+                alert("The selected STR HUB Warehousing file is empty.");
+                resetStrHubWarehousing();
+                return;
+            }
+
+            rawStrHubWarehousingRows = rawRows;
+            document.getElementById('status-strhubwarehousing').textContent = `${rawStrHubWarehousingRows.length - 1} records loaded`;
+
+            updateAddProblemClientOptions();
+            checkAddProblemBtns();
+            switchTab('addproblem');
+        }
+
+        function resetStrHubWarehousing() {
+            rawStrHubWarehousingRows = [];
+            const inputEl = document.getElementById('file-strhubwarehousing');
+            if (inputEl) inputEl.value = '';
+            const nameEl = document.getElementById('name-strhubwarehousing');
+            if (nameEl) nameEl.textContent = 'No file chosen';
+            const statusEl = document.getElementById('status-strhubwarehousing');
+            if (statusEl) statusEl.textContent = '';
+            checkAddProblemBtns();
+        }
+
+        function checkAddProblemBtns() {
+            const hasStrHub = (rawStrHubWarehousingRows && rawStrHubWarehousingRows.length > 0);
+            const hasScan = (rawScanRecordsRows && rawScanRecordsRows.length > 0);
+            const hasDeliveryTimes = (rawDeliveryTimesRows && rawDeliveryTimesRows.length > 0);
+
+            const btnGetProblem = document.getElementById('btn-export-to-get-problem');
+            if (btnGetProblem) {
+                btnGetProblem.disabled = !hasStrHub;
+            }
+
+            const btnAddProblem = document.getElementById('btn-export-to-add-problem');
+            if (btnAddProblem) {
+                btnAddProblem.disabled = !(hasStrHub && hasScan && hasDeliveryTimes);
+            }
+        }
+
+        function updateAddProblemClientOptions() {
+            const selectEl = document.getElementById('select-addproblem-client');
+            if (!selectEl) return;
+
+            const curVal = selectEl.value;
+            const globalClients = ["TEMU", "SF", "TT", "Shein", "speed", "Others"];
+
+            selectEl.innerHTML = '<option value="">All (全部客户)</option>';
+            globalClients.forEach(client => {
+                const opt = document.createElement('option');
+                opt.value = client;
+                opt.textContent = client;
+                selectEl.appendChild(opt);
+            });
+
+            if (curVal && globalClients.includes(curVal)) {
+                selectEl.value = curVal;
+            }
+        }
+
+        function formatWarehouseTime(val) {
+            if (val === undefined || val === null) return '';
+            const date = getJSDate(val);
+            if (!date) return String(val).trim();
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            const hh = String(date.getUTCHours()).padStart(2, '0');
+            const mm = String(date.getUTCMinutes()).padStart(2, '0');
+            const ss = String(date.getUTCSeconds()).padStart(2, '0');
+            if (hh === '00' && mm === '00' && ss === '00' && typeof val === 'string' && !val.includes(':')) {
+                return `${year}/${month}/${day}`;
+            }
+            return `${year}/${month}/${day} ${hh}:${mm}:${ss}`;
+        }
+
+        function isStuttgartHubStation(station) {
+            if (!station) return false;
+            const clean = String(station).trim().toLowerCase().replace(/\s+/g, ' ');
+            const noSpace = clean.replace(/[\s_]+/g, '');
+            return clean === "stuttgart hub" || noSpace === "stuttgarthub";
+        }
+
+        function getScanRecordsLatestScanMap() {
+            const map = {};
+            if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) return map;
+
+            const headers = rawScanRecordsRows[0].map(h => String(h).trim().toLowerCase());
+
+            // 1. Waybill column
+            const waybillHeaders = ["waybill", "运单号", "运单", "tracking number", "tracking", "单号"];
+            let waybillIdx = -1;
+            for (const wbh of waybillHeaders) {
+                waybillIdx = headers.findIndex(h => h === wbh || h.includes(wbh));
+                if (waybillIdx !== -1) break;
+            }
+            if (waybillIdx === -1) waybillIdx = 0;
+
+            // 2. Scanning Time column
+            const scanTimeHeaders = ["scanning time", "scan time", "扫描时间", "scan date", "time", "date", "时间"];
+            let scanTimeIdx = -1;
+            for (const sth of scanTimeHeaders) {
+                scanTimeIdx = headers.findIndex(h => h === sth || h.includes(sth));
+                if (scanTimeIdx !== -1) break;
+            }
+            if (scanTimeIdx === -1) scanTimeIdx = 5;
+
+            // 3. Scan Type column
+            const scanTypeHeaders = ["scan type", "scanning type", "last scan type", "latest scan type", "扫描类型", "操作类型"];
+            let scanTypeIdx = -1;
+            for (const sth of scanTypeHeaders) {
+                scanTypeIdx = headers.findIndex(h => h === sth || h.includes(sth));
+                if (scanTypeIdx !== -1) break;
+            }
+            if (scanTypeIdx === -1) scanTypeIdx = 4;
+
+            // 4. Scanning Site / Station column
+            const scanningSiteHeaders = [
+                "scanning site", "scanning_site", "scan site", "扫描站点", "扫描站", "站点",
+                "last scan station", "latest scanning point", "scanning point", "scan station",
+                "scanning dsp", "scan dsp", "dsp", "扫描点", "扫描网点", "网点"
+            ];
+            let scanningSiteIdx = -1;
+            for (const ssh of scanningSiteHeaders) {
+                scanningSiteIdx = headers.findIndex(h => h === ssh || h.includes(ssh));
+                if (scanningSiteIdx !== -1) break;
+            }
+            if (scanningSiteIdx === -1) scanningSiteIdx = 6;
+
+            // 5. Scanner number column (for problem scan exclusion filter)
+            const scannerNumberHeaders = ["scanner number", "scanner no", "扫描枪编号", "扫描枪", "扫描号"];
+            let scannerNumberIdx = -1;
+            for (const snh of scannerNumberHeaders) {
+                scannerNumberIdx = headers.findIndex(h => h === snh);
+                if (scannerNumberIdx !== -1) break;
+            }
+            if (scannerNumberIdx === -1) {
+                scannerNumberIdx = headers.findIndex(h => h.includes("scanner") || h.includes("扫码员") || h.includes("扫码人"));
+            }
+            if (scannerNumberIdx === -1) scannerNumberIdx = 24;
+
+            // 6. Dispatcher or receiver / Scanner for station backup checks
+            const dispRecHeaders = ["dispatcher or receiver", "dispatcher/receiver", "dispatcher or receiver name", "派送员或接收员", "收发员"];
+            let dispRecIdx = -1;
+            for (const drh of dispRecHeaders) {
+                dispRecIdx = headers.findIndex(h => h.includes(drh));
+                if (dispRecIdx !== -1) break;
+            }
+            const scannerHeaders = ["scanner", "扫码员", "扫码人"];
+            let scannerIdx = -1;
+            for (const sh of scannerHeaders) {
+                scannerIdx = headers.findIndex(h => h === sh);
+                if (scannerIdx !== -1) break;
+            }
+            if (scannerIdx === -1) scannerIdx = scannerNumberIdx;
+
+            const getScannerValue = (row) => {
+                if (dispRecIdx !== -1) {
+                    const rawDispRec = String(row[dispRecIdx] !== undefined ? row[dispRecIdx] : '').trim();
+                    if (rawDispRec !== '') return rawDispRec;
+                }
+                return String(row[scannerIdx] !== undefined ? row[scannerIdx] : '').trim();
+            };
+
+            const dataRows = rawScanRecordsRows.slice(1);
+            const waybillGroups = {};
+
+            for (let i = 0; i < dataRows.length; i++) {
+                const row = dataRows[i];
+                if (!row || row.length === 0) continue;
+
+                // Problem scan with scanner 02500088 or 02500029 filter
+                const st = String(row[scanTypeIdx] !== undefined ? row[scanTypeIdx] : '').trim();
+                const sn = String(row[scannerNumberIdx] !== undefined ? row[scannerNumberIdx] : '').trim();
+                if ((st.toLowerCase().includes("problem scan") || st.includes("问题")) && (sn === "02500088" || sn === "02500029")) {
+                    continue;
+                }
+
+                const waybill = String(row[waybillIdx] !== undefined ? row[waybillIdx] : (row[0] !== undefined ? row[0] : '')).trim();
+                if (waybill === '') continue;
+
+                const dateVal = (scanTimeIdx !== -1 && row[scanTimeIdx] !== undefined) ? row[scanTimeIdx] : row[5];
+                const date = getJSDate(dateVal);
+                if (!date) continue;
+
+                const cleanWb = waybill.toUpperCase();
+                if (!waybillGroups[cleanWb]) {
+                    waybillGroups[cleanWb] = [];
+                }
+                waybillGroups[cleanWb].push({
+                    date: date,
+                    rawTime: dateVal,
+                    row: row
+                });
+            }
+
+            for (const cleanWb in waybillGroups) {
+                const group = waybillGroups[cleanWb];
+                group.sort((a, b) => b.date - a.date);
+                const latestItem = group[0];
+
+                const lastScanType = String(latestItem.row[scanTypeIdx] !== undefined ? latestItem.row[scanTypeIdx] : '').trim();
+                let lastScanStation = String(latestItem.row[scanningSiteIdx] !== undefined ? latestItem.row[scanningSiteIdx] : '').trim();
+                if (!lastScanStation && latestItem.row[6] !== undefined) {
+                    lastScanStation = String(latestItem.row[6]).trim();
+                }
+                const scannerVal = getScannerValue(latestItem.row);
+                if (scannerVal.toLowerCase().includes("backup")) {
+                    lastScanStation = "BackUp";
+                }
+
+                map[cleanWb] = {
+                    latestScanDate: formatWarehouseTime(latestItem.rawTime),
+                    latestScanDateObj: latestItem.date,
+                    latestScanType: lastScanType,
+                    latestScanStation: lastScanStation
+                };
+            }
+
+            return map;
+        }
+
+        function getParsedStrHubWarehousingRecords(selectedClient, requireStuttgartDsp = true) {
+            if (!rawStrHubWarehousingRows || rawStrHubWarehousingRows.length === 0) {
+                return [];
+            }
+
+            const cleaned = extractCleanRowsFromFile(rawStrHubWarehousingRows);
+            const headerRow = cleaned.header;
+            const dataRows = cleaned.data;
+            const headersLower = headerRow.map(h => String(h).trim().toLowerCase());
+
+            // 1. Waybill column
+            const waybillHeaders = ["waybill number", "waybill no", "waybill no.", "waybill", "tracking number", "tracking no", "运单号", "单号"];
+            let waybillColIdx = -1;
+            for (const wbh of waybillHeaders) {
+                waybillColIdx = headersLower.findIndex(h => h.includes(wbh));
+                if (waybillColIdx !== -1) break;
+            }
+            if (waybillColIdx === -1) waybillColIdx = 0;
+
+            // 2. warehouse time = Scanning Time column in STR HUB Warehousing
+            const scanTimeHeaders = [
+                "scanning time", "scan time", "扫描时间", "scanning_time", "scan date", "warehouse time", "warehousing time", "time", "date"
+            ];
+            let scanTimeColIdx = -1;
+            for (const sth of scanTimeHeaders) {
+                scanTimeColIdx = headersLower.findIndex(h => h === sth || h.includes(sth));
+                if (scanTimeColIdx !== -1) break;
+            }
+            if (scanTimeColIdx === -1) {
+                scanTimeColIdx = headersLower.findIndex(h => h.includes("time") || h.includes("时间") || h.includes("date") || h.includes("日期"));
+            }
+
+            // 3. warehouse station = Scanning DSP column in STR HUB Warehousing
+            const dspHeaders = [
+                "scanning dsp", "scanning_dsp", "scan dsp", "dsp", "scanning site", "scanning point", "scan station", "station", "site"
+            ];
+            let dspColIdx = -1;
+            for (const dh of dspHeaders) {
+                dspColIdx = headersLower.findIndex(h => h === dh || h.includes(dh));
+                if (dspColIdx !== -1) break;
+            }
+            if (dspColIdx === -1) {
+                dspColIdx = headersLower.findIndex(h => h.includes("dsp") || h.includes("station") || h.includes("site") || h.includes("网点"));
+            }
+
+            const records = [];
+            for (let i = 0; i < dataRows.length; i++) {
+                const row = dataRows[i];
+                if (!row || row.length === 0) continue;
+
+                const waybill = String(row[waybillColIdx] !== undefined ? row[waybillColIdx] : '').trim();
+                if (!waybill) continue;
+
+                // 1) client 的取值来源于全局参数，不从表里取值，所以上传的 STR HUB Warehousing 表里的 waybill 先用 client 全局规则处理下
+                const client = getWaybillClient(waybill);
+
+                // 再参与 client 筛选：若选择了某个 client，只包含该客户
+                if (selectedClient && selectedClient.trim() !== '') {
+                    if (String(client).trim().toUpperCase() !== String(selectedClient).trim().toUpperCase()) {
+                        continue;
+                    }
+                }
+
+                // 2) warehouse station = STR HUB Warehousing 表里 Scanning DSP
+                const warehouseStation = dspColIdx !== -1 ? String(row[dspColIdx] !== undefined ? row[dspColIdx] : '').trim() : '';
+
+                // 筛选条件：Scanning DSP = "Stuttgart HUB" (仅在 requireStuttgartDsp 为 true 时过滤，如 exportToGetProblem)
+                if (requireStuttgartDsp) {
+                    if (!isStuttgartHubStation(warehouseStation)) {
+                        continue;
+                    }
+                }
+
+                // warehouse time = STR HUB Warehousing 表里 Scanning Time
+                const rawScanTime = scanTimeColIdx !== -1 ? row[scanTimeColIdx] : '';
+                const warehouseTime = formatWarehouseTime(rawScanTime);
+
+                records.push({
+                    waybill: waybill,
+                    client: client,
+                    warehouseTime: warehouseTime,
+                    warehouseStation: warehouseStation,
+                    rawRow: row
+                });
+            }
+
+            return records;
+        }
+
+        function exportToGetProblem() {
+            if (!rawStrHubWarehousingRows || rawStrHubWarehousingRows.length === 0) {
+                alert("Please upload STR HUB Warehousing file first.");
+                return;
+            }
+
+            const selectEl = document.getElementById('select-addproblem-client');
+            const selectedClient = selectEl ? selectEl.value : "";
+
+            const records = getParsedStrHubWarehousingRecords(selectedClient, true);
+            if (records.length === 0) {
+                alert("No records found in STR HUB Warehousing matching the selected client and Scanning DSP='Stuttgart HUB' criteria.");
+                return;
+            }
+
+            const exportRows = records.map(r => ({
+                "waybill": r.waybill,
+                "client": r.client,
+                "warehouse Time": r.warehouseTime,
+                "warehouse station": r.warehouseStation
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: ["waybill", "client", "warehouse Time", "warehouse station"]
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "GetProblem");
+            XLSX.writeFile(wb, "GetProblem.xlsx");
+        }
+
+        function exportToAddProblem() {
+            if (!rawStrHubWarehousingRows || rawStrHubWarehousingRows.length === 0) {
+                alert("Please upload STR HUB Warehousing file first.");
+                return;
+            }
+            if (!rawScanRecordsRows || rawScanRecordsRows.length === 0) {
+                alert("Please upload Scan records file first.");
+                return;
+            }
+            if (!rawDeliveryTimesRows || rawDeliveryTimesRows.length === 0) {
+                alert("Please upload Delivery times file first.");
+                return;
+            }
+
+            const selectEl = document.getElementById('select-addproblem-client');
+            const selectedClient = selectEl ? selectEl.value : "";
+
+            // 1. STR HUB Warehousing 经过 client 筛选 (不强制要求原表的 Scanning DSP 必须是 Stuttgart HUB，以 Scan record 的 latest scan station 为准)
+            const records = getParsedStrHubWarehousingRecords(selectedClient, false);
+            if (records.length === 0) {
+                alert("No records found in STR HUB Warehousing matching the selected client.");
+                return;
+            }
+
+            // 2. Scan record 处理: 提取每个运单的 latest scan
+            const scanLatestMap = getScanRecordsLatestScanMap();
+
+            // 3. Delivery times 映射
+            const deliveryTimesMap = getDeliveryTimesMap();
+
+            const exportRows = [];
+            const seenWaybills = new Set();
+
+            for (let i = 0; i < records.length; i++) {
+                const r = records[i];
+                const wbKey = r.waybill.toUpperCase().trim();
+
+                // 运单去重
+                if (seenWaybills.has(wbKey)) continue;
+                seenWaybills.add(wbKey);
+
+                // 检查 Scan record 中是否有记录，且 latest scan station 必须为 "Stuttgart HUB"
+                const scanInfo = scanLatestMap[wbKey];
+                if (!scanInfo) {
+                    continue; // 无扫描记录，排除
+                }
+
+                if (!isStuttgartHubStation(scanInfo.latestScanStation)) {
+                    continue; // 最新扫描站点不是 Stuttgart HUB，排除
+                }
+
+                // 关联 Delivery times
+                const delivInfo = deliveryTimesMap[wbKey] || deliveryTimesMap[r.waybill] || {};
+                const deliveryCount = (delivInfo.deliveryCount !== undefined && delivInfo.deliveryCount !== null) ? delivInfo.deliveryCount : "";
+
+                let issueType = "";
+                if (delivInfo.latestIssueType !== undefined && delivInfo.latestIssueType !== null) {
+                    issueType = String(delivInfo.latestIssueType).trim();
+                } else if (delivInfo.lastProblemReason !== undefined && delivInfo.lastProblemReason !== null) {
+                    issueType = String(delivInfo.lastProblemReason).trim();
+                }
+
+                // add 判定逻辑：Latest issue type 无值或者包含 "delivery failed"（忽略大小写），则为 "yes"，否则为 "no"
+                const issueTypeLower = issueType.toLowerCase();
+                let add = "no";
+                if (!issueType || issueTypeLower.includes("delivery failed")) {
+                    add = "yes";
+                }
+
+                // 选项 A：仅保留符合规则的行，只导出 add == 'yes' 的包裹
+                if (add !== "yes") {
+                    continue;
+                }
+
+                // 导出表格列（字段）:
+                // waybill, client, latest scan date, latest scan type, latest scan station, warehouse Time, Delivery count, Latest issue type, add
+                exportRows.push({
+                    "waybill": r.waybill,
+                    "client": r.client,
+                    "latest scan date": scanInfo.latestScanDate,
+                    "latest scan type": scanInfo.latestScanType,
+                    "latest scan station": scanInfo.latestScanStation,
+                    "warehouse Time": r.warehouseTime,
+                    "Delivery count": deliveryCount,
+                    "Latest issue type": issueType,
+                    "add": add
+                });
+            }
+
+            if (exportRows.length === 0) {
+                alert("No records found matching the criteria (latest scan station='Stuttgart HUB' and add='yes').");
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: [
+                    "waybill",
+                    "client",
+                    "latest scan date",
+                    "latest scan type",
+                    "latest scan station",
+                    "warehouse Time",
+                    "Delivery count",
+                    "Latest issue type",
+                    "add"
+                ]
+            });
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "AddProblem");
+            XLSX.writeFile(wb, "AddProblem.xlsx");
         }
 
     </script>
