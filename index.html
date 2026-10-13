@@ -1106,6 +1106,37 @@
             return getWaybillClient(waybill);
         }
 
+        // Global Safeguard: ensure SheetJS XLSX.utils.json_to_sheet strictly strips internal metadata fields (starting with '_')
+        // and restricts output to opts.header if specified, preventing internal sorting/helper columns from appearing in exported files
+        (function() {
+            if (typeof XLSX !== 'undefined' && XLSX.utils && XLSX.utils.json_to_sheet) {
+                const _originalJsonToSheet = XLSX.utils.json_to_sheet;
+                XLSX.utils.json_to_sheet = function(data, opts) {
+                    if (Array.isArray(data)) {
+                        const hasHeader = opts && Array.isArray(opts.header) && opts.header.length > 0;
+                        const cleanedData = data.map(item => {
+                            if (!item || typeof item !== 'object') return item;
+                            const cleanObj = {};
+                            if (hasHeader) {
+                                for (const h of opts.header) {
+                                    cleanObj[h] = item[h] !== undefined ? item[h] : '';
+                                }
+                            } else {
+                                for (const k of Object.keys(item)) {
+                                    if (!k.startsWith('_')) {
+                                        cleanObj[k] = item[k];
+                                    }
+                                }
+                            }
+                            return cleanObj;
+                        });
+                        return _originalJsonToSheet.call(XLSX.utils, cleanedData, opts);
+                    }
+                    return _originalJsonToSheet.call(XLSX.utils, data, opts);
+                };
+            }
+        })();
+
         // Global Helper: Parse Ascan date string or Date object to sortable numeric timestamp/weight
         function parseAscanDateForSort(val, rawDate) {
             if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
@@ -3729,6 +3760,7 @@
 
             // Sort by AscanDate from smallest to largest (ascending)
             exportRows.sort((a, b) => compareAscanDateAsc(a.AscanDate, b.AscanDate, a._ascanTs, b._ascanTs));
+            exportRows.forEach(item => { delete item._ascanTs; });
 
             const ws = XLSX.utils.json_to_sheet(exportRows, {
                 header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "SLA", "Appeal", "reason"]
@@ -4273,7 +4305,13 @@
                 return (a._entryTimeTs || 0) - (b._entryTimeTs || 0);
             });
 
-            const ws = XLSX.utils.json_to_sheet(finalAscanSignedData, {
+            const exportRows = finalAscanSignedData.map(item => {
+                const copy = { ...item };
+                delete copy._entryTimeTs;
+                return copy;
+            });
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
                 header: ["AscanDate", "Station", "Waybill Number", "entry time", "Latest scan time", "Timeline", "Sign for identification"]
             });
 
@@ -6667,6 +6705,7 @@
 
             // Sort exportData by AscanDate from smallest to largest (ascending)
             exportData.sort((a, b) => compareAscanDateAsc(a.AscanDate, b.AscanDate, a._ascanRawDate, b._ascanRawDate));
+            exportData.forEach(item => { delete item._ascanRawDate; });
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
                 header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "driver", "client", "Delivery count", "OverDays", "last problem reason"]
