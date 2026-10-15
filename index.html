@@ -921,7 +921,7 @@
                         <li><strong>Filter valid Signing time</strong>: 首先过滤掉所有 <strong>Signing time 为空</strong> 的数据（剔除未签收或时间缺失的无效行后，再进行后续的随机抽样与异常分析）。</li>
                         <li>Filters rows from Driver signed where <strong>Delivery outlet</strong> represents Station.</li>
                         <li>Column F (index 5) is treated as the <strong>courier ID / driver ID</strong>.</li>
-                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE2</code> / <code>JTDE0</code> &rarr; <code>TT</code>, <code>JTDE1</code> &rarr; <code>TEMU</code>, <code>JTDE9</code> &rarr; <code>SF</code>, <code>JTDE8</code> / <code>JDTE8</code> &rarr; <code>Shein</code>, <code>JTDE3</code> &rarr; <code>speed</code>, others &rarr; <code>Others</code>).</li>
+                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE2</code> / <code>JTDE0</code> &rarr; <code>TT</code>, <code>JTDE1</code> / <code>JTDE4</code> &rarr; <code>TEMU</code>, <code>JTDE9</code> &rarr; <code>SF</code>, <code>JTDE8</code> / <code>JDTE8</code> &rarr; <code>Shein</code>, <code>JTDE3</code> &rarr; <code>speed</code>, others &rarr; <code>Others</code>).</li>
                         <li><strong>优先抽检与总单量控制 (Special Driver & Total SpotCheck)</strong>:
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li>若填入了 <strong>special driver</strong>：系统优先筛选 F 列 Courier ID 匹配该名单的司机，并按配置的配额（<code>TT Signed per driver</code> 与 <code>Others Signed per driver</code>）在对应包裹池中通过 Fisher-Yates 随机抽取。</li>
@@ -960,7 +960,7 @@
                         </li>
                         <li><strong>export delivery</strong>: 结合 <strong>delivery import</strong> (HUB Delivery) 与 <strong>arrive import</strong> 导出 <code>delivery.xlsx</code>，包含 3 个 Sheet：
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
-                                <li><strong>dispatch_hub_courier</strong>: 各网点、各日期派件员派件明细（station, date, courier, Dispatched, Dispatch Signed, IN WH, Problems, DispatchNoSigned, Dispatch Signed%）。其中 <code>Dispatch Signed%</code> 取值自源表的 <code>Delivery Success Rate</code>。</li>
+                                <li><strong>dispatch_hub_courier</strong>: 各网点、各日期派件员派件明细（station, date, courier, Dispatched, Dispatch Signed, IN WH, Problems, DispatchNoSigned, Dispatch Signed%）。其中 <code>Dispatch Signed%</code> 为派送签收率（<code>Dispatch Signed / Dispatched</code> 百分比）。</li>
                                 <li><strong>dispatch_Hub_day%</strong>: 网点日维度汇总。列顺序：<code>station</code>, <code>date</code>, <code>received</code>, <code>Dispatched</code>, <code>courier number</code>, <code>Dispatch Signed</code>, <code>Dispatched signed%</code>, <code>Dispatched SPR</code>, <code>Daily Signed%</code>, <code>No Dispatch</code>。包含日清签收率（<code>IF(DispatchSigned/received>=DispatchSigned%,DispatchSigned%,DispatchSigned/received)</code>）与未派件量（<code>received-dispatched</code>）。</li>
                                 <li><strong>dispatch_DC_day%</strong>: DC 日维度汇总。B 列包含 BAW 的全属于该 DC，其 received 数量为当日 D 列数值对应总和（date, received, Dispatched, courier number, Dispatch Signed, Dispatched signed%, Dispatched SPR）。</li>
                             </ul>
@@ -1067,6 +1067,7 @@
             // Prefix to Client Mapping (matching upper-cased 5-character waybill prefix)
             prefixMap: {
                 "JTDE1": "TEMU",
+                "JTDE4": "TEMU",
                 "JTDE9": "SF",
                 "JTDE2": "TT",
                 "JTDE0": "TT",
@@ -7181,7 +7182,9 @@
                     const inWh = receiveNum(getDeliveryRowValue(row, ["left stock", "stock", "warehouse retained", "retained", "stranded packages", "stranded", "留仓量", "留仓", "在库"], 6));
                     const problems = receiveNum(getDeliveryRowValue(row, ["problem shipment", "problem", "problems", "问题件", "异常件"], 7));
                     const noSigned = receiveNum(getDeliveryRowValue(row, ["not signed", "nosigned", "未签收"], 8));
-                    const signedPct = getDeliverySuccessRate(row);
+                    const signedPct = dispatched > 0
+                        ? `${((signed / dispatched) * 100).toFixed(2)}%`
+                        : (getDeliverySuccessRate(row) !== "0.00%" ? getDeliverySuccessRate(row) : "0.00%");
 
                     // 1. dispatch_hub_courier
                     dispatch_hub_courier.push({
