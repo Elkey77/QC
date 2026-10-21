@@ -567,9 +567,17 @@
                 <div class="rules-card">
                     <h3>CS Data Cleaning Logic</h3>
                     <ol>
-                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Time</code>、<code>status</code>、<code>Asignee</code>、<code>Total hours</code>。
+                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Time</code>、<code>status</code>、<code>Asignee</code>、<code>Deadline</code>、<code>NeedClose</code>、<code>Total hours</code>。
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
-                                <li><strong>Asignee 规则</strong>：读取 F列（<code>Types of secondary questions</code>），若为 <code>"Als zugestellt markiert, aber nicht erhalten"</code> 或 <code>"签收未收到"</code>，则 Asignee 为 <code>"Rania Al Sukhni"</code>；其他值均为 <code>"Ralf"</code>。</li>
+                                <li><strong>channel 规则</strong>：直接保留原始 <code>channel</code> 列原值（不执行格式清洗）。</li>
+                                <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
+                                <li><strong>Asignee 规则</strong>：
+                                    读取工单中的 <code>Last resposible</code> 列：
+                                    若为 <code>"other"</code>、<code>"others"</code>、空值或 <code>"Rania Al Sukhni"</code>，则 Asignee 为 <code>"Rania Al Sukhni"</code>；
+                                    若为 <code>"Rashmipd"</code>、<code>"Yan Liu"</code>、<code>"Anningruo Lu"</code>、<code>"Raffy"</code>，则对应指派为各自的名字。
+                                </li>
+                                <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Time 升序排序</strong>。</li>
+                                <li><strong>专用公共假期</strong>：<code>2026-12-25, 2027-01-01, 2027-01-06, 2027-03-26, 2027-03-29, 2027-05-06, 2027-05-17, 2027-05-27, 2027-11-01</code>。</li>
                             </ul>
                         </li>
                         <li><strong>export CS driver</strong>: 需上传 <strong>CS Record</strong> 和 <strong>Scan records</strong>。系统以 <code>waybill</code> 为主键进行关联（Left Join），导出包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Time</code>、<code>Signed date</code>、<code>Last Scan Type</code>、<code>Station</code>、<code>Driver</code>、<code>Total hours</code>。</li>
@@ -646,8 +654,7 @@
                                 <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
                                 <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                                 <li><code>last scan type</code> (Column E)</li>
-                                <li><code>last scan station</code> (Column G)</li>
-                                <li><code>Previous/Next Stop</code> (Column H)</li>
+                                <li><code>last scan station</code> (Column G, 若存在下一站 next station 则赋值为下一站)</li>
                                 <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                             </ul>
                         </li>
@@ -681,7 +688,7 @@
                                     </ul>
                                 </li>
                                 <li>Retains the details from the latest scan record for the other columns.</li>
-                                <li>Exports as <code>NoUpdate.xlsx</code> with columns: <code>waybill</code>, <code>last scan date</code>, <code>last scan type</code>, <code>last scan station</code>, <code>NoUpdate</code>, <code>Previous/Next Stop</code>, <code>Scanner</code>.</li>
+                                <li>Exports as <code>NoUpdate.xlsx</code> with columns: <code>waybill</code>, <code>last scan date</code>, <code>last scan type</code>, <code>last scan station</code>, <code>NoUpdate</code>, <code>Scanner</code>.</li>
                             </ul>
                         </li>
                         <li><strong>export lost appeal Logic</strong>:
@@ -1473,8 +1480,12 @@
                 stationIdx = headers.findIndex(h => h.includes(stHeader));
                 if (stationIdx !== -1) break;
             }
-            if (stationIdx === -1) {
-                stationIdx = headers.length > 38 ? 38 : -1;
+            // 9. Last resposible (header search)
+            const lastRespHeaders = ["last resposible", "last responsible", "last responsible person", "last resposible person"];
+            let lastResponsibleIdx = -1;
+            for (const lrHeader of lastRespHeaders) {
+                lastResponsibleIdx = headers.findIndex(h => h.includes(lrHeader));
+                if (lastResponsibleIdx !== -1) break;
             }
 
             return {
@@ -1485,7 +1496,8 @@
                 lastUpdateIdx,
                 secondaryQuestionIdx,
                 problemDescIdx,
-                stationIdx
+                stationIdx,
+                lastResponsibleIdx
             };
         }
 
@@ -1518,6 +1530,130 @@
             return letters.slice(0, 4);
         }
 
+        // CS SLA Specific Public Holidays (25.12.2026, 01.01.2027, 06.01.2027, 26.03.2027, 29.03.2027, 06.05.2027, 17.05.2027, 27.05.2027, 01.11.2027)
+        const CS_SLA_HOLIDAYS_SET = new Set([
+            "2026-12-25",
+            "2027-01-01",
+            "2027-01-06",
+            "2027-03-26",
+            "2027-03-29",
+            "2027-05-06",
+            "2027-05-17",
+            "2027-05-27",
+            "2027-11-01"
+        ]);
+
+        function isCSSLANonWorkingDay(d) {
+            if (!d || isNaN(d.getTime())) return false;
+            const dayOfWeek = d.getUTCDay(); // 0 = Sun, 6 = Sat
+            if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+            const y = d.getUTCFullYear();
+            const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            return CS_SLA_HOLIDAYS_SET.has(`${y}-${m}-${day}`);
+        }
+
+        function calculateCSSLADeadline(checkInDate, rawChannel) {
+            if (!checkInDate || isNaN(checkInDate.getTime())) return null;
+
+            const ch = String(rawChannel || '').toLowerCase();
+            let targetHours = 36;
+            if (ch.includes("cc录入") || ch.includes("cc entry") ||
+                ch.includes("im录入") || ch.includes("im entry") ||
+                ch === "cc" || ch === "im") {
+                targetHours = 48;
+            }
+
+            let curMs = checkInDate.getTime();
+            let remainingMs = targetHours * 3600 * 1000;
+
+            while (remainingMs > 0) {
+                let curDate = new Date(curMs);
+                if (isCSSLANonWorkingDay(curDate)) {
+                    // Skip ahead to start of next day (00:00:00 UTC)
+                    const nextDayStart = new Date(Date.UTC(curDate.getUTCFullYear(), curDate.getUTCMonth(), curDate.getUTCDate() + 1));
+                    curMs = nextDayStart.getTime();
+                    continue;
+                }
+
+                const nextDayStart = new Date(Date.UTC(curDate.getUTCFullYear(), curDate.getUTCMonth(), curDate.getUTCDate() + 1));
+                const msLeftInDay = nextDayStart.getTime() - curMs;
+
+                if (remainingMs <= msLeftInDay) {
+                    curMs += remainingMs;
+                    remainingMs = 0;
+                    break;
+                } else {
+                    remainingMs -= msLeftInDay;
+                    curMs = nextDayStart.getTime();
+                }
+            }
+
+            return new Date(curMs);
+        }
+
+        function calculateNeedCloseDate(deadline) {
+            if (!deadline || isNaN(deadline.getTime())) return null;
+
+            const isNonWork = isCSSLANonWorkingDay(deadline);
+            const timeInMin = deadline.getUTCHours() * 60 + deadline.getUTCMinutes();
+
+            let targetDate = new Date(Date.UTC(deadline.getUTCFullYear(), deadline.getUTCMonth(), deadline.getUTCDate()));
+
+            // Working hours: 09:30 (570 min) - 17:30 (1050 min)
+            // If deadline falls on a non-working day or before 09:30 on a working day, it must be closed on the previous working day
+            if (isNonWork || timeInMin < 570) {
+                do {
+                    targetDate = new Date(targetDate.getTime() - 86400000);
+                } while (isCSSLANonWorkingDay(targetDate));
+            }
+
+            return targetDate;
+        }
+
+        function formatNeedCloseLabel(targetDate, todayDate) {
+            if (!targetDate || isNaN(targetDate.getTime())) return '';
+            if (!todayDate || isNaN(todayDate.getTime())) {
+                const y = targetDate.getUTCFullYear();
+                const m = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(targetDate.getUTCDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            }
+
+            const diffDays = Math.round((targetDate.getTime() - todayDate.getTime()) / 86400000);
+
+            if (diffDays <= 0) {
+                return 'today';
+            }
+            if (diffDays === 1) {
+                return 'tomorrow';
+            }
+
+            const todayDow = todayDate.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+            const targetDow = targetDate.getUTCDay();
+            const weekNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const targetDayName = weekNames[targetDow];
+
+            const daysUntilSunday = (7 - todayDow) % 7; // days remaining in current week until Sunday 24:00
+
+            if (diffDays <= daysUntilSunday) {
+                return targetDayName;
+            } else {
+                return 'next ' + targetDayName;
+            }
+        }
+
+        function formatCSSLADateTime(d) {
+            if (!d || isNaN(d.getTime())) return '';
+            const y = d.getUTCFullYear();
+            const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(d.getUTCDate()).padStart(2, '0');
+            const hh = String(d.getUTCHours()).padStart(2, '0');
+            const mm = String(d.getUTCMinutes()).padStart(2, '0');
+            const ss = String(d.getUTCSeconds()).padStart(2, '0');
+            return `${y}-${m}-${day} ${hh}:${mm}:${ss}`;
+        }
+
         function exportCSSLA() {
             if (!rawCSRows || rawCSRows.length === 0) {
                 alert('Please upload CS Record file first.');
@@ -1525,8 +1661,10 @@
             }
 
             const headers = rawCSRows[0].map(h => String(h).trim().toLowerCase());
-            const { waybillIdx, channelIdx, checkInIdx, statusIdx, lastUpdateIdx, secondaryQuestionIdx } = getCSColumnIndices(headers);
-            const holidaysSet = getPublicHolidaysSet();
+            const { waybillIdx, channelIdx, checkInIdx, statusIdx, lastUpdateIdx, secondaryQuestionIdx, lastResponsibleIdx } = getCSColumnIndices(headers);
+
+            const nowBerlin = getBerlinNowDate();
+            const todayDate = new Date(Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate()));
 
             const dataRows = rawCSRows.slice(1);
             const exportData = [];
@@ -1538,33 +1676,61 @@
                 const waybill = String(row[waybillIdx] !== undefined ? row[waybillIdx] : '').trim();
                 if (waybill === '') continue;
 
-                // Channel: remove Chinese, keep only English letters; if starts with C or I take first 2 chars, else first 4 chars
-                const rawChannel = String(row[channelIdx] !== undefined ? row[channelIdx] : '').trim();
-                const channel = cleanCSChannel(rawChannel);
+                // 1. 原有的channel列取值=channel，删除原来的channel逻辑
+                const channel = (channelIdx !== -1 && row[channelIdx] !== undefined && row[channelIdx] !== null)
+                    ? String(row[channelIdx]).trim()
+                    : '';
 
                 // Complaint Time: check-in time formatted to MM/DD hh:mm:ss
                 const checkInVal = row[checkInIdx];
                 const cellAddress = rawCSSheet ? XLSX.utils.encode_cell({ r: i + 1, c: checkInIdx }) : null;
                 const cell = (rawCSSheet && cellAddress) ? rawCSSheet[cellAddress] : null;
                 const complaintTime = formatComplaintTime(checkInVal, cell);
+                const checkInDate = getJSDate(checkInVal);
 
                 // Status & Last update for Total hours
                 const statusVal = (statusIdx !== -1 && row[statusIdx] !== undefined) ? String(row[statusIdx]).trim() : '';
                 const lastUpdateVal = (lastUpdateIdx !== -1 && row[lastUpdateIdx] !== undefined) ? row[lastUpdateIdx] : '';
 
-                // Asignee calculation based on Types of secondary questions (F列)
-                const secQVal = (secondaryQuestionIdx !== -1 && row[secondaryQuestionIdx] !== undefined) ? String(row[secondaryQuestionIdx]).trim() : '';
-                const secQLower = secQVal.toLowerCase();
-                let asignee = "Ralf";
-                if (secQLower.includes("als zugestellt markiert, aber nicht erhalten") || 
-                    secQLower.includes("als zugestellt markiert") || 
-                    secQVal.includes("签收未收到") || 
-                    secQVal.includes("已签收未收到")) {
+                // 2. Asignee calculation based on Last resposible:
+                // Staff names: Rania Al Sukhni, Rashmipd, Yan Liu, Anningruo Lu, Raffy
+                // If Last resposible = other / others, empty, or Rania Al Sukhni -> Rania Al Sukhni
+                // If Last resposible = Rashmipd, Yan Liu, Anningruo Lu, Raffy -> corresponding name
+                const rawLastResp = (lastResponsibleIdx !== -1 && row[lastResponsibleIdx] !== undefined && row[lastResponsibleIdx] !== null)
+                    ? String(row[lastResponsibleIdx]).trim()
+                    : '';
+                const lrLower = rawLastResp.toLowerCase();
+                let asignee = "Rania Al Sukhni";
+
+                if (lrLower.includes("rashmipd") || lrLower === "rashmi") {
+                    asignee = "Rashmipd";
+                } else if (lrLower.includes("yan liu") || lrLower.includes("liu yan")) {
+                    asignee = "Yan Liu";
+                } else if (lrLower.includes("anningruo lu") || lrLower.includes("lu anningruo")) {
+                    asignee = "Anningruo Lu";
+                } else if (lrLower.includes("raffy") || lrLower === "raff") {
+                    asignee = "Raffy";
+                } else if (lrLower.includes("rania al sukhni") || lrLower === "rania") {
+                    asignee = "Rania Al Sukhni";
+                } else {
+                    // other, others, empty, or unknown -> Rania Al Sukhni
                     asignee = "Rania Al Sukhni";
                 }
 
-                const totalHours = calculateTotalHours(checkInVal, statusVal, lastUpdateVal, holidaysSet);
-                const checkInDate = getJSDate(checkInVal);
+                // Deadline & NeedClose calculation
+                const deadlineDate = calculateCSSLADeadline(checkInDate, channel);
+                const deadlineStr = formatCSSLADateTime(deadlineDate);
+                const needCloseDate = calculateNeedCloseDate(deadlineDate);
+                const needCloseLabel = formatNeedCloseLabel(needCloseDate, todayDate);
+
+                let needCloseRank = Infinity;
+                if (needCloseDate) {
+                    const diffDays = Math.round((needCloseDate.getTime() - todayDate.getTime()) / 86400000);
+                    needCloseRank = diffDays <= 0 ? 0 : diffDays;
+                }
+
+                // Total hours using CS SLA dedicated holiday set
+                const totalHours = calculateTotalHours(checkInVal, statusVal, lastUpdateVal, CS_SLA_HOLIDAYS_SET);
                 const checkInTs = checkInDate ? checkInDate.getTime() : 0;
 
                 exportData.push({
@@ -1573,7 +1739,10 @@
                     "Complaint Time": complaintTime,
                     "status": statusVal,
                     "Asignee": asignee,
+                    "Deadline": deadlineStr,
+                    "NeedClose": needCloseLabel,
                     "Total hours": totalHours,
+                    _needCloseRank: needCloseRank,
                     _ts: checkInTs
                 });
             }
@@ -1583,15 +1752,21 @@
                 return;
             }
 
-            // Sort by Complaint Time ascending (从小到大)
+            // Sort by NeedClose ascending (today first, then tomorrow, then forward), then Complaint Time ascending
             exportData.sort((a, b) => {
+                if (a._needCloseRank !== b._needCloseRank) {
+                    return a._needCloseRank - b._needCloseRank;
+                }
                 if (a._ts !== b._ts) return a._ts - b._ts;
                 return String(a["Complaint Time"] || "").localeCompare(String(b["Complaint Time"] || ""));
             });
-            exportData.forEach(item => { delete item._ts; });
+            exportData.forEach(item => {
+                delete item._needCloseRank;
+                delete item._ts;
+            });
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
-                header: ["waybill", "channel", "Complaint Time", "status", "Asignee", "Total hours"]
+                header: ["waybill", "channel", "Complaint Time", "status", "Asignee", "Deadline", "NeedClose", "Total hours"]
             });
 
             const wb = XLSX.utils.book_new();
@@ -2489,8 +2664,21 @@
             }
             if (scanTimeIdx === -1) scanTimeIdx = 5;
 
-            // Find "Previous/Next Stop"
-            const prevStationHeaders = ["previous station", "previous stop", "previous/next stop", "上一站", "上一站/下一站"];
+            // Find "Previous/Next Stop" or "Next Station"
+            const prevStationHeaders = [
+                "next station", 
+                "next stop", 
+                "next site", 
+                "next_station", 
+                "下一站", 
+                "previous/next stop", 
+                "previous / next stop", 
+                "上一站/下一站", 
+                "下一站/上一站", 
+                "previous station", 
+                "previous stop", 
+                "上一站"
+            ];
             let prevStationIdx = -1;
             for (const psh of prevStationHeaders) {
                 prevStationIdx = headers.findIndex(h => h.includes(psh));
@@ -2630,7 +2818,7 @@
                 return "no";
             };
 
-            const extractScanItemData = (item) => {
+            const extractScanItemData = (item, isLatest = false) => {
                 if (!item) {
                     return {
                         date: "",
@@ -2644,11 +2832,16 @@
                 const prevNextVal = (prevStationIdx !== -1 && item.row[prevStationIdx] !== undefined) 
                     ? item.row[prevStationIdx] 
                     : (item.row[7] !== undefined ? item.row[7] : '');
+                const prevNextStr = String(prevNextVal).trim();
+                let stationVal = getStationValue(item.row, scannerVal);
+                if (isLatest && prevNextStr !== "") {
+                    stationVal = prevNextStr;
+                }
                 return {
                     date: formatDateToYYYYMMDD(item.date),
                     scanType: String(item.row[scanTypeIdx] !== undefined ? item.row[scanTypeIdx] : '').trim(),
-                    station: getStationValue(item.row, scannerVal),
-                    prevNext: String(prevNextVal).trim(),
+                    station: stationVal,
+                    prevNext: prevNextStr,
                     scanner: scannerVal
                 };
             };
@@ -2779,6 +2972,10 @@
                 const prevNextVal = (prevStationIdx !== -1 && latestItem.row[prevStationIdx] !== undefined) 
                     ? latestItem.row[prevStationIdx] 
                     : (latestItem.row[7] !== undefined ? latestItem.row[7] : '');
+                const prevNextStr = String(prevNextVal).trim();
+                if (prevNextStr !== "") {
+                    stationVal = prevNextStr;
+                }
 
                 noUpdateRecords.push({
                     "waybill": waybill,
@@ -2786,7 +2983,6 @@
                     "last scan type": lastScanType,
                     "last scan station": stationVal,
                     "NoUpdate": noUpdateVal,
-                    "Previous/Next Stop": String(prevNextVal).trim(),
                     "Scanner": scannerVal
                 });
             }
@@ -2827,11 +3023,11 @@
                     fileName = "LatestScanRecord.xlsx";
                     exportHeaders = ["waybill", "client"];
                     if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
-                    exportHeaders = exportHeaders.concat(["last scan date", "last scan type", "last scan station", "Previous/Next Stop", "Scanner"]);
+                    exportHeaders = exportHeaders.concat(["last scan date", "last scan type", "last scan station", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
-                        const d = extractScanItemData(group[0]);
+                        const d = extractScanItemData(group[0], true);
                         const rowObj = {
                             "waybill": waybill,
                             "client": getClientValue(waybill, group[0].row)
@@ -2842,7 +3038,6 @@
                         rowObj["last scan date"] = d.date;
                         rowObj["last scan type"] = d.scanType;
                         rowObj["last scan station"] = d.station;
-                        rowObj["Previous/Next Stop"] = d.prevNext;
                         rowObj["Scanner"] = d.scanner;
                         processedRecords.push(rowObj);
                     }
@@ -2851,12 +3046,12 @@
                     fileName = "LatestSecondScanRecord.xlsx";
                     exportHeaders = ["waybill", "client"];
                     if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
-                    exportHeaders = exportHeaders.concat(["latest second scan date", "latest second scan type", "latest second scan station", "Previous/Next Stop", "Scanner"]);
+                    exportHeaders = exportHeaders.concat(["latest second scan date", "latest second scan type", "latest second scan station", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
                         if (group.length >= 2) {
-                            const d = extractScanItemData(group[1]);
+                            const d = extractScanItemData(group[1], false);
                             const rowObj = {
                                 "waybill": waybill,
                                 "client": getClientValue(waybill, group[1].row)
@@ -2867,7 +3062,6 @@
                             rowObj["latest second scan date"] = d.date;
                             rowObj["latest second scan type"] = d.scanType;
                             rowObj["latest second scan station"] = d.station;
-                            rowObj["Previous/Next Stop"] = d.prevNext;
                             rowObj["Scanner"] = d.scanner;
                             processedRecords.push(rowObj);
                         }
@@ -2877,11 +3071,11 @@
                     fileName = "FirstScanRecord.xlsx";
                     exportHeaders = ["waybill", "client"];
                     if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
-                    exportHeaders = exportHeaders.concat(["first scan date", "first scan type", "first scan station", "Previous/Next Stop", "Scanner"]);
+                    exportHeaders = exportHeaders.concat(["first scan date", "first scan type", "first scan station", "Scanner"]);
 
                     for (const waybill in waybillGroups) {
                         const group = waybillGroups[waybill];
-                        const d = extractScanItemData(group[group.length - 1]);
+                        const d = extractScanItemData(group[group.length - 1], false);
                         const rowObj = {
                             "waybill": waybill,
                             "client": getClientValue(waybill, group[group.length - 1].row)
@@ -2892,7 +3086,6 @@
                         rowObj["first scan date"] = d.date;
                         rowObj["first scan type"] = d.scanType;
                         rowObj["first scan station"] = d.station;
-                        rowObj["Previous/Next Stop"] = d.prevNext;
                         rowObj["Scanner"] = d.scanner;
                         processedRecords.push(rowObj);
                     }
@@ -2988,7 +3181,6 @@
                         `${typeName}-scan date`,
                         `${typeName}-scan station`,
                         `${typeName}-scan type`,
-                        `${typeName}-Previous/Next Stop`,
                         `${typeName}-Scanner`
                     ]);
 
@@ -2996,7 +3188,7 @@
                         const group = waybillGroups[waybill];
                         const matched = extractScanTypeRecord(group, typeName);
                         if (matched) {
-                            const d = extractScanItemData(matched);
+                            const d = extractScanItemData(matched, false);
                             const rowObj = {
                                 "waybill": waybill,
                                 "client": getClientValue(waybill, matched.row)
@@ -3007,7 +3199,6 @@
                             rowObj[`${typeName}-scan date`] = d.date;
                             rowObj[`${typeName}-scan station`] = d.station;
                             rowObj[`${typeName}-scan type`] = d.scanType;
-                            rowObj[`${typeName}-Previous/Next Stop`] = d.prevNext;
                             rowObj[`${typeName}-Scanner`] = d.scanner;
                             processedRecords.push(rowObj);
                         }
@@ -3076,7 +3267,6 @@
                             `${desc.prefix}-scan date`,
                             `${desc.prefix}-scan station`,
                             `${desc.prefix}-scan type`,
-                            `${desc.prefix}-Previous/Next Stop`,
                             `${desc.prefix}-Scanner`
                         ];
                         exportHeaders = exportHeaders.concat(cols);
@@ -3167,6 +3357,7 @@
                             }
                         } else if (desc.type === 'time') {
                             let item = null;
+                            const isLatest = (desc.key === 'latest');
                             if (desc.key === 'latest') {
                                 item = group[0];
                             } else if (desc.key === 'second-latest') {
@@ -3174,20 +3365,18 @@
                             } else if (desc.key === 'first') {
                                 item = group[group.length - 1];
                             }
-                            const d = extractScanItemData(item);
+                            const d = extractScanItemData(item, isLatest);
                             rowObj[`${desc.prefix}-scan date`] = d.date;
                             rowObj[`${desc.prefix}-scan station`] = d.station;
                             rowObj[`${desc.prefix}-scan type`] = d.scanType;
-                            rowObj[`${desc.prefix}-Previous/Next Stop`] = d.prevNext;
                             rowObj[`${desc.prefix}-Scanner`] = d.scanner;
                             if (d.date) hasAnyMatchedData = true;
                         } else if (desc.type === 'type') {
                             const matched = extractScanTypeRecord(group, desc.key);
-                            const d = extractScanItemData(matched);
+                            const d = extractScanItemData(matched, false);
                             rowObj[`${desc.prefix}-scan date`] = d.date;
                             rowObj[`${desc.prefix}-scan station`] = d.station;
                             rowObj[`${desc.prefix}-scan type`] = d.scanType;
-                            rowObj[`${desc.prefix}-Previous/Next Stop`] = d.prevNext;
                             rowObj[`${desc.prefix}-Scanner`] = d.scanner;
                             if (d.date) hasAnyMatchedData = true;
                         }
@@ -3276,14 +3465,13 @@
                 if (singleOpt === 'latest') {
                     if (tabScanRecords) tabScanRecords.textContent = "latest Scan record";
                     if (titleElem) titleElem.innerHTML = "latest Scan record Data Cleaning Logic";
-                    if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, retains only the record with the latest <strong>scan date (Column F)</strong>.";
+                    if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, retains only the record with the latest <strong>scan date (Column F)</strong>. (若存在下一站 next station 则 last scan station 赋值为下一站)";
                     if (columnsElem) {
                         columnsElem.innerHTML = `
                             ${getBaseColumnsHtml()}
                             <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>last scan type</code> (Column E)</li>
-                            <li><code>last scan station</code> (Column G)</li>
-                            <li><code>Previous/Next Stop</code> (Column H)</li>
+                            <li><code>last scan station</code> (Column G, 若存在下一站 next station 则赋值为下一站)</li>
                             <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                         `;
                     }
@@ -3297,7 +3485,6 @@
                             <li><code>latest second scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>latest second scan type</code> (Column E)</li>
                             <li><code>latest second scan station</code> (Column G)</li>
-                            <li><code>Previous/Next Stop</code> (Column H)</li>
                             <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                         `;
                     }
@@ -3311,7 +3498,6 @@
                             <li><code>first scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                             <li><code>first scan type</code> (Column E)</li>
                             <li><code>first scan station</code> (Column G)</li>
-                            <li><code>Previous/Next Stop</code> (Column H)</li>
                             <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                         `;
                     }
@@ -3399,7 +3585,7 @@
             }
 
             const ws = XLSX.utils.json_to_sheet(finalNoUpdateData, {
-                header: ["waybill", "last scan date", "last scan type", "last scan station", "NoUpdate", "Previous/Next Stop", "Scanner"]
+                header: ["waybill", "last scan date", "last scan type", "last scan station", "NoUpdate", "Scanner"]
             });
 
             const wb = XLSX.utils.book_new();
@@ -3448,8 +3634,7 @@
                     <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
                     <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                     <li><code>last scan type</code> (Column E)</li>
-                    <li><code>last scan station</code> (Column G)</li>
-                    <li><code>Previous/Next Stop</code> (Column H)</li>
+                    <li><code>last scan station</code> (Column G, 若存在下一站 next station 则赋值为下一站)</li>
                     <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                 `;
             }
