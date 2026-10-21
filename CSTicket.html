@@ -1,0 +1,1989 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CS Paper Generator</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --panel: #fff;
+      --ink: #17233a;
+      --muted: #667085;
+      --line: #cfd8e3;
+      --blue: #173b66;
+      --orange: #ec6b2f;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
+      width: min(1420px, calc(100vw - 32px));
+      margin: 16px auto;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    h1, h2, p { margin-top: 0; }
+    h1 { font-size: 22px; margin-bottom: 8px; }
+    h2 { font-size: 18px; margin-bottom: 12px; }
+    p { color: var(--muted); line-height: 1.45; }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px dashed #aab3c2;
+      border-radius: 8px;
+      background: #fafbfc;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 14px;
+      border: 0;
+      border-radius: 7px;
+      padding: 11px 14px;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .status {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.55;
+    }
+
+    .result-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .result-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .result-actions button,
+    .result-head button {
+      width: auto;
+      margin: 0;
+      white-space: nowrap;
+    }
+
+    .empty {
+      min-height: 420px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      background: #fafbfc;
+    }
+
+    .paper {
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+      max-height: 297mm;
+      margin: 0 auto 16px;
+      padding: 7mm 9mm 6mm;
+      background: #fff;
+      border: 1px solid var(--line);
+      color: #12213a;
+      page-break-after: always;
+      break-after: page;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+
+    .paper > :first-child { margin-top: 0; }
+    .paper > :last-child { margin-bottom: 0; }
+
+    .meta-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 13.5px;
+      line-height: 1.3;
+      padding-bottom: 2mm;
+      margin-bottom: 2mm;
+      border-bottom: 1.5px solid #23344e;
+      font-weight: 800;
+    }
+
+    .meta-group {
+      display: flex;
+      gap: 6mm;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .meta-badge {
+      background: #e9eef5;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #1e3a5f;
+      font-weight: 700;
+    }
+
+    .sms-guidance-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 1.5mm 3mm;
+      margin-bottom: 2mm;
+      font-size: 9px;
+      line-height: 1.25;
+      color: #334155;
+      font-weight: 700;
+    }
+
+    .sms-guidance-bar .ar {
+      direction: rtl;
+      font-family: Arial, Tahoma, sans-serif;
+    }
+
+    .tickets-container {
+      display: flex;
+      flex-direction: column;
+      gap: 34mm;
+      flex: 1;
+      margin-top: 2mm;
+    }
+
+    .ticket-card {
+      border: 1px solid #c8d3e0;
+      border-radius: 6px;
+      padding: 3mm 4.5mm;
+      background: #fff;
+      display: flex;
+      gap: 3.5mm;
+      align-items: center;
+      box-sizing: border-box;
+      font-size: 10.5px;
+      line-height: 1.28;
+      position: relative;
+    }
+
+    .ticket-card:nth-child(even) {
+      background: #fbfcfe;
+    }
+
+    .ticket-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.8mm;
+      min-width: 0;
+    }
+
+    .ticket-head-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-bottom: 1px dashed #dbe2ea;
+      padding-bottom: 1.5mm;
+      font-size: 11.5px;
+    }
+
+    .ticket-index-tag {
+      background: var(--blue);
+      color: #fff;
+      font-size: 10.5px;
+      font-weight: 800;
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
+
+    .ticket-grid-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 5px 18px;
+    }
+
+    .triple-field-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 14px;
+      background: #f3f6fa;
+      border: 1px solid #e0e7ef;
+      border-radius: 3px;
+      padding: 1.8mm 2.5mm;
+      flex-wrap: wrap;
+    }
+
+    .triple-col {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      white-space: nowrap;
+    }
+
+    .triple-col.train-col {
+      flex: 0 0 auto;
+      margin-left: 2px;
+    }
+
+    .train-symbol-no {
+      color: #16a34a;
+      font-weight: 900;
+      font-size: 20px;
+      line-height: 1;
+      margin-left: 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .train-symbol-yes {
+      color: #dc2626;
+      font-weight: 900;
+      font-size: 22px;
+      line-height: 1;
+      margin-left: 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .address-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .address-text-wrap {
+      flex: 0 1 auto;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .mini-map-qr {
+      flex: 0 0 12mm;
+      width: 12mm;
+      height: 12mm;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .mini-map-qr .qr-code,
+    .mini-map-qr .qr-code canvas,
+    .mini-map-qr .qr-code img,
+    .mini-map-qr .qr-image {
+      width: 12mm !important;
+      height: 12mm !important;
+      display: block;
+    }
+
+    .ticket-sms-sidebar {
+      flex: 0 0 32mm;
+      width: 32mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-left: 1px dashed #cfd8e3;
+      padding-left: 3mm;
+      box-sizing: border-box;
+    }
+
+    .ticket-qr-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3.5mm;
+      width: 100%;
+    }
+
+    .ticket-qr-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ticket-qr-item .qr-code,
+    .ticket-qr-item .qr-code canvas,
+    .ticket-qr-item .qr-code img,
+    .ticket-qr-item .qr-image {
+      width: 20mm !important;
+      height: 20mm !important;
+      display: block;
+    }
+
+    .ticket-qr-call-item .qr-code,
+    .ticket-qr-call-item .qr-code canvas,
+    .ticket-qr-call-item .qr-code img,
+    .ticket-qr-call-item .qr-image {
+      width: 25mm !important;
+      height: 25mm !important;
+      display: block;
+    }
+
+    .ticket-sms-placeholder {
+      width: 26mm;
+      height: 44mm;
+      border: 1px dashed #cbd5e1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: var(--muted);
+      background: #fafbfc;
+      text-align: center;
+      padding: 2px;
+      box-sizing: border-box;
+    }
+
+    .ticket-sms-caption {
+      margin-top: 1.5mm;
+      font-size: 9px;
+      line-height: 1.1;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+      padding: 1.5px 5px;
+      border-radius: 3px;
+      letter-spacing: 0.3px;
+    }
+
+    .ticket-sms-caption.sms-color {
+      color: #0369a1;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+    }
+
+    .ticket-sms-caption.wa-color {
+      color: #15803d;
+      background: #dcfce7;
+      border: 1px solid #bbf7d0;
+    }
+
+    .ticket-sms-caption.call-color {
+      color: #9a3412;
+      background: #ffedd5;
+      border: 1px solid #fdba74;
+    }
+
+    .field-label {
+      color: #4b5563;
+      font-weight: 700;
+    }
+
+    .field-value {
+      color: #111827;
+      font-weight: 800;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .paper { width: 100%; min-height: auto; }
+    }
+
+    .pdf-export-container {
+      background: #fff;
+    }
+    .pdf-export-container .paper {
+      margin: 0 !important;
+      border: 0 !important;
+      height: 297mm !important;
+      box-shadow: none !important;
+    }
+
+    /* --- Tabs Navigation --- */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tab-btn {
+      width: auto !important;
+      margin: 0 !important;
+      padding: 7px 16px !important;
+      border: 1px solid var(--line) !important;
+      background: #eaedf2 !important;
+      color: var(--muted) !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      border-radius: 6px !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+    }
+
+    .tab-btn:hover {
+      background: #dde2e9 !important;
+      color: var(--ink) !important;
+    }
+
+    .tab-btn.active {
+      background: var(--blue) !important;
+      color: #fff !important;
+      border-color: var(--blue) !important;
+    }
+
+    .tab-view {
+      width: 100%;
+    }
+
+    /* --- Slogan Tab Styling --- */
+    .slogan-form {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+
+    .slogan-main-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .form-group.flex-2 { flex: 2; min-width: 200px; }
+    .form-group.flex-1 { flex: 1; min-width: 110px; }
+    .form-group.btn-group { min-width: 130px; }
+
+    .slogan-form input[type="text"],
+    .slogan-form input[type="number"] {
+      padding: 9px 12px;
+      border: 1px solid #c2cad6;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: var(--ink);
+      background: #fff;
+      box-sizing: border-box;
+      width: 100%;
+    }
+
+    .slogan-form input[type="text"]:focus,
+    .slogan-form input[type="number"]:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 2px rgba(23, 59, 102, 0.15);
+    }
+
+    .btn-slogan-print,
+    #printSloganBtnTop {
+      background: var(--orange) !important;
+      color: #fff !important;
+      font-weight: 700 !important;
+      border-radius: 6px !important;
+      padding: 9px 18px !important;
+      margin: 0 !important;
+      width: 100% !important;
+      border: none !important;
+      cursor: pointer !important;
+      transition: background 0.15s ease !important;
+      white-space: nowrap !important;
+    }
+
+    .btn-slogan-print:hover,
+    #printSloganBtnTop:hover {
+      background: #d8571c !important;
+    }
+
+    .slogan-options-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px dashed #e2e7ef;
+      font-size: 13px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+
+    .checkbox-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .slogan-preview-section {
+      margin-top: 12px;
+    }
+
+    .slogan-preview-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 14px;
+    }
+
+    .slogan-badge {
+      background: #eef2f6;
+      color: #3b4b60;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .slogan-papers-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      background: #eceff4;
+      padding: 24px;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+    }
+
+    .slogan-paper {
+      width: 100mm;
+      height: 120mm;
+      background: #fff;
+      border: 1px solid #c9d2de;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      box-sizing: border-box;
+      padding: 4mm;
+      display: grid;
+      gap: 2mm;
+      page-break-after: always;
+      break-after: page;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .slogan-cell {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2mm;
+      box-sizing: border-box;
+      font-weight: 900;
+      color: #000;
+      word-break: break-word;
+      line-height: 1.35;
+      background: #fff;
+    }
+
+    .slogan-cell.with-border {
+      border: 1.5px dashed #9aa5b5;
+      border-radius: 3px;
+    }
+
+    @media print {
+      body { background: #fff; }
+      .sidebar, .result-head, .tabs-nav, .slogan-form, .slogan-preview-title { display: none !important; }
+      .app { display: block !important; width: auto !important; margin: 0 !important; }
+      .panel { border: 0 !important; padding: 0 !important; }
+
+      /* When normal CS Paper is printed */
+      body:not(.printing-slogan) #sloganView { display: none !important; }
+      body:not(.printing-slogan) .paper {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 7mm 9mm;
+        border: 0;
+        page-break-after: always;
+        break-after: page;
+        overflow: hidden;
+      }
+      body:not(.printing-slogan) .paper:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      /* When Slogan is printed */
+      body.printing-slogan #csPaperView { display: none !important; }
+      body.printing-slogan #sloganView { display: block !important; }
+      body.printing-slogan .slogan-preview-section { margin: 0 !important; }
+      body.printing-slogan .slogan-papers-container {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        gap: 0 !important;
+      }
+      body.printing-slogan .slogan-paper {
+        width: 100mm !important;
+        height: 120mm !important;
+        margin: 0 !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        overflow: hidden !important;
+      }
+      body.printing-slogan .slogan-paper:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="panel sidebar">
+      <h1>CS Paper Generator</h1>
+      <p>Upload one Excel file. All rows will be grouped by driver and printed (up to 5 tickets per A4 page).</p>
+      <input id="excelFile" type="file" accept=".xlsx,.xls">
+      <button id="printBtn" disabled>print CS paper</button>
+      <button id="exportHubBtn" disabled>export paper by hub</button>
+      <div id="status" class="status">Waiting for Excel file.</div>
+    </aside>
+
+    <section class="panel">
+      <div class="result-head">
+        <div class="tabs-nav">
+          <button type="button" class="tab-btn active" id="tabCsPaper" data-tab="csPaper">CS Paper</button>
+          <button type="button" class="tab-btn" id="tabSlogan" data-tab="slogan">Slogan Tab</button>
+        </div>
+        <div class="result-actions" id="csPaperActions">
+          <button id="exportHubBtnTop" disabled>export paper by hub</button>
+          <button id="printBtnTop" disabled>print CS paper</button>
+        </div>
+        <div class="result-actions" id="sloganTopActions" style="display: none;">
+          <button type="button" id="printSloganBtnTop">Print slogan</button>
+        </div>
+      </div>
+
+      <!-- CS Paper View -->
+      <div id="csPaperView" class="tab-view">
+        <div id="papers" class="empty">No printable paper generated yet.</div>
+      </div>
+
+      <!-- Slogan Tab View -->
+      <div id="sloganView" class="tab-view" style="display: none;">
+        <div class="slogan-form">
+          <div class="form-row slogan-main-row">
+            <div class="form-group flex-2">
+              <label for="sloganInput"><strong>Slogan 输入框 ({{input slogan}}):</strong></label>
+              <input type="text" id="sloganInput" value="妥投拍照 规范投递" placeholder="请输入口号或标语...">
+            </div>
+            <div class="form-group flex-1">
+              <label for="sloganNumber"><strong>number/page (默认9):</strong></label>
+              <input type="number" id="sloganNumber" value="9" min="1" max="100">
+            </div>
+            <div class="form-group flex-1">
+              <label for="sloganPages"><strong>打印页数:</strong></label>
+              <input type="number" id="sloganPages" value="1" min="1" max="50">
+            </div>
+            <div class="form-group btn-group">
+              <button type="button" id="printSloganBtn" class="btn-slogan-print">Print slogan</button>
+            </div>
+          </div>
+          <div class="slogan-options-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="sloganShowBorder" checked> 显示撕取裁切虚线
+            </label>
+            <span class="slogan-info-text">标准面单纸张打印：10cm × 12cm (100mm × 120mm) · 每张显示 <span id="sloganNumberDisplay">9</span> 个 · 字体加粗</span>
+          </div>
+        </div>
+
+        <div class="slogan-preview-section">
+          <div class="slogan-preview-title">
+            <span>面单预览（标准面单 10cm × 12cm）</span>
+            <span id="sloganStatusTag" class="slogan-badge">共 1 页，每页 9 个 Slogan</span>
+          </div>
+          <div id="sloganPapersContainer" class="slogan-papers-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script>
+    const fileInput = document.getElementById("excelFile");
+    const papers = document.getElementById("papers");
+    const statusBox = document.getElementById("status");
+    const printButtons = [document.getElementById("printBtn"), document.getElementById("printBtnTop")];
+    const exportHubButtons = [document.getElementById("exportHubBtn"), document.getElementById("exportHubBtnTop")];
+
+    const requiredColumns = {
+      shipmentId: ["order number", "shipment id", "paketnummer", "sendungsnummer"],
+      deliveryDate: ["signed date", "delivery date", "zustelldatum"],
+      complaintDate: ["complaint date", "complain date", "compliant date", "beschwerdedatum", "datum"],
+      station: ["station", "hub"],
+      driver: ["driver", "driver name", "zusteller", "fahrer"],
+      client: ["client", "client name", "clientname", "kunde", "mandant", "auftraggeber", "客户"],
+      customerName: ["customer name", "customername", "empfaenger", "empfänger", "receiver", "recipient", "kundenname", "收件人"],
+      address: ["customer address", "address", "kundenadresse", "adresse"],
+      phone: ["customer phone", "phone", "telephone", "telefonnummer", "tel"],
+      firstCall: ["first call", "firstcall", "first_call"],
+      lastCall: ["last call", "lastcall", "last_call"],
+      podLocation: ["pod location", "podlocation", "pod_location", "pod ort"],
+      systemDeliveryLocation: ["system delivery location", "system delivery", "system location", "system delievry location", "system ort"],
+      realDeliveryLocation: ["real delivery location", "real location", "real ort", "real"],
+      train: ["train", "training", "train check", "fehlerverhalten"],
+      waybill: ["waybill", "waybill number", "waybill no", "tracking", "tracking number", "tracking no", "billcode", "bill code", "运单号"],
+      found: ["found", "gruende", "gründe", "grund", "reasons", "reason", "ursache", "客诉原因"]
+    };
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      try {
+        const workbook = await readWorkbook(file);
+        let dataRows = [];
+        let candidates = [];
+        let printable = [];
+        let missingCustomerInfoRows = 0;
+        let paperError = "";
+        let driverPages = [];
+        let totalDrivers = 0;
+        let totalStations = 0;
+
+        try {
+          const rows = sheetToRows(workbook.Sheets[workbook.SheetNames[0]]);
+          const headers = rows[0] || [];
+          dataRows = rows.slice(1);
+          const index = buildColumnIndex(headers);
+
+          candidates = dataRows
+            .filter(row => row.some(cellHasContent))
+            .map((row, order) => ({ ...rowToRecord(row, index), order, row, index }));
+          missingCustomerInfoRows = candidates.filter(record => !hasRequiredCustomerInfo(record)).length;
+          printable = candidates
+            .map(({ row, index, ...record }) => record);
+
+          const paginated = groupAndPaginateByStationAndDriver(printable);
+          driverPages = paginated.pages;
+          totalDrivers = paginated.totalDrivers;
+          totalStations = paginated.totalStations;
+
+          renderPapers(driverPages);
+        } catch (paperBuildError) {
+          renderPapers([]);
+          paperError = paperBuildError.message || "CS paper could not be generated.";
+          papers.className = "empty";
+          papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>生成失败:</strong> ${escapeHtml(paperError)}</div>`;
+          console.warn(paperBuildError);
+        }
+
+        updateStatus(file.name, dataRows.length, printable.length, totalDrivers, driverPages.length, missingCustomerInfoRows, paperError, totalStations);
+      } catch (error) {
+        renderPapers([]);
+        statusBox.textContent = `Excel file could not be read: ${error.message || error}`;
+        papers.className = "empty";
+        papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>Excel 读取错误:</strong> ${escapeHtml(error.message || String(error))}</div>`;
+        console.error(error);
+      }
+    });
+
+    printButtons.forEach(button => {
+      if (button) {
+        button.addEventListener("click", async () => {
+          ensurePrintPageStyle("A4");
+          document.body.classList.remove("printing-slogan");
+          hydrateQrCodes();
+          await waitForQrImages();
+          window.print();
+        });
+      }
+    });
+
+    exportHubButtons.forEach(button => {
+      if (button) {
+        button.addEventListener("click", exportPdfsByHub);
+      }
+    });
+
+    async function ensurePdfLibrariesLoaded() {
+      const getJsPdf = () => (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (typeof html2canvas === "function" && typeof getJsPdf() === "function" && typeof JSZip !== "undefined") {
+        return;
+      }
+
+      const loadScript = (src) => new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error(`Failed to load ${src}`));
+        document.head.appendChild(script);
+      });
+
+      if (typeof html2canvas !== "function") {
+        try {
+          await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js");
+        } catch (e) {
+          try {
+            await loadScript("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js");
+          } catch (e2) {
+            console.warn("Failed to load html2canvas from fallback CDN", e2);
+          }
+        }
+      }
+
+      if (typeof getJsPdf() !== "function") {
+        try {
+          await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+        } catch (e) {
+          try {
+            await loadScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js");
+          } catch (e2) {
+            console.warn("Failed to load jsPDF from fallback CDN", e2);
+          }
+        }
+      }
+
+      if (typeof JSZip === "undefined") {
+        try {
+          await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+        } catch (e) {
+          try {
+            await loadScript("https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js");
+          } catch (e2) {
+            console.warn("Failed to load JSZip from fallback CDN", e2);
+          }
+        }
+      }
+    }
+
+    async function exportPdfsByHub() {
+      const setButtonsDisabled = (disabled) => {
+        exportHubButtons.forEach(btn => { if (btn) btn.disabled = disabled; });
+        printButtons.forEach(btn => { if (btn) btn.disabled = disabled; });
+      };
+
+      const todayStr = getTodayString();
+      const tempHolder = document.createElement("div");
+      tempHolder.className = "pdf-export-container";
+      tempHolder.style.position = "fixed";
+      tempHolder.style.left = "0";
+      tempHolder.style.top = "0";
+      tempHolder.style.width = "210mm";
+      tempHolder.style.background = "#ffffff";
+      tempHolder.style.zIndex = "-9999";
+      tempHolder.style.pointerEvents = "none";
+      document.body.appendChild(tempHolder);
+
+      try {
+        setButtonsDisabled(true);
+        const originalStatus = statusBox.innerHTML;
+        statusBox.innerHTML = `<strong>Status:</strong> Initializing PDF generation...`;
+
+        // Ensure libraries are loaded
+        await ensurePdfLibrariesLoaded();
+
+        if (typeof html2canvas !== "function") {
+          throw new Error("HTML to canvas library (html2canvas) is not loaded. Please check your internet connection.");
+        }
+        if (typeof JSZip === "undefined") {
+          throw new Error("ZIP compression library (JSZip) is not loaded. Please check your internet connection.");
+        }
+
+        // 1. Ensure QR codes are hydrated and images loaded
+        hydrateQrCodes();
+        await waitForQrImages();
+
+        // 2. Find all generated .paper elements
+        const paperElements = Array.from(document.querySelectorAll(".paper"));
+        if (paperElements.length === 0) {
+          alert("No printable papers found.");
+          setButtonsDisabled(false);
+          statusBox.innerHTML = originalStatus;
+          if (tempHolder.parentNode) tempHolder.parentNode.removeChild(tempHolder);
+          return;
+        }
+
+        // 3. Group them by station
+        const groups = {};
+        paperElements.forEach(el => {
+          const station = el.dataset.station || "Unknown";
+          if (!groups[station]) {
+            groups[station] = [];
+          }
+          groups[station].push(el);
+        });
+
+        // 4. Create JSZip instance
+        const zip = new JSZip();
+        const stations = Object.keys(groups);
+
+        // 5. Generate PDF for each station (page-by-page to guarantee NO blank pages)
+        for (let i = 0; i < stations.length; i++) {
+          const station = stations[i];
+          const stationPapers = groups[station];
+          const safeStation = sanitizeFilename(station);
+
+          statusBox.innerHTML = `<strong>Status:</strong> Generating PDF for station "${escapeHtml(station)}" (${i + 1}/${stations.length}, ${stationPapers.length} pages)...`;
+          await new Promise(resolve => setTimeout(resolve, 50));
+
+          const pdf = createJsPdf();
+
+          for (let j = 0; j < stationPapers.length; j++) {
+            const paperEl = stationPapers[j];
+            tempHolder.innerHTML = "";
+
+            const clone = paperEl.cloneNode(true);
+            clone.style.margin = "0";
+            clone.style.border = "none";
+            clone.style.boxShadow = "none";
+            clone.style.width = "210mm";
+            clone.style.minHeight = "297mm";
+            clone.style.height = "297mm";
+            clone.style.boxSizing = "border-box";
+            clone.style.pageBreakAfter = "auto";
+            clone.style.display = "flex";
+            clone.style.flexDirection = "column";
+
+            // Copy canvas pixel data from original to clone (ensuring QR codes are drawn)
+            const origCanvases = paperEl.querySelectorAll("canvas");
+            const clonedCanvases = clone.querySelectorAll("canvas");
+            origCanvases.forEach((origCanvas, idx) => {
+              const clonedCanvas = clonedCanvases[idx];
+              if (clonedCanvas) {
+                clonedCanvas.width = origCanvas.width;
+                clonedCanvas.height = origCanvas.height;
+                const ctx = clonedCanvas.getContext("2d");
+                ctx.drawImage(origCanvas, 0, 0);
+              }
+            });
+
+            tempHolder.appendChild(clone);
+
+            const canvas = await html2canvas(clone, {
+              scale: 2,
+              useCORS: true,
+              logging: false
+            });
+
+            const imgData = canvas.toDataURL("image/jpeg", 0.98);
+            if (j > 0) {
+              pdf.addPage("a4", "portrait");
+            }
+            pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+          }
+
+          const pdfBlob = pdf.output("blob");
+          const pdfFileName = `${safeStation}_DNR-${todayStr}.pdf`;
+          zip.file(pdfFileName, pdfBlob);
+        }
+
+        // 6. Generate ZIP file and trigger download
+        statusBox.innerHTML = `<strong>Status:</strong> Packaging ZIP file...`;
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(zipBlob);
+        const zipFileName = `DNR_Paper_${todayStr}.zip`;
+        link.download = zipFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        statusBox.innerHTML = originalStatus;
+        setButtonsDisabled(false);
+      } catch (error) {
+        console.error(error);
+        alert("Failed to export PDFs by station: " + error.message);
+        statusBox.innerHTML = `<strong>Error:</strong> PDF generation failed: ${escapeHtml(error.message)}`;
+        setButtonsDisabled(false);
+      } finally {
+        if (tempHolder.parentNode) {
+          tempHolder.parentNode.removeChild(tempHolder);
+        }
+      }
+    }
+
+    function createJsPdf() {
+      const JsPdfClass = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+      if (typeof JsPdfClass === "function") {
+        return new JsPdfClass({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+          compress: true
+        });
+      }
+      throw new Error("PDF generator library (jsPDF) is not loaded. Please check your internet connection.");
+    }
+
+    function getTodayString() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      return `${day}-${month}`;
+    }
+
+    function sanitizeFilename(name) {
+      return String(name || "Unknown")
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .trim() || "Unknown";
+    }
+
+    function readWorkbook(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = event => {
+          const workbook = XLSX.read(new Uint8Array(event.target.result), { type: "array", cellDates: false });
+          resolve(workbook);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function sheetToRows(sheet) {
+      if (!sheet["!ref"]) return [];
+
+      const range = XLSX.utils.decode_range(sheet["!ref"]);
+      const rows = [];
+
+      for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+        const row = [];
+        for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+          const address = XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
+          row.push(cellValue(sheet[address]));
+        }
+        rows.push(row);
+      }
+
+      return rows;
+    }
+
+    function cellValue(cell) {
+      if (!cell) {
+        return { raw: "", text: "", type: "" };
+      }
+
+      return {
+        raw: cell.v ?? "",
+        text: cell.w ?? "",
+        formula: cell.f ?? "",
+        type: cell.t ?? ""
+      };
+    }
+
+    function buildColumnIndex(headers) {
+      const normalized = headers.map(normalizeHeader);
+      const index = {};
+
+      for (const [key, columnNames] of Object.entries(requiredColumns)) {
+        index[key] = findColumn(normalized, columnNames);
+      }
+
+      return index;
+    }
+
+    function findColumn(headers, names) {
+      for (const name of names) {
+        const exact = headers.indexOf(name);
+        if (exact >= 0) return exact;
+      }
+
+      for (const name of names) {
+        const partial = headers.findIndex(header => header.includes(name));
+        if (partial >= 0) return partial;
+      }
+
+      return -1;
+    }
+
+    function normalizeHeader(value) {
+      return clean(value)
+        .toLowerCase()
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function isYes(value) {
+      return clean(value).toLowerCase() === "yes";
+    }
+
+    function rowToRecord(row, index) {
+      const driver = valueAt(row, index.driver, 4);
+      const client = valueAt(row, index.client);
+      const customerName = valueAt(row, index.customerName, 5);
+      const address = valueAt(row, index.address, 6);
+      const phone = valueAt(row, index.phone, 7);
+      const waybill = valueAt(row, index.waybill) || valueAt(row, index.shipmentId, 0);
+      const shipmentId = waybill || valueAt(row, index.shipmentId, 0);
+      const found = valueAt(row, index.found);
+
+      const rawDeliveryDate = clean(cellAt(row, index.deliveryDate, 1));
+      let deliveryDateDisplay = "";
+      if (rawDeliveryDate.toUpperCase() === "CC") {
+        deliveryDateDisplay = "hotline";
+      } else if (rawDeliveryDate.toUpperCase() === "IM") {
+        deliveryDateDisplay = "email";
+      } else {
+        deliveryDateDisplay = formatExcelDate(cellAt(row, index.deliveryDate, 1));
+      }
+
+      const firstCall = formatCallTime(cellAt(row, index.firstCall));
+      const lastCall = formatCallTime(cellAt(row, index.lastCall));
+      const podLocation = valueAt(row, index.podLocation);
+      const systemDeliveryLocation = valueAt(row, index.systemDeliveryLocation);
+      const realDeliveryLocation = valueAt(row, index.realDeliveryLocation);
+      const train = valueAt(row, index.train);
+
+      return {
+        waybill,
+        shipmentId,
+        found,
+        deliveryDate: deliveryDateDisplay,
+        complaintDate: formatExcelDate(cellAt(row, index.complaintDate, 2)),
+        station: stationForDriver(valueAt(row, index.station, 3), driver),
+        driver,
+        client,
+        customerName,
+        address,
+        phone,
+        firstCall,
+        lastCall,
+        podLocation,
+        systemDeliveryLocation,
+        realDeliveryLocation,
+        train
+      };
+    }
+
+    function formatCallTime(cell) {
+      if (!cell) return "";
+      const raw = rawValue(cell);
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        const date = XLSX.SSF.parse_date_code(raw);
+        if (date) {
+          const h = String(date.H || 0).padStart(2, "0");
+          const m = String(date.M || 0).padStart(2, "0");
+          const s = String(date.S || 0).padStart(2, "0");
+          const timeStr = `${h}:${m}` + (date.S ? `:${s}` : "");
+          if (date.y > 1900) {
+            const day = String(date.d).padStart(2, "0");
+            const mon = String(date.m).padStart(2, "0");
+            return `${day}.${mon}.${date.y} ${timeStr}`;
+          }
+          return timeStr;
+        }
+      }
+      return clean(bestCellText(cell));
+    }
+
+    function stationForDriver(station, driver) {
+      return clean(driver).toLowerCase().includes("backup") ? "Backup" : station;
+    }
+
+    function sortByStationAndDriver(left, right) {
+      const stationCompare = (left.station || "").localeCompare(right.station || "", undefined, {
+        numeric: true,
+        sensitivity: "base"
+      });
+      if (stationCompare !== 0) return stationCompare;
+
+      const driverCompare = (left.driver || "").localeCompare(right.driver || "", undefined, {
+        numeric: true,
+        sensitivity: "base"
+      });
+      if (driverCompare !== 0) return driverCompare;
+
+      return (left.order || 0) - (right.order || 0);
+    }
+
+    const TICKETS_PER_PAGE = 3;
+
+    function groupAndPaginateByStationAndDriver(printable) {
+      const sorted = [...printable].sort(sortByStationAndDriver);
+      const stationGroups = new Map();
+      const uniqueDrivers = new Set();
+
+      sorted.forEach(record => {
+        const stationKey = record.station || "Unknown";
+        if (record.driver) uniqueDrivers.add(record.driver);
+
+        if (!stationGroups.has(stationKey)) {
+          stationGroups.set(stationKey, {
+            station: stationKey,
+            records: []
+          });
+        }
+        stationGroups.get(stationKey).records.push(record);
+      });
+
+      const pages = [];
+      stationGroups.forEach(group => {
+        const total = group.records.length;
+        const totalPages = Math.ceil(total / TICKETS_PER_PAGE);
+        for (let i = 0; i < total; i += TICKETS_PER_PAGE) {
+          const chunk = group.records.slice(i, i + TICKETS_PER_PAGE);
+          pages.push({
+            station: group.station,
+            pageIndex: Math.floor(i / TICKETS_PER_PAGE) + 1,
+            totalPages,
+            totalStationTickets: total,
+            startIndex: i,
+            records: chunk
+          });
+        }
+      });
+
+      return { pages, totalDrivers: uniqueDrivers.size, totalStations: stationGroups.size };
+    }
+
+    function hasRequiredCustomerInfo(record) {
+      const cleanPhone = cleanCallablePhone(record.phone);
+      return Boolean(cleanPhone && record.address && record.address !== "-");
+    }
+
+    function valueAt(row, index, fallbackIndex = -1) {
+      return bestCellText(cellAt(row, index, fallbackIndex));
+    }
+
+    function cellAt(row, index, fallbackIndex = -1) {
+      if (index >= 0) return row[index];
+      if (fallbackIndex >= 0 && fallbackIndex < row.length) return row[fallbackIndex];
+      return undefined;
+    }
+
+    function formatExcelDate(value) {
+      const raw = rawValue(value);
+
+      if (raw instanceof Date) {
+        return raw.toLocaleDateString("de-DE");
+      }
+
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        const date = XLSX.SSF.parse_date_code(raw);
+        if (date) {
+          const day = String(date.d).padStart(2, "0");
+          const month = String(date.m).padStart(2, "0");
+          const hour = String(date.H || 0).padStart(2, "0");
+          const minute = String(date.M || 0).padStart(2, "0");
+          const hasTime = Boolean(date.H || date.M || date.S);
+          return hasTime ? `${day}.${month}.${date.y} ${hour}:${minute}` : `${day}.${month}.${date.y}`;
+        }
+      }
+
+      return displayValue(value);
+    }
+
+    function rawValue(value) {
+      return value && typeof value === "object" ? value.raw : value;
+    }
+
+    function textValue(value) {
+      return value && typeof value === "object" ? value.text : "";
+    }
+
+    function formulaValue(value) {
+      return value && typeof value === "object" ? value.formula : "";
+    }
+
+    function displayValue(value) {
+      const raw = rawValue(value);
+      const text = textValue(value);
+      const formula = formulaValue(value);
+
+      if (raw instanceof Date) {
+        return raw.toLocaleDateString("de-DE");
+      }
+
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        return numberToPlain(raw);
+      }
+
+      const source = cleanText(raw !== null && raw !== undefined && raw !== "" ? raw : (text || formulaToDisplay(formula)));
+      
+      if (/^[+-]?\d+(\.\d+)?e[+-]?\d+$/i.test(source)) {
+        const num = Number(source);
+        if (Number.isFinite(num)) {
+          return numberToPlain(num);
+        }
+      }
+
+      return source;
+    }
+
+    function bestCellText(value) {
+      if (!value || typeof value !== "object") return displayValue(value);
+
+      const candidates = [
+        value.raw,
+        value.text,
+        formulaToDisplay(value.formula)
+      ];
+
+      for (const candidate of candidates) {
+        const text = cleanText(candidate);
+        if (text) {
+          if (/^[+-]?\d+(\.\d+)?e[+-]?\d+$/i.test(text)) {
+            const num = Number(text);
+            if (Number.isFinite(num)) {
+              return numberToPlain(num);
+            }
+          }
+          return text;
+        }
+      }
+
+      return "";
+    }
+
+    function formulaToDisplay(formula) {
+      const text = cleanText(formula);
+      if (!text) return "";
+      return text.replace(/^=\+?/, "");
+    }
+
+    function cellHasContent(value) {
+      if (value === undefined || value === null) return false;
+      if (value && typeof value === "object") {
+        return [value.raw, value.text, value.formula].some(part => cleanText(part) !== "");
+      }
+      return cleanText(value) !== "";
+    }
+
+    function numberToPlain(value) {
+      if (!Number.isFinite(value)) return "";
+      return value.toLocaleString("en-US", {
+        useGrouping: false,
+        maximumFractionDigits: 20
+      });
+    }
+
+    function clean(value) {
+      return displayValue(value).trim();
+    }
+
+    function cleanText(value) {
+      return String(value ?? "").trim();
+    }
+
+    function renderPapers(pages) {
+      printButtons.forEach(button => { if (button) button.disabled = pages.length === 0; });
+      exportHubButtons.forEach(button => { if (button) button.disabled = pages.length === 0; });
+
+      if (!pages.length) {
+        papers.className = "empty";
+        papers.textContent = "No printable ticket data found in the Excel file.";
+        return;
+      }
+
+      papers.className = "";
+      papers.innerHTML = pages.map(page => paperPageTemplate(page)).join("");
+      hydrateQrCodes();
+    }
+
+    function paperPageTemplate(page) {
+      const complaintDate = page.records[0]?.complaintDate || today();
+      const startIdx = page.startIndex ?? 0;
+      const cardsHtml = page.records.map((record, idx) => ticketCardTemplate(record, startIdx + idx + 1)).join("");
+
+      return `
+        <article class="paper" data-station="${escapeHtml(page.station)}">
+          <div class="meta-line">
+            <div class="meta-group">
+              <span><strong>Station:</strong> ${escapeHtml(page.station)}</span>
+            </div>
+            <div class="meta-group">
+              <span class="meta-badge">Seite ${page.pageIndex} / ${page.totalPages} (Station Gesamt: ${page.totalStationTickets})</span>
+              <span style="white-space: nowrap;"><strong>Datum:</strong> ${escapeHtml(complaintDate)}</span>
+            </div>
+          </div>
+
+          <div class="sms-guidance-bar">
+            <span><strong>Hinweis:</strong> Bei Übergabe QR-Code scannen & Nachricht (SMS/WhatsApp) senden. Antwort 'Ja' gilt als Nachweis.</span>
+            <span class="ar">عند التسليم، امسح رمز QR وأرسل رسالة (SMS/WhatsApp). رد العميل بـ 'نعم' هو الإثبات.</span>
+          </div>
+
+          <div class="tickets-container">
+            ${cardsHtml}
+          </div>
+        </article>
+      `;
+    }
+
+    function ticketCardTemplate(record, itemIndex) {
+      const callsText = formatCallsDisplay(record.firstCall, record.lastCall);
+
+      return `
+        <div class="ticket-card">
+          <div class="ticket-main">
+            <div class="ticket-head-row">
+              <div>
+                <span class="ticket-index-tag">#${itemIndex}</span>
+                <span class="field-label">Zusteller:</span>
+                <span class="field-value">${escapeHtml(record.driver || "-")}</span>
+              </div>
+              <div>
+                <span class="field-label">Zustelldatum:</span>
+                <span class="field-value">${escapeHtml(record.deliveryDate || "-")}</span>
+              </div>
+              <div>
+                <span class="field-label">Beschwerdedatum:</span>
+                <span class="field-value">${escapeHtml(record.complaintDate || "-")}</span>
+              </div>
+            </div>
+
+            <div class="ticket-grid-row">
+              <div>
+                <span class="field-label">Kunde:</span>
+                <span class="field-value">${escapeHtml(record.client || "-")}</span>
+              </div>
+              <div>
+                <span class="field-label">Empfänger:</span>
+                <span class="field-value">${escapeHtml(record.customerName || "-")}</span>
+              </div>
+              <div>
+                <span class="field-label">Gründen:</span>
+                <span class="field-value">${escapeHtml(record.found || "-")}</span>
+              </div>
+              <div>
+                <span class="field-label">Tel:</span>
+                <span class="field-value">${escapeHtml(formatDisplayPhone(record.phone))}</span>
+              </div>
+            </div>
+
+            <div class="address-row">
+              <span class="field-label">Kundenadresse:</span>
+              <span class="field-value">${escapeHtml(record.address || "-")}</span>
+              ${miniMapQr(record.address)}
+            </div>
+
+            <div class="triple-field-row">
+              <div class="triple-col" title="POD Location">
+                <span class="field-label">POD Location:</span>
+                <span class="field-value">${escapeHtml(record.podLocation || "-")}</span>
+              </div>
+              <div class="triple-col" title="System delivery location">
+                <span class="field-label">System Location:</span>
+                <span class="field-value">${escapeHtml(record.systemDeliveryLocation || "-")}</span>
+              </div>
+              <div class="triple-col train-col" title="Fehlerverhalten (no: ✓, yes: ✗)">
+                <span class="field-label" style="font-weight: 800;">Fehlerverhalten:</span>
+                ${renderTrainSymbol(record.train)}
+              </div>
+              ${record.realDeliveryLocation ? `
+              <div class="triple-col" title="Real delivery location">
+                <span class="field-label">Real Location:</span>
+                <span class="field-value">${escapeHtml(record.realDeliveryLocation || "-")}</span>
+              </div>` : ''}
+            </div>
+
+            <div>
+              <span class="field-label">Calls:</span>
+              <span class="field-value">${escapeHtml(callsText)}</span>
+            </div>
+          </div>
+
+          <div class="ticket-sms-sidebar">
+            ${compactContactQrDuo(record)}
+          </div>
+        </div>
+      `;
+    }
+
+    function formatCallsDisplay(firstCall, lastCall) {
+      const f = firstCall && firstCall !== "-" ? firstCall : "-";
+      const l = lastCall && lastCall !== "-" ? lastCall : "-";
+      return `First Call: ${f} | Last Call: ${l}`;
+    }
+
+    function renderTrainSymbol(trainValue) {
+      const cleanVal = clean(trainValue).toLowerCase();
+      if (cleanVal === "no") {
+        return `<span class="train-symbol-no" title="Fehlerverhalten: no (in Ordnung)">✓</span>`;
+      } else if (cleanVal === "yes") {
+        return `<span class="train-symbol-yes" title="Fehlerverhalten: yes (Fehler/Abweichung)">✗</span>`;
+      } else if (cleanVal) {
+        return `<span style="font-weight: 900; font-size: 16px; color: #334155;">${escapeHtml(cleanVal)}</span>`;
+      }
+      return `<span style="color: #94a3b8; font-weight: 800;">-</span>`;
+    }
+
+    function miniMapQr(address) {
+      if (!address || address === "-") return "";
+      return `
+        <span class="mini-map-qr">
+          <span class="qr-code" data-qr="${escapeHtml(googleMapsUrl(address))}" data-size="48" aria-label="Google Maps: ${escapeHtml(address)}"></span>
+        </span>
+      `;
+    }
+
+    function hasCallOnlyIndicators(phone) {
+      if (!phone) return false;
+      const str = String(phone);
+      return /[,#;]|[\uff0c\uff03\uff1b\u3001]|(?:\bext\b)/i.test(str);
+    }
+
+    function cleanCallablePhone(phone) {
+      if (!phone) return "";
+      let str = String(phone).trim();
+      if (!str || str === "-" || str === "n/a" || str === "null" || str === "undefined" || str === "/") return "";
+
+      str = str.replace(/[\uff08\u3010\[\{]/g, "(")
+               .replace(/[\uff09\u3011\]\}]/g, ")")
+               .replace(/[\uff0b]/g, "+")
+               .replace(/[\uff0c\u3001]/g, ",")
+               .replace(/[\uff03]/g, "#")
+               .replace(/[\uff1b]/g, ";")
+               .replace(/[\u00a0\u3000]/g, " ")
+               .trim();
+
+      str = str.replace(/[\uff10-\uff19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
+      str = str.replace(/^["']+|["']+$/g, "").trim();
+      str = str.replace(/^(?:tel|phone|mobil|mobile|handy|telefon|kontakt|contact)\s*[:.]?\s*/i, "").trim();
+
+      const match = str.match(/([,#;]|\bext\.?\b)/i);
+      if (match) {
+        const splitIdx = match.index;
+        const mainPart = str.slice(0, splitIdx).trim();
+        let extPart = str.slice(splitIdx).trim();
+
+        const cleanedMain = cleanPhoneNumber(mainPart);
+        extPart = extPart.replace(/\bext\.?\s*/gi, ",")
+                         .replace(/[^\d,#;]/g, "");
+
+        if (cleanedMain) {
+          return cleanedMain + extPart;
+        } else if (mainPart) {
+          const mainDigits = mainPart.replace(/\D/g, "");
+          return (mainPart.includes("+") ? "+" : "") + mainDigits + extPart;
+        }
+      }
+
+      return cleanPhoneNumber(phone);
+    }
+
+    function compactContactQrDuo(record) {
+      const isCallOnly = hasCallOnlyIndicators(record.phone);
+      const callablePhone = cleanCallablePhone(record.phone);
+      const cleanPhone = cleanPhoneNumber(record.phone);
+
+      if (!callablePhone && !cleanPhone) {
+        return `
+          <div class="ticket-sms-placeholder">
+            <span>Keine Tel.<br>vorhanden</span>
+          </div>
+          <div class="ticket-sms-caption">Kein Kontakt</div>
+        `;
+      }
+
+      if (isCallOnly && callablePhone) {
+        const callQrText = `tel:${callablePhone}`;
+        return `
+          <div class="ticket-qr-stack">
+            <div class="ticket-qr-item ticket-qr-call-item">
+              <div class="qr-code qr-call-code" data-qr="${escapeHtml(callQrText)}" data-size="108" aria-label="Anruf an ${escapeHtml(callablePhone)}"></div>
+              <div class="ticket-sms-caption call-color">Anruf</div>
+            </div>
+          </div>
+        `;
+      }
+
+      const waybill = record.waybill || record.shipmentId || "";
+      const waybillPart = waybill ? ` ${waybill}` : "";
+      const msgBody = `Haben Sie dieses Paket schon erhalten?${waybillPart} Bitte antworten Sie mit 'JA' zur Bestätigung.`;
+
+      const smsQrText = `sms:${cleanPhone}?body=${encodeURIComponent(msgBody)}`;
+      const waDigits = cleanPhone.replace(/\D/g, "");
+      const waQrText = `https://wa.me/${waDigits}?text=${encodeURIComponent(msgBody)}`;
+
+      return `
+        <div class="ticket-qr-stack">
+          <div class="ticket-qr-item">
+            <div class="qr-code" data-qr="${escapeHtml(smsQrText)}" data-size="84" aria-label="SMS an ${escapeHtml(cleanPhone)}"></div>
+            <div class="ticket-sms-caption sms-color">SMS</div>
+          </div>
+          <div class="ticket-qr-item">
+            <div class="qr-code" data-qr="${escapeHtml(waQrText)}" data-size="84" aria-label="WhatsApp an ${escapeHtml(cleanPhone)}"></div>
+            <div class="ticket-sms-caption wa-color">WhatsApp</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function cleanPhoneNumber(phone) {
+      if (!phone) return "";
+      let str = String(phone).trim();
+      if (!str || str === "-" || str === "n/a" || str === "null" || str === "undefined" || str === "/") return "";
+
+      // 1. Normalize full-width characters & brackets
+      str = str.replace(/[\uff08\u3010\[\{]/g, "(")
+               .replace(/[\uff09\u3011\]\}]/g, ")")
+               .replace(/[\uff0b]/g, "+")
+               .replace(/[\u00a0\u3000]/g, " ")
+               .trim();
+
+      // Full-width numbers to half-width
+      str = str.replace(/[\uff10-\uff19]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0xfee0));
+
+      // 2. Remove quotes and common text prefixes (e.g. "Tel:", "Phone:")
+      str = str.replace(/^["']+|["']+$/g, "").trim();
+      str = str.replace(/^(?:tel|phone|mobil|mobile|handy|telefon|kontakt|contact)\s*[:.]?\s*/i, "").trim();
+
+      // 3. Leading country code in parentheses, e.g. (+49)15170384474, (+49) 15170384474, (+49)015170384474, (+49)-15170384474
+      const parenMatch = str.match(/^\s*\(\s*(?:\+|00)?\s*(\d{1,4})\s*\)\s*(.*)$/);
+      if (parenMatch) {
+        const countryCode = parenMatch[1];
+        let rest = parenMatch[2].trim();
+        rest = rest.replace(/^[\s\-_/]+/, "").replace(/^\(?0\)?\s*/, "").replace(/^0+/, "");
+        const restDigits = rest.replace(/\D/g, "");
+        if (restDigits) {
+          return "+" + countryCode + restDigits;
+        }
+      }
+
+      // 4. Leading +CC or 00CC with optional (0) or trunk 0
+      // e.g. +49(0)15170384474, +49 (0) 15170384474, +49 015170384474, 0049(0)151...
+      const intlMatch = str.match(/^\s*(?:\+|00)\s*(\d{1,4})\s*(.*)$/);
+      if (intlMatch) {
+        const countryCode = intlMatch[1];
+        let rest = intlMatch[2].trim();
+        rest = rest.replace(/^[\s\-_/]+/, "").replace(/^\(?0\)?\s*/, "").replace(/^0+/, "");
+        const restDigits = rest.replace(/\D/g, "");
+        if (restDigits) {
+          return "+" + countryCode + restDigits;
+        }
+      }
+
+      // 5. Domestic number starting with single '0' (not 00), assume German mobile/landline (+49)
+      // e.g. 015170384474 -> +4915170384474
+      if (/^0[1-9]/.test(str)) {
+        const digits = str.replace(/\D/g, "");
+        return "+49" + digits.slice(1);
+      }
+
+      // 6. Starting with '49' without plus (e.g. 4915170384474, when Excel parsed as number)
+      const allDigits = str.replace(/\D/g, "");
+      if (/^49[1-9]\d{8,11}$/.test(allDigits)) {
+        return "+" + allDigits;
+      }
+
+      // 7. German mobile number without leading 0 (e.g. 15170384474, when Excel dropped leading 0)
+      if (/^1[567]\d{8,10}$/.test(allDigits)) {
+        return "+49" + allDigits;
+      }
+
+      // 8. Fallback
+      const hasPlus = str.indexOf("+") >= 0;
+      if (!allDigits) return "";
+      return hasPlus ? "+" + allDigits : allDigits;
+    }
+
+    function formatDisplayPhone(phone) {
+      if (!phone || phone === "-" || phone === "n/a" || phone === "null") return "-";
+      if (hasCallOnlyIndicators(phone)) {
+        const callable = cleanCallablePhone(phone);
+        if (callable) {
+          const match = callable.match(/([,#;])/);
+          if (match) {
+            const mainPart = callable.slice(0, match.index);
+            const extPart = callable.slice(match.index);
+            if (mainPart.startsWith("+49") && mainPart.length >= 12) {
+              return "+49 " + mainPart.slice(3) + " " + extPart;
+            }
+            return mainPart + " " + extPart;
+          }
+          return callable;
+        }
+        return String(phone).trim();
+      }
+      const cleaned = cleanPhoneNumber(phone);
+      if (!cleaned) return phone;
+      if (cleaned.startsWith("+49") && cleaned.length >= 12) {
+        return "+49 " + cleaned.slice(3);
+      }
+      return cleaned;
+    }
+
+    function googleMapsUrl(address) {
+      return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+    }
+
+    function hydrateQrCodes() {
+      document.querySelectorAll(".qr-code").forEach(container => {
+        if (container.dataset.ready === "true") return;
+
+        const text = container.dataset.qr;
+        if (!text) return;
+
+        container.textContent = "";
+        const size = container.dataset.size ? parseInt(container.dataset.size, 10) : 120;
+
+        if (typeof QRCode === "function") {
+          new QRCode(container, {
+            text,
+            width: size,
+            height: size,
+            correctLevel: QRCode.CorrectLevel.M
+          });
+          container.dataset.ready = "true";
+          return;
+        }
+
+        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size * 2}x${size * 2}&margin=0&data=${encodeURIComponent(text)}`;
+        const image = document.createElement("img");
+        image.className = "qr-image";
+        image.src = fallbackUrl;
+        image.alt = container.getAttribute("aria-label") || "QR Code";
+        container.appendChild(image);
+        container.dataset.ready = "true";
+      });
+    }
+
+    function waitForQrImages() {
+      const pending = Array.from(document.querySelectorAll(".qr-code img"))
+        .filter(image => image.src && !image.complete)
+        .map(image => new Promise(resolve => {
+          image.addEventListener("load", resolve, { once: true });
+          image.addEventListener("error", resolve, { once: true });
+          if (image.complete) resolve();
+        }));
+
+      return Promise.all(pending);
+    }
+
+    function updateStatus(fileName, checkedRows, printableRows, totalDrivers = 0, totalPages = 0, skippedRows = 0, paperError = "", totalStations = 0) {
+      const paperStatus = paperError
+        ? `<strong>CS paper:</strong> ${escapeHtml(paperError)}<br>`
+        : "";
+      statusBox.innerHTML = `
+        <strong>File:</strong> ${escapeHtml(fileName)}<br>
+        ${paperStatus}
+        <strong>Data rows checked:</strong> ${checkedRows}<br>
+        <strong>Printable tickets:</strong> ${printableRows}<br>
+        <strong>Total Drivers:</strong> ${totalDrivers}${totalStations ? ` (in ${totalStations} Stations)` : ""}<br>
+        <strong>A4 Pages generated (3 tickets/page):</strong> ${totalPages}<br>
+        <strong>Tickets with missing phone/address:</strong> ${skippedRows}<br>
+      `;
+    }
+
+    function today() {
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, "0");
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      return `${day}/${month}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    // ==========================================
+    // Tab Switching & Slogan Printing Logic
+    // ==========================================
+    const tabCsPaper = document.getElementById("tabCsPaper");
+    const tabSlogan = document.getElementById("tabSlogan");
+    const csPaperView = document.getElementById("csPaperView");
+    const sloganView = document.getElementById("sloganView");
+    const csPaperActions = document.getElementById("csPaperActions");
+    const sloganTopActions = document.getElementById("sloganTopActions");
+
+    const sloganInput = document.getElementById("sloganInput");
+    const sloganNumber = document.getElementById("sloganNumber");
+    const sloganPages = document.getElementById("sloganPages");
+    const sloganShowBorder = document.getElementById("sloganShowBorder");
+    const sloganNumberDisplay = document.getElementById("sloganNumberDisplay");
+    const sloganStatusTag = document.getElementById("sloganStatusTag");
+    const sloganPapersContainer = document.getElementById("sloganPapersContainer");
+    const printSloganBtn = document.getElementById("printSloganBtn");
+    const printSloganBtnTop = document.getElementById("printSloganBtnTop");
+
+    function ensurePrintPageStyle(size) {
+      let styleEl = document.getElementById("dynamic-print-page-style");
+      if (!styleEl) {
+        styleEl = document.createElement("style");
+        styleEl.id = "dynamic-print-page-style";
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = `@page { size: ${size}; margin: 0; }`;
+    }
+
+    function switchTab(tab) {
+      if (tab === "slogan") {
+        if (tabCsPaper) tabCsPaper.classList.remove("active");
+        if (tabSlogan) tabSlogan.classList.add("active");
+        if (csPaperView) csPaperView.style.display = "none";
+        if (sloganView) sloganView.style.display = "block";
+        if (csPaperActions) csPaperActions.style.display = "none";
+        if (sloganTopActions) sloganTopActions.style.display = "flex";
+        renderSlogan();
+      } else {
+        if (tabSlogan) tabSlogan.classList.remove("active");
+        if (tabCsPaper) tabCsPaper.classList.add("active");
+        if (sloganView) sloganView.style.display = "none";
+        if (csPaperView) csPaperView.style.display = "block";
+        if (sloganTopActions) sloganTopActions.style.display = "none";
+        if (csPaperActions) csPaperActions.style.display = "flex";
+      }
+    }
+
+    if (tabCsPaper) tabCsPaper.addEventListener("click", () => switchTab("csPaper"));
+    if (tabSlogan) tabSlogan.addEventListener("click", () => switchTab("slogan"));
+
+    function getOptimalGrid(n) {
+      if (n <= 1) return { cols: 1, rows: 1 };
+      if (n === 2) return { cols: 1, rows: 2 };
+      if (n === 3) return { cols: 1, rows: 3 };
+      if (n === 4) return { cols: 2, rows: 2 };
+      if (n <= 6) return { cols: 2, rows: 3 };
+      if (n <= 8) return { cols: 2, rows: 4 };
+      if (n === 9) return { cols: 3, rows: 3 };
+      if (n <= 12) return { cols: 3, rows: 4 };
+      if (n <= 15) return { cols: 3, rows: 5 };
+      if (n <= 16) return { cols: 4, rows: 4 };
+      if (n <= 20) return { cols: 4, rows: 5 };
+      if (n <= 25) return { cols: 5, rows: 5 };
+      let cols = Math.max(1, Math.round(Math.sqrt(n * 0.82)));
+      let rows = Math.ceil(n / cols);
+      return { cols, rows };
+    }
+
+    function calculateFontSize(text, cols, rows) {
+      const cleanLen = (text || "Slogan").trim().length || 6;
+      const cellWidthMm = 90 / cols;
+      const cellHeightMm = 110 / rows;
+      const charsPerLine = Math.max(2, Math.ceil(Math.sqrt(cleanLen * (cellWidthMm / cellHeightMm) * 1.5)));
+      const lines = Math.ceil(cleanLen / charsPerLine);
+
+      const sizeBasedOnWidth = (cellWidthMm * 3.78 * 0.82) / Math.max(1, charsPerLine);
+      const sizeBasedOnHeight = (cellHeightMm * 3.78 * 0.78) / Math.max(1, lines * 1.35);
+
+      let size = Math.floor(Math.min(sizeBasedOnWidth, sizeBasedOnHeight));
+      return Math.max(10, Math.min(size, 40));
+    }
+
+    function renderSlogan() {
+      if (!sloganPapersContainer) return;
+
+      const text = (sloganInput ? sloganInput.value : "").trim() || "Slogan";
+      let count = parseInt(sloganNumber ? sloganNumber.value : 9, 10);
+      if (isNaN(count) || count < 1) count = 9;
+
+      let pages = parseInt(sloganPages ? sloganPages.value : 1, 10);
+      if (isNaN(pages) || pages < 1) pages = 1;
+      if (pages > 50) pages = 50;
+
+      const showBorder = sloganShowBorder ? sloganShowBorder.checked : true;
+
+      if (sloganNumberDisplay) sloganNumberDisplay.textContent = count;
+      if (sloganStatusTag) sloganStatusTag.textContent = `共 ${pages} 页，每页 ${count} 个 Slogan`;
+
+      const { cols, rows } = getOptimalGrid(count);
+      const fontSize = calculateFontSize(text, cols, rows);
+
+      let html = "";
+      for (let p = 0; p < pages; p++) {
+        let cellsHtml = "";
+        for (let i = 0; i < count; i++) {
+          cellsHtml += `
+            <div class="slogan-cell ${showBorder ? "with-border" : ""}" style="font-size: ${fontSize}px;">
+              ${escapeHtml(text)}
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="slogan-paper" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
+            ${cellsHtml}
+          </div>
+        `;
+      }
+
+      sloganPapersContainer.innerHTML = html;
+    }
+
+    function printSlogan() {
+      renderSlogan();
+      ensurePrintPageStyle("100mm 120mm");
+      document.body.classList.add("printing-slogan");
+
+      window.print();
+    }
+
+    if (printSloganBtn) printSloganBtn.addEventListener("click", printSlogan);
+    if (printSloganBtnTop) printSloganBtnTop.addEventListener("click", printSlogan);
+
+    if (sloganInput) sloganInput.addEventListener("input", renderSlogan);
+    if (sloganNumber) sloganNumber.addEventListener("input", renderSlogan);
+    if (sloganPages) sloganPages.addEventListener("input", renderSlogan);
+    if (sloganShowBorder) sloganShowBorder.addEventListener("change", renderSlogan);
+
+    window.addEventListener("afterprint", () => {
+      document.body.classList.remove("printing-slogan");
+      ensurePrintPageStyle("A4");
+    });
+
+    // Initialize slogan preview on page load
+    renderSlogan();
+  </script>
+</body>
+</html>
