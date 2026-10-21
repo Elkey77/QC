@@ -868,6 +868,7 @@
                                 <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
                                 <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
                                 <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
+                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 6</code> 天，其余客户（<code>SF / TEMU / Shein / speed / others</code>）均为 <code>10</code> 天。</li>
                                 <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                                 <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                             </ul>
@@ -1088,6 +1089,16 @@
                 "TT": 7,
                 "default": 10
             },
+            // LifeCycle days by client
+            lifeCycles: {
+                "TT": 6,
+                "SF": 10,
+                "TEMU": 10,
+                "SHEIN": 10,
+                "SPEED": 10,
+                "OTHERS": 10,
+                "default": 10
+            },
             // Standard headers to detect client column in uploaded sheets
             headerKeywords: ["client", "客户", "customer", "channel"]
         };
@@ -1112,6 +1123,70 @@
                 if (rawClient !== '') return rawClient;
             }
             return getWaybillClient(waybill);
+        }
+
+        // Global Helper: Get LifeCycle days for a client
+        function getClientLifeCycle(client) {
+            const clientUpper = String(client || '').trim().toUpperCase();
+            if (CLIENT_CONFIG.lifeCycles && CLIENT_CONFIG.lifeCycles[clientUpper] !== undefined) {
+                return CLIENT_CONFIG.lifeCycles[clientUpper];
+            }
+            return (CLIENT_CONFIG.lifeCycles && CLIENT_CONFIG.lifeCycles.default !== undefined)
+                ? CLIENT_CONFIG.lifeCycles.default
+                : 10;
+        }
+
+        // Global Helper: Calculate DeadLine = AscanDate + LifeCycle
+        function calculateDeadLine(ascanRawDate, ascanDateStr, lifeCycleDays) {
+            if (!ascanRawDate && !ascanDateStr) return '';
+            const days = (typeof lifeCycleDays === 'number' && !isNaN(lifeCycleDays)) ? lifeCycleDays : 10;
+
+            if (ascanRawDate instanceof Date && !isNaN(ascanRawDate.getTime())) {
+                const target = new Date(ascanRawDate.getTime());
+                target.setUTCDate(target.getUTCDate() + days);
+                if (ascanDateStr && typeof ascanDateStr === 'string' && ascanDateStr.includes("/") && ascanDateStr.split("/")[0].length === 4) {
+                    const y = target.getUTCFullYear();
+                    const m = String(target.getUTCMonth() + 1).padStart(2, '0');
+                    const d = String(target.getUTCDate()).padStart(2, '0');
+                    return `${y}/${m}/${d}`;
+                }
+                const m = String(target.getUTCMonth() + 1).padStart(2, '0');
+                const d = String(target.getUTCDate()).padStart(2, '0');
+                return `${m}/${d}`;
+            }
+
+            if (ascanDateStr && typeof ascanDateStr === 'string' && ascanDateStr.trim() !== '') {
+                const trimmed = ascanDateStr.trim();
+                if (trimmed.includes("/")) {
+                    const parts = trimmed.split("/");
+                    if (parts.length === 2) {
+                        const m = parseInt(parts[0], 10) - 1;
+                        const d = parseInt(parts[1], 10);
+                        const curYear = new Date().getFullYear();
+                        const target = new Date(Date.UTC(curYear, m, d));
+                        target.setUTCDate(target.getUTCDate() + days);
+                        const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+                        const dd = String(target.getUTCDate()).padStart(2, '0');
+                        return `${mm}/${dd}`;
+                    } else if (parts.length === 3) {
+                        const dateObj = getJSDate(trimmed);
+                        if (dateObj) {
+                            const target = new Date(dateObj.getTime());
+                            target.setUTCDate(target.getUTCDate() + days);
+                            if (parts[0].length === 4) {
+                                const y = target.getUTCFullYear();
+                                const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+                                const dd = String(target.getUTCDate()).padStart(2, '0');
+                                return `${y}/${mm}/${dd}`;
+                            }
+                            const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+                            const dd = String(target.getUTCDate()).padStart(2, '0');
+                            return `${mm}/${dd}`;
+                        }
+                    }
+                }
+            }
+            return '';
         }
 
         // Global Safeguard: ensure SheetJS XLSX.utils.json_to_sheet strictly strips internal metadata fields (starting with '_')
@@ -6696,6 +6771,10 @@
                 const deliveryCount = (deliveryInfo.deliveryCount !== undefined && deliveryInfo.deliveryCount !== null) ? deliveryInfo.deliveryCount : "";
                 const lastProblemReason = (deliveryInfo.lastProblemReason !== undefined && deliveryInfo.lastProblemReason !== null) ? deliveryInfo.lastProblemReason : "";
 
+                // 7. DeadLine = AscanDate + LifeCycle
+                const lifeCycle = getClientLifeCycle(client);
+                const deadLine = calculateDeadLine(ascanRawDate, ascanDate, lifeCycle);
+
                 // 6. OverDays from NoUpdate record Column W (hours / 24, Math.floor)
                 let overDays = "";
                 if (wColIdx >= 0 && row[wColIdx] !== undefined && row[wColIdx] !== null && String(row[wColIdx]).trim() !== "") {
@@ -6716,6 +6795,7 @@
                     "Delivery count": deliveryCount,
                     "OverDays": overDays,
                     "last problem reason": lastProblemReason,
+                    "DeadLine": deadLine,
                     _ascanRawDate: ascanRawDate
                 });
 
@@ -6894,7 +6974,7 @@
             exportData.forEach(item => { delete item._ascanRawDate; });
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
-                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "driver", "client", "Delivery count", "OverDays", "last problem reason"]
+                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "driver", "client", "Delivery count", "OverDays", "last problem reason", "DeadLine"]
             });
 
             const wsWhatsApp = XLSX.utils.json_to_sheet(whatsAppData, {
