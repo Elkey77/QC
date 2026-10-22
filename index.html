@@ -868,7 +868,7 @@
                                 <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
                                 <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
                                 <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
-                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 6</code> 天，其余客户（<code>SF / TEMU / Shein / speed / others</code>）均为 <code>10</code> 天。</li>
+                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 6</code> 天，其余客户（<code>SF / Temu / Shein / FF / others</code>）均为 <code>10</code> 天。</li>
                                 <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                                 <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                             </ul>
@@ -929,7 +929,7 @@
                         <li><strong>Filter valid Signing time</strong>: 首先过滤掉所有 <strong>Signing time 为空</strong> 的数据（剔除未签收或时间缺失的无效行后，再进行后续的随机抽样与异常分析）。</li>
                         <li>Filters rows from Driver signed where <strong>Delivery outlet</strong> represents Station.</li>
                         <li>Column F (index 5) is treated as the <strong>courier ID / driver ID</strong>.</li>
-                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE2</code> / <code>JTDE0</code> &rarr; <code>TT</code>, <code>JTDE1</code> / <code>JTDE4</code> &rarr; <code>TEMU</code>, <code>JTDE9</code> &rarr; <code>SF</code>, <code>JTDE8</code> / <code>JDTE8</code> &rarr; <code>Shein</code>, <code>JTDE3</code> &rarr; <code>speed</code>, others &rarr; <code>Others</code>).</li>
+                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE000000</code> / <code>JTDE200000</code> &rarr; <code>TT</code>, <code>JTDE00000</code> &rarr; <code>FF</code>, <code>JTDE1000</code> / <code>JTDE30000</code> / <code>JTDE40000</code> &rarr; <code>Temu</code>, <code>JTDE80000</code> &rarr; <code>Shein</code>, <code>JTDE90000</code> &rarr; <code>SF</code>, others &rarr; <code>Others</code>).</li>
                         <li><strong>优先抽检与总单量控制 (Special Driver & Total SpotCheck)</strong>:
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li>若填入了 <strong>special driver</strong>：系统优先筛选 F 列 Courier ID 匹配该名单的司机，并按配置的配额（<code>TT Signed per driver</code> 与 <code>Others Signed per driver</code>）在对应包裹池中通过 Fisher-Yates 随机抽取。</li>
@@ -985,11 +985,12 @@
                         <span class="options-label" style="font-weight: 600; color: #2b1111;">client:</span>
                         <select id="select-addproblem-client" style="padding: 6px 12px; border: 1px solid #ebdcdc; border-radius: 6px; font-size: 13px; color: #2b1111; background-color: #ffffff; cursor: pointer; outline: none;">
                             <option value="">All (全部客户)</option>
-                            <option value="TEMU">TEMU</option>
+                            <option value="Temu">Temu</option>
+                            <option value="FF">FF</option>
                             <option value="SF">SF</option>
                             <option value="TT">TT</option>
                             <option value="Shein">Shein</option>
-                            <option value="speed">speed</option>
+
                             <option value="Others">Others</option>
                         </select>
                     </div>
@@ -1013,7 +1014,7 @@
                             <li><strong>Client Filter</strong>:
                                 <ul>
                                     <li><code>client</code> 取值来源于全局参数（根据运单号前缀匹配规则识别），不从表里取值。上传的 STR HUB Warehousing 表里的 <code>waybill</code> 先用 client 全局规则处理后，再参与 client 筛选。</li>
-                                    <li>可选客户：<code>TEMU</code>, <code>SF</code>, <code>TT</code>, <code>Shein</code>, <code>speed</code>, <code>Others</code>。</li>
+                                    <li>可选客户：<code>Temu</code>, <code>FF</code>, <code>SF</code>, <code>TT</code>, <code>Shein</code>, <code>Others</code>。</li>
                                     <li>若选择了某个 client，只导出该客户；若未选（默认 <code>All</code>），则包含全部客户。</li>
                                 </ul>
                             </li>
@@ -1072,16 +1073,33 @@
 
         // Global Client Configuration & Rules
         const CLIENT_CONFIG = {
-            // Prefix to Client Mapping (matching upper-cased 5-character waybill prefix)
+            // Ordered prefix mapping rules (longer prefixes evaluated first to prevent false matching e.g. JTDE000000 vs JTDE00000)
+            prefixRules: [
+                { prefix: "JTDE000000", client: "TT" },
+                { prefix: "JTDE200000", client: "TT" },
+                { prefix: "JTDE00000",  client: "FF" },
+                { prefix: "JTDE1000",   client: "Temu" },
+                { prefix: "JTDE30000",  client: "Temu" },
+                { prefix: "JTDE40000",  client: "Temu" },
+                { prefix: "JTDE80000",  client: "Shein" },
+                { prefix: "JDTE80000",  client: "Shein" }, // tolerate common J&T typo
+                { prefix: "JTDE90000",  client: "SF" }
+            ],
+            // Prefix to Client Mapping
             prefixMap: {
-                "JTDE1": "TEMU",
-                "JTDE4": "TEMU",
-                "JTDE9": "SF",
-                "JTDE2": "TT",
-                "JTDE0": "TT",
-                "JTDE8": "Shein",
-                "JDTE8": "Shein", // tolerate common J&T typo
-                "JTDE3": "speed"
+                "JTDE000000": "TT",
+                "JTDE200000": "TT",
+                "JTDE00000": "FF",
+                "JTDE1000": "Temu",
+                "JTDE30000": "Temu",
+                "JTDE40000": "Temu",
+                "JTDE80000": "Shein",
+                "JDTE80000": "Shein", // tolerate common J&T typo
+                "JTDE90000": "SF"
+
+
+
+
             },
             defaultClient: "Others",
             // SLA thresholds in days by client
@@ -1095,6 +1113,7 @@
                 "SF": 10,
                 "TEMU": 10,
                 "SHEIN": 10,
+                "FF": 10,
                 "SPEED": 10,
                 "OTHERS": 10,
                 "default": 10
@@ -1106,8 +1125,22 @@
         // Global Helper: Get client by waybill number prefix
         function getWaybillClient(waybill) {
             if (!waybill) return CLIENT_CONFIG.defaultClient;
-            const prefix5 = String(waybill).trim().substring(0, 5).toUpperCase();
-            return CLIENT_CONFIG.prefixMap[prefix5] || CLIENT_CONFIG.defaultClient;
+            let str = String(waybill).trim().toUpperCase();
+            if (!str) return CLIENT_CONFIG.defaultClient;
+
+            // Tolerate common J&T typo: JDTE -> JTDE
+            if (str.startsWith("JDTE")) {
+                str = "JTDE" + str.slice(4);
+            }
+
+            for (let i = 0; i < CLIENT_CONFIG.prefixRules.length; i++) {
+                const rule = CLIENT_CONFIG.prefixRules[i];
+                if (str.startsWith(rule.prefix)) {
+                    return rule.client;
+                }
+            }
+            return CLIENT_CONFIG.defaultClient;
+
         }
 
         // Global Helper: Get SLA threshold days for a client
@@ -7742,7 +7775,7 @@
             if (!selectEl) return;
 
             const curVal = selectEl.value;
-            const globalClients = ["TEMU", "SF", "TT", "Shein", "speed", "Others"];
+            const globalClients = ["Temu", "FF", "SF", "TT", "Shein", "Others"];
 
             selectEl.innerHTML = '<option value="">All (全部客户)</option>';
             globalClients.forEach(client => {
