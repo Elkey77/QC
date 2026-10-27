@@ -700,9 +700,9 @@
                                         <li><code>last scan date</code> = <code>Application time</code> from Return scan (formatted as <code>yyyy/mm/dd</code>)</li>
                                     </ul>
                                 </li>
-                                <li><strong>SLA</strong>: If <code>last scan type</code> contains <code>"Signed"</code> or <code>"Return"</code> &rarr; <code>last scan date - AscanDate</code> (days difference); otherwise &rarr; <code>today() - AscanDate</code>.</li>
-                                <li><strong>Appeal</strong>: If <code>SLA &le; (client == "TT" ? 7 : 10)</code> &rarr; <code>"in SLA"</code>; otherwise &rarr; <code>"Over"</code>.</li>
-                                <li><strong>reason</strong>: 不管 <code>Appeal</code> 列的值如何均有值，格式为 <code>=client &amp; " " &amp; SLA &amp; " days " &amp; last scan type</code>（例如 <code>TT 5 days Parcel Signed</code> 或 <code>TEMU 12 days Return registration</code>）。</li>
+                                <li><strong>SLA (Hours)</strong>: 仅当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时计算小时数差值（保留小数）：<code>(last scan time - Ascan time)</code>；其余状态不计算（留空）。</li>
+                                <li><strong>Appeal</strong>: 计算了 <code>SLA</code> 时，若 <code>SLA &le; (client == "TT" ? 144 : 240)</code> &rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>；未计算 <code>SLA</code> 时留空。</li>
+                                <li><strong>reason</strong>: 计算了 <code>SLA</code> 时（无论 <code>"in SLA"</code> 或 <code>"Over"</code>），格式为 <code>=SLA &amp; " hours " &amp; last scan type</code>（例如 <code>120.5 hours Parcel Signed</code>）；未计算 <code>SLA</code> 时留空。</li>
                                 <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> (Sheet: <code>LostAppeal</code>) with columns: <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
                             </ul>
                         </li>
@@ -868,7 +868,7 @@
                                 <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
                                 <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
                                 <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
-                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 6</code> 天，其余客户（<code>SF / Temu / Shein / FF / others</code>）均为 <code>10</code> 天。</li>
+                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 5</code> 天，其余客户（<code>SF / TEMU / Shein / speed / others</code>）均为 <code>9</code> 天。</li>
                                 <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                                 <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                             </ul>
@@ -1107,16 +1107,21 @@
                 "TT": 7,
                 "default": 10
             },
+            // Lost Appeal SLA thresholds in hours by client
+            lostAppealSlaHours: {
+                "TT": 144,
+                "default": 240
+            },
             // LifeCycle days by client
             lifeCycles: {
-                "TT": 6,
-                "SF": 10,
-                "TEMU": 10,
-                "SHEIN": 10,
-                "FF": 10,
-                "SPEED": 10,
-                "OTHERS": 10,
-                "default": 10
+                "TT": 5,
+                "SF": 9,
+                "TEMU": 9,
+                "SHEIN": 9,
+                "FF": 9,
+                "SPEED": 9,
+                "OTHERS": 9,
+                "default": 9
             },
             // Standard headers to detect client column in uploaded sheets
             headerKeywords: ["client", "客户", "customer", "channel"]
@@ -1158,6 +1163,17 @@
             return getWaybillClient(waybill);
         }
 
+        // Global Helper: Get Lost Appeal SLA threshold hours for a client
+        function getClientLostAppealSlaHours(client) {
+            const clientUpper = String(client || '').trim().toUpperCase();
+            if (CLIENT_CONFIG.lostAppealSlaHours && CLIENT_CONFIG.lostAppealSlaHours[clientUpper] !== undefined) {
+                return CLIENT_CONFIG.lostAppealSlaHours[clientUpper];
+            }
+            return (CLIENT_CONFIG.lostAppealSlaHours && CLIENT_CONFIG.lostAppealSlaHours.default !== undefined)
+                ? CLIENT_CONFIG.lostAppealSlaHours.default
+                : 240;
+        }
+
         // Global Helper: Get LifeCycle days for a client
         function getClientLifeCycle(client) {
             const clientUpper = String(client || '').trim().toUpperCase();
@@ -1166,13 +1182,13 @@
             }
             return (CLIENT_CONFIG.lifeCycles && CLIENT_CONFIG.lifeCycles.default !== undefined)
                 ? CLIENT_CONFIG.lifeCycles.default
-                : 10;
+                : 9;
         }
 
         // Global Helper: Calculate DeadLine = AscanDate + LifeCycle
         function calculateDeadLine(ascanRawDate, ascanDateStr, lifeCycleDays) {
             if (!ascanRawDate && !ascanDateStr) return '';
-            const days = (typeof lifeCycleDays === 'number' && !isNaN(lifeCycleDays)) ? lifeCycleDays : 10;
+            const days = (typeof lifeCycleDays === 'number' && !isNaN(lifeCycleDays)) ? lifeCycleDays : 9;
 
             if (ascanRawDate instanceof Date && !isNaN(ascanRawDate.getTime())) {
                 const target = new Date(ascanRawDate.getTime());
@@ -3975,7 +3991,7 @@
 
             const exportRows = [];
             const now = new Date();
-            const todayUTC = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            const nowUTCMs = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
 
             for (const waybill in waybillGroups) {
                 const group = waybillGroups[waybill];
@@ -4006,32 +4022,37 @@
                 }
 
                 // 1. SLA Calculation:
-                // 如果last scan type包含Signed或者Return ，则=last scan date-AscanDate; 如果last scan type为其他，则=today()-AscanDate
+                // 仅当 last scan type 为 "Return registration" 或 "Parcel Signed" 时才计算 SLA (小时数，保留小数)
                 const lstLower = lastScanType.toLowerCase();
-                const isSignedOrReturn = lstLower.includes("signed") || lstLower.includes("return") || lastScanType.includes("签收") || lastScanType.includes("退件");
+                const isSignedOrReturn = (lstLower === "return registration" || lstLower === "parcel signed");
 
-                const firstUTC = Date.UTC(firstItem.date.getUTCFullYear(), firstItem.date.getUTCMonth(), firstItem.date.getUTCDate());
-                let sla = 0;
+                const firstMs = firstItem.date.getTime();
+                let sla = "";
+                let appeal = "";
+                let reason = "";
 
                 if (isSignedOrReturn) {
                     if (lastScanDateObj) {
-                        const lastUTC = Date.UTC(lastScanDateObj.getUTCFullYear(), lastScanDateObj.getUTCMonth(), lastScanDateObj.getUTCDate());
-                        sla = Math.round((lastUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                        const lastMs = lastScanDateObj.getTime();
+                        sla = Math.round(((lastMs - firstMs) / (1000 * 60 * 60)) * 100) / 100;
+                        const threshold = getClientLostAppealSlaHours(clientVal);
+                        appeal = (sla <= threshold) ? "in SLA" : "Over";
+                        reason = `${sla} hours ${lastScanType}`;
                     } else {
-                        sla = 0;
+                        sla = "";
                     }
                 } else {
-                    sla = Math.round((todayUTC - firstUTC) / (1000 * 60 * 60 * 24));
+                    // Other scan types: do not calculate SLA, Appeal, or reason
                 }
 
                 // 2. Appeal Calculation:
-                // 如果last scan type包含Signed或者Return ，则=IF(last scan date-AscanDate<=IF(client="TT",7,10),"in SLA","Over"); 如果last scan type为其他，则=IF(today()-AscanDate<=IF(client="TT",7,10),"in SLA","Over")
-                const threshold = getClientSlaThreshold(clientVal);
-                const appeal = (sla <= threshold) ? "in SLA" : "Over";
+                // TT SLA <= 144h, 其他 <= 240h 时，Appeal = "in SLA"，否则 "Over"
+                // 2. Appeal & Reason Calculation handled above when SLA is calculated
+
 
                 // 3. Reason Calculation:
-                // 不管appeal列的值如何，reason列总有值，格式为 =client&" "&SLA&" days "&last scan type
-                const reason = `${clientVal} ${sla} days ${lastScanType}`;
+                // 3. Reason Calculation: 格式为 ${sla} hours ${lastScanType} (仅当 SLA 计算时有值)
+
 
                 exportRows.push({
                     "waybill": waybill,
