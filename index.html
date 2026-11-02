@@ -768,7 +768,7 @@
                         <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间直接过滤剔除 <strong>Delivery outlet</strong> 不包含 <code>"BAW"</code> 的数据，大幅提升大文件解析与合并速度。</li>
                         <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>，该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code> 和 <code>final Lost</code>）。</li>
                         <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> or <code>Pickup time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM)。<strong>所有包含 AscanDate 列的导出均严格按 AscanDate 从小到大升序排序</strong>。</li>
-                        <li><strong>Client Identification</strong>: 优先读取 <code>Order source name</code> 列（若有 <code>"-"</code> 则截取 <code>"-"</code> 之前的字段，若无则取整个值）；若为空或无此列，则按单号前缀规律兜底推导。</li>
+                        <li><strong>Client Identification</strong>: 优先读取 <code>Order source name</code> 或 <code>Client's name</code> 列（若有 <code>"-"</code> 则截取 <code>"-"</code> 之前的字段，若无则取整个值）；若为空、无此列或值为加密串/乱码（如 <code>Y!$U#1#...===$=</code>），则按单号前缀规律自动兜底推导。</li>
                         <li><strong>Station Mapping</strong>:
                             <ul>
                                 <li>If <code>Latest scanning point</code> contains "BAW" &rarr; Latest scanning point.</li>
@@ -1189,26 +1189,59 @@
                 "OTHERS": 9,
                 "default": 9
             },
-            // Standard headers to detect client column in uploaded sheets (Order source name prioritized)
-            headerKeywords: ["order source name", "订单来源名称", "订单来源", "client", "客户", "customer", "channel"]
+            // Standard headers to detect client column in uploaded sheets (Order source name & Client's name prioritized)
+            headerKeywords: ["order source name", "client's name", "client’s name", "clients name", "client name", "订单来源名称", "订单来源", "client", "客户名称", "客户", "customer", "channel"]
         };
 
-        // Global Helper: Strip '-' and anything after '-' from client string
+        // Global Helper: Detect whether a client value is garbled or encrypted (e.g. Y!$U#1#SoPs4x9WLlxcW2X6dAC3Sg===$=)
+        function isGarbledClient(val) {
+            if (val === undefined || val === null) return true;
+            const s = String(val).trim();
+            if (!s) return true;
+            // 1. Contains encryption / desensitization / mojibake special characters (e.g., !, $, #, =, ?, , control chars, Latin-1 mojibake)
+            if (/[!$#=?*%&+/\\~^|<>{}\[\]\uFFFD\x00-\x1F\x7F-\x9F\u0080-\u00FF]/.test(s)) {
+                return true;
+            }
+            // 2. Excessively long string or cipher-like mixed letters and digits
+            if (s.length > 25 || (/[A-Za-z]/.test(s) && /\d/.test(s))) {
+                return true;
+            }
+            // 3. Contains no valid letters or Chinese characters at all
+            if (!/[A-Za-z\u4e00-\u9fa5]/.test(s)) {
+                return true;
+            }
+            return false;
+        }
+
+        // Global Helper: Strip '-' and anything after '-' from client string; return '' if garbled/encrypted
         function cleanClientString(val) {
             if (val === undefined || val === null) return '';
             const str = String(val).trim();
             if (!str) return '';
-            const dashIdx = str.indexOf('-');
-            if (dashIdx !== -1) {
-                return str.slice(0, dashIdx).trim();
+            // Reject immediately if raw string contains obvious cipher/garbled markers (e.g. Y!$U#1#...===$=)
+            if (/[!$#=\uFFFD\x00-\x1F\x7F-\x9F\u0080-\u00FF]/.test(str)) {
+                return '';
             }
-            return str;
+            const dashIdx = str.indexOf('-');
+            const cleaned = dashIdx !== -1 ? str.slice(0, dashIdx).trim() : str;
+            if (!cleaned || isGarbledClient(cleaned)) {
+                return '';
+            }
+            return cleaned;
         }
 
-        // Global Helper: Locate client column index (Order source name prioritized)
+        // Global Helper: Locate client column index (Order source name & Client's name prioritized)
         function findClientColIdx(headersLower) {
             if (!Array.isArray(headersLower)) return -1;
-            let idx = headersLower.findIndex(h => h === "order source name" || h.includes("order source name") || h.includes("订单来源"));
+            let idx = headersLower.findIndex(h =>
+                h === "order source name" ||
+                h.includes("order source name") ||
+                h === "client's name" ||
+                h === "client’s name" ||
+                h.includes("client's name") ||
+                h.includes("client’s name") ||
+                h.includes("订单来源")
+            );
             if (idx !== -1) return idx;
             for (const kw of CLIENT_CONFIG.headerKeywords) {
                 idx = headersLower.findIndex(h => h === kw || h.includes(kw));
