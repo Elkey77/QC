@@ -567,16 +567,19 @@
                 <div class="rules-card">
                     <h3>CS Data Cleaning Logic</h3>
                     <ol>
-                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Time</code>、<code>status</code>、<code>Asignee</code>、<code>Deadline</code>、<code>NeedClose</code>、<code>Total hours</code>。
+                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Date</code>、<code>status</code>、<code>station</code>、<code>Asignee</code>、<code>Deadline</code>、<code>NeedClose</code>、<code>Total hours</code>、<code>Problem</code>。
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li><strong>channel 规则</strong>：直接保留原始 <code>channel</code> 列原值（不执行格式清洗）。</li>
-                                <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
+                                <li><strong>Complaint Date 规则</strong>：取 <code>Check-in time</code> 并格式化为 <code>mm/dd</code> 格式。</li>
+                                <li><strong>station 规则</strong>：位于 <code>Asignee</code> 列之前，取自上传文件的 <code>Responsible node with forwarding orderorders</code> 列。</li>
                                 <li><strong>Asignee 规则</strong>：
-                                    读取工单中的 <code>Last resposible</code> 列：
-                                    若为 <code>"other"</code>、<code>"others"</code>、空值或 <code>"Rania Al Sukhni"</code>，则 Asignee 为 <code>"Rania Al Sukhni"</code>；
-                                    若为 <code>"Rashmipd"</code>、<code>"Yan Liu"</code>、<code>"Anningruo Lu"</code>、<code>"Raffy"</code>，则对应指派为各自的名字。
+                                    读取工单中的 <code>Types of secondary questions</code> 列：
+                                    若为 <code>"Als zugestellt markiert, aber nicht erhalten/签收未收到"</code>，则 Asignee 为 <code>"Rania Al Sukhni"</code>；
+                                    若为 <code>others</code>（其他值），则 Asignee 为 <code>"Yan Liu"</code>。
                                 </li>
-                                <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Time 升序排序</strong>。</li>
+                                <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
+                                <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Date（登记时间）升序排序</strong>。</li>
+                                <li><strong>Problem 规则</strong>：位于 <code>Total hours</code> 列之后，取自上传文件的 <code>Problem Description</code> 列。</li>
                                 <li><strong>专用公共假期</strong>：<code>2026-12-25, 2027-01-01, 2027-01-06, 2027-03-26, 2027-03-29, 2027-05-06, 2027-05-17, 2027-05-27, 2027-11-01</code>。</li>
                             </ul>
                         </li>
@@ -722,7 +725,7 @@
                     <button class="btn-primary" id="btn-export-final-lost" onclick="exportFinalLost()" style="background-color: #b82525; color: #ffffff;" disabled>export final Lost</button>
                 </div>
 
-                <!-- WillLost Deadline Date Filter Group (for export final Lost) -->
+                <!-- WillLost Deadline Date & NoUpdate Filter Group (for export final Lost) -->
                 <div style="background-color: #ffffff; border: 1px solid #f2e3e3; border-radius: 6px; padding: 14px 20px; display: flex; flex-direction: column; gap: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -737,7 +740,26 @@
                     <div id="container-willlost-deadlines" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 24px;">
                         <span style="font-size: 12px; color: #a38d8d;">No dates available</span>
                     </div>
-                    <span style="font-size: 12px; color: #8f6b6b;">When Deadline Date(s) are selected, only WillLost records matching the selected date(s) participate in the "export final Lost" calculation (if none selected, all WillLost dates are included). "export WillLost" always exports all WillLost records.</span>
+                    <div style="border-top: 1px dashed #f2e3e3; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 14px; font-weight: 600; color: #331818;">NoUpdate:</span>
+                            <div id="container-willlost-noupdate" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+                                <label style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff8f8; border: 1px solid #ebdcdc; border-radius: 4px; padding: 4px 10px; font-size: 13px; color: #2b1111; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" class="willlost-noupdate-chk" value="4" style="accent-color: #b82525; cursor: pointer;">
+                                    4
+                                </label>
+                                <label style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff8f8; border: 1px solid #ebdcdc; border-radius: 4px; padding: 4px 10px; font-size: 13px; color: #2b1111; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" class="willlost-noupdate-chk" value="5" style="accent-color: #b82525; cursor: pointer;">
+                                    5
+                                </label>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button type="button" onclick="selectAllWillLostNoUpdates(true)" style="background: none; border: none; color: #b82525; font-size: 12px; cursor: pointer; text-decoration: underline;">Select All</button>
+                            <button type="button" onclick="selectAllWillLostNoUpdates(false)" style="background: none; border: none; color: #8f6b6b; font-size: 12px; cursor: pointer; text-decoration: underline;">Clear</button>
+                        </div>
+                    </div>
+                    <span style="font-size: 12px; color: #8f6b6b;">When Deadline Date(s) are selected, only WillLost records matching the selected date(s) participate in the "export final Lost" calculation (if none selected, all WillLost dates are included). When NoUpdate (4 / 5) is selected, records with NoUpdate of 4 or 5 days also participate in "export final Lost". "export WillLost" always exports all WillLost records.</span>
                 </div>
 
                 <div class="rules-card">
@@ -797,7 +819,7 @@
                                 <li><strong>Deadline Date</strong>：<code>AscanDate + 客户的 LifeCycle 标准</code>（TT: 5天，其余: 9天）。</li>
                                 <li><strong>export WillLost</strong>：针对未签收且未退件包裹，仅保留满足 <code>today() - 1 &le; Deadline Date &le; today() + 3</code> 的记录；<strong>去除 <code>Latest scanning point</code>（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，且将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>。导出 <code>WillLost.xlsx</code>（Sheet: <code>WillLost</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>, <code>Deadline Date</code>。</li>
                                 <li><strong>export NoUpdate</strong>：针对未签收且未退件包裹，保留满足 <code>4 &le; NoUpdate &le; 5</code>（停滞未更新天数在 4 至 5 天之间）的记录。导出 <code>NoUpdate.xlsx</code>（Sheet: <code>NoUpdate</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
-                                <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
+                                <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost），同时支持勾选 <strong>NoUpdate（4 / 5）</strong> 将断更超 4 天或 5 天的数据一并纳入参与 <code>final Lost</code> 计算（按运单去重合并）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
                             </ul>
                         </li>
                     </ol>
@@ -1692,6 +1714,9 @@
                 stationIdx = headers.findIndex(h => h.includes(stHeader));
                 if (stationIdx !== -1) break;
             }
+            if (stationIdx === -1) {
+                stationIdx = headers.length > 38 ? 38 : -1;
+            }
             // 9. Last resposible (header search)
             const lastRespHeaders = ["last resposible", "last responsible", "last responsible person", "last resposible person"];
             let lastResponsibleIdx = -1;
@@ -1866,6 +1891,27 @@
             return `${y}-${m}-${day} ${hh}:${mm}:${ss}`;
         }
 
+        function formatComplaintDateMMDD(val) {
+            if (val === undefined || val === null) return '';
+            const date = getJSDate(val);
+            if (date) {
+                const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+                const day = String(date.getUTCDate()).padStart(2, '0');
+                return `${month}/${day}`;
+            }
+            const s = String(val).trim();
+            if (!s) return '';
+            const isoM = s.match(/^\d{4}[-/.](\d{1,2})[-/.](\d{1,2})/);
+            if (isoM) {
+                return `${isoM[1].padStart(2, '0')}/${isoM[2].padStart(2, '0')}`;
+            }
+            const usM = s.match(/^(\d{1,2})[-/.](\d{1,2})/);
+            if (usM) {
+                return `${usM[1].padStart(2, '0')}/${usM[2].padStart(2, '0')}`;
+            }
+            return s;
+        }
+
         function exportCSSLA() {
             if (!rawCSRows || rawCSRows.length === 0) {
                 alert('Please upload CS Record file first.');
@@ -1873,7 +1919,7 @@
             }
 
             const headers = rawCSRows[0].map(h => String(h).trim().toLowerCase());
-            const { waybillIdx, channelIdx, checkInIdx, statusIdx, lastUpdateIdx, secondaryQuestionIdx, lastResponsibleIdx } = getCSColumnIndices(headers);
+            const { waybillIdx, channelIdx, checkInIdx, statusIdx, lastUpdateIdx, secondaryQuestionIdx, problemDescIdx, stationIdx } = getCSColumnIndices(headers);
 
             const nowBerlin = getBerlinNowDate();
             const todayDate = new Date(Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate()));
@@ -1893,40 +1939,36 @@
                     ? String(row[channelIdx]).trim()
                     : '';
 
-                // Complaint Time: check-in time formatted to MM/DD hh:mm:ss
+                // Complaint Date: check-in time formatted to mm/dd
                 const checkInVal = row[checkInIdx];
-                const cellAddress = rawCSSheet ? XLSX.utils.encode_cell({ r: i + 1, c: checkInIdx }) : null;
-                const cell = (rawCSSheet && cellAddress) ? rawCSSheet[cellAddress] : null;
-                const complaintTime = formatComplaintTime(checkInVal, cell);
+                const complaintDate = formatComplaintDateMMDD(checkInVal);
                 const checkInDate = getJSDate(checkInVal);
 
                 // Status & Last update for Total hours
                 const statusVal = (statusIdx !== -1 && row[statusIdx] !== undefined) ? String(row[statusIdx]).trim() : '';
                 const lastUpdateVal = (lastUpdateIdx !== -1 && row[lastUpdateIdx] !== undefined) ? row[lastUpdateIdx] : '';
 
-                // 2. Asignee calculation based on Last resposible:
-                // Staff names: Rania Al Sukhni, Rashmipd, Yan Liu, Anningruo Lu, Raffy
-                // If Last resposible = other / others, empty, or Rania Al Sukhni -> Rania Al Sukhni
-                // If Last resposible = Rashmipd, Yan Liu, Anningruo Lu, Raffy -> corresponding name
-                const rawLastResp = (lastResponsibleIdx !== -1 && row[lastResponsibleIdx] !== undefined && row[lastResponsibleIdx] !== null)
-                    ? String(row[lastResponsibleIdx]).trim()
+                // Station from "Responsible node with forwarding orderorders"
+                const stationVal = (stationIdx !== -1 && row[stationIdx] !== undefined && row[stationIdx] !== null)
+                    ? String(row[stationIdx]).trim()
                     : '';
-                const lrLower = rawLastResp.toLowerCase();
-                let asignee = "Rania Al Sukhni";
 
-                if (lrLower.includes("rashmipd") || lrLower === "rashmi") {
-                    asignee = "Rashmipd";
-                } else if (lrLower.includes("yan liu") || lrLower.includes("liu yan")) {
-                    asignee = "Yan Liu";
-                } else if (lrLower.includes("anningruo lu") || lrLower.includes("lu anningruo")) {
-                    asignee = "Anningruo Lu";
-                } else if (lrLower.includes("raffy") || lrLower === "raff") {
-                    asignee = "Raffy";
-                } else if (lrLower.includes("rania al sukhni") || lrLower === "rania") {
+                // 2. Asignee calculation based on Types of secondary questions:
+                // Types of secondary questions = "Als zugestellt markiert, aber nicht erhalten/签收未收到" -> "Rania Al Sukhni"
+                // Types of secondary questions = others -> "Yan Liu"
+                const rawSecondaryQ = (secondaryQuestionIdx !== -1 && row[secondaryQuestionIdx] !== undefined && row[secondaryQuestionIdx] !== null)
+                    ? String(row[secondaryQuestionIdx]).trim()
+                    : '';
+                const sqLower = rawSecondaryQ.toLowerCase();
+                let asignee = "Yan Liu";
+                if (
+                    sqLower === "als zugestellt markiert, aber nicht erhalten/签收未收到" ||
+                    sqLower.includes("als zugestellt markiert") ||
+                    rawSecondaryQ.includes("签收未收到")
+                ) {
                     asignee = "Rania Al Sukhni";
                 } else {
-                    // other, others, empty, or unknown -> Rania Al Sukhni
-                    asignee = "Rania Al Sukhni";
+                    asignee = "Yan Liu";
                 }
 
                 // Deadline & NeedClose calculation
@@ -1945,15 +1987,22 @@
                 const totalHours = calculateTotalHours(checkInVal, statusVal, lastUpdateVal, CS_SLA_HOLIDAYS_SET);
                 const checkInTs = checkInDate ? checkInDate.getTime() : 0;
 
+                // Problem from "Problem Description"
+                const problemVal = (problemDescIdx !== -1 && row[problemDescIdx] !== undefined && row[problemDescIdx] !== null)
+                    ? String(row[problemDescIdx]).trim()
+                    : '';
+
                 exportData.push({
                     "waybill": waybill,
                     "channel": channel,
-                    "Complaint Time": complaintTime,
+                    "Complaint Date": complaintDate,
                     "status": statusVal,
+                    "station": stationVal,
                     "Asignee": asignee,
                     "Deadline": deadlineStr,
                     "NeedClose": needCloseLabel,
                     "Total hours": totalHours,
+                    "Problem": problemVal,
                     _needCloseRank: needCloseRank,
                     _ts: checkInTs
                 });
@@ -1964,13 +2013,13 @@
                 return;
             }
 
-            // Sort by NeedClose ascending (today first, then tomorrow, then forward), then Complaint Time ascending
+            // Sort by NeedClose ascending (today first, then tomorrow, then forward), then Complaint Date/Time ascending
             exportData.sort((a, b) => {
                 if (a._needCloseRank !== b._needCloseRank) {
                     return a._needCloseRank - b._needCloseRank;
                 }
                 if (a._ts !== b._ts) return a._ts - b._ts;
-                return String(a["Complaint Time"] || "").localeCompare(String(b["Complaint Time"] || ""));
+                return String(a["Complaint Date"] || "").localeCompare(String(b["Complaint Date"] || ""));
             });
             exportData.forEach(item => {
                 delete item._needCloseRank;
@@ -1978,7 +2027,7 @@
             });
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
-                header: ["waybill", "channel", "Complaint Time", "status", "Asignee", "Deadline", "NeedClose", "Total hours"]
+                header: ["waybill", "channel", "Complaint Date", "status", "station", "Asignee", "Deadline", "NeedClose", "Total hours", "Problem"]
             });
 
             const wb = XLSX.utils.book_new();
@@ -4298,10 +4347,11 @@
 
         function checkShippingFinalLostBtn() {
             const hasWillLost = finalShippingWillLostData && finalShippingWillLostData.length > 0;
+            const hasNoUpdate = finalShippingNoUpdateData && finalShippingNoUpdateData.length > 0;
             const hasScan = rawScanRecordsRows && rawScanRecordsRows.length > 1;
             const btnFinalLost = document.getElementById('btn-export-final-lost');
             if (btnFinalLost) {
-                btnFinalLost.disabled = !(hasWillLost && hasScan);
+                btnFinalLost.disabled = !((hasWillLost || hasNoUpdate) && hasScan);
             }
         }
 
@@ -4940,6 +4990,23 @@
             return selected;
         }
 
+        function selectAllWillLostNoUpdates(selectAll) {
+            const checkboxes = document.querySelectorAll('.willlost-noupdate-chk');
+            checkboxes.forEach(cb => {
+                cb.checked = selectAll;
+            });
+        }
+
+        function getSelectedWillLostNoUpdates() {
+            const checkboxes = document.querySelectorAll('.willlost-noupdate-chk:checked');
+            const selected = [];
+            checkboxes.forEach(cb => {
+                const val = parseInt(String(cb.value).trim(), 10);
+                if (!isNaN(val)) selected.push(val);
+            });
+            return selected;
+        }
+
         function updateWillLostDeadlineOptions() {
             const container = document.getElementById('container-willlost-deadlines');
             const hint = document.getElementById('willlost-deadline-hint');
@@ -5269,8 +5336,10 @@
         }
 
         function exportFinalLost() {
-            if (!finalShippingWillLostData || finalShippingWillLostData.length === 0) {
-                alert('No WillLost records available. Please upload 48h Shipping records first.');
+            const hasWillLost = finalShippingWillLostData && finalShippingWillLostData.length > 0;
+            const hasNoUpdate = finalShippingNoUpdateData && finalShippingNoUpdateData.length > 0;
+            if (!hasWillLost && !hasNoUpdate) {
+                alert('No WillLost or NoUpdate records available. Please upload 48h Shipping records first.');
                 return;
             }
             if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) {
@@ -5282,28 +5351,54 @@
             const filterByDeadline = selectedDeadlines.length > 0;
             const selectedDeadlineSet = new Set(selectedDeadlines);
 
-            const scanInfoMap = getScanRecordsInfoMap();
+            const selectedNoUpdates = getSelectedWillLostNoUpdates();
+            const filterByNoUpdate = selectedNoUpdates.length > 0;
+            const selectedNoUpdateSet = new Set(selectedNoUpdates);
 
-            // Sort by AscanDate from smallest to largest (ascending)
-            finalShippingWillLostData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            const candidateMap = new Map();
 
-            const exportRows = [];
-            for (let i = 0; i < finalShippingWillLostData.length; i++) {
-                const r = finalShippingWillLostData[i];
-
-                // 1. Filter by selected Deadline Date(s) if user checked any
-                if (filterByDeadline) {
-                    const dl = String(r.deadlineDate || '').trim();
-                    if (!selectedDeadlineSet.has(dl)) {
-                        continue;
+            // 1. Collect matching WillLost records
+            if (hasWillLost) {
+                for (let i = 0; i < finalShippingWillLostData.length; i++) {
+                    const r = finalShippingWillLostData[i];
+                    if (filterByDeadline) {
+                        const dl = String(r.deadlineDate || '').trim();
+                        if (!selectedDeadlineSet.has(dl)) {
+                            continue;
+                        }
+                    }
+                    if (r.waybill) {
+                        candidateMap.set(r.waybill, r);
                     }
                 }
+            }
+
+            // 2. Collect matching NoUpdate (4 / 5) records if user checked 4 or 5
+            if (filterByNoUpdate && hasNoUpdate) {
+                for (let i = 0; i < finalShippingNoUpdateData.length; i++) {
+                    const r = finalShippingNoUpdateData[i];
+                    const nuVal = typeof r.noUpdate === 'number' ? r.noUpdate : parseInt(String(r.noUpdate).trim(), 10);
+                    if (selectedNoUpdateSet.has(nuVal) && r.waybill && !candidateMap.has(r.waybill)) {
+                        candidateMap.set(r.waybill, r);
+                    }
+                }
+            }
+
+            const candidateList = Array.from(candidateMap.values());
+            // Sort by AscanDate from smallest to largest (ascending)
+            candidateList.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+
+            const scanInfoMap = getScanRecordsInfoMap();
+
+            const exportRows = [];
+            for (let i = 0; i < candidateList.length; i++) {
+                const r = candidateList[i];
 
                 const scanInfo = scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null;
                 const rawCandidateStation = scanInfo ? (scanInfo.rawLatestScanStation || scanInfo.station || "") : r.station;
                 const station = normalizeAndFilterWillLostStation(rawCandidateStation);
 
-                // 2. Filter out records where latest scan station does NOT contain BAW or ST (and unify ST -> "Stuttgart HUB")
+                // Filter out records where latest scan station does NOT contain BAW or ST (and unify ST -> "Stuttgart HUB")
                 if (station === null) {
                     continue;
                 }
@@ -5311,7 +5406,7 @@
                 const lastScanDate = (scanInfo && scanInfo.lastScanDate) ? scanInfo.lastScanDate : "";
                 const lastScanType = (scanInfo && scanInfo.lastScanType) ? scanInfo.lastScanType : "";
 
-                // 3. Filter out records where latest scan contains signed, returned, etc.
+                // Filter out records where latest scan contains signed, returned, etc.
                 if (isFinalLostExcludedScanType(lastScanType) || (!lastScanType && isFinalLostExcludedScanType(r.lastScanType))) {
                     continue;
                 }
@@ -5337,7 +5432,7 @@
             }
 
             if (exportRows.length === 0) {
-                alert('No final Lost records remaining after filtering by selected Deadline Date(s) and excluding signed/returned statuses.');
+                alert('No final Lost records remaining after filtering by selected Deadline Date(s) / NoUpdate value(s) and excluding signed/returned statuses.');
                 return;
             }
 
@@ -5373,6 +5468,7 @@
             if (dlContainer) dlContainer.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
             const dlHint = document.getElementById('willlost-deadline-hint');
             if (dlHint) dlHint.textContent = '(Upload 48h Shipping records to load dates)';
+            selectAllWillLostNoUpdates(false);
             checkShippingFinalLostBtn();
         }
 
