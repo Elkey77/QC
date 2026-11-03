@@ -625,6 +625,10 @@
                             <input type="checkbox" class="scan-time-chk" value="noupdate-more-than-5" onchange="toggleScanTimeOpt()">
                             NoUpdate more than 5
                         </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" class="scan-time-chk" value="str-station-last-scan" onchange="toggleScanTimeOpt()">
+                            STR station last scan
+                        </label>
                     </div>
 
                     <!-- Scan Type Options -->
@@ -665,6 +669,12 @@
                             <ul>
                                 <li>When <code>NoUpdate more than 5</code> is checked, adds a column <code>NoUpdate more than 5</code> to <code>export scan record</code> with values <code>yes</code> or <code>no</code>.</li>
                                 <li>For each unique waybill, sorts all scan records ascending by <strong>Scanning Time</strong>. If the time interval between any two adjacent scans is &ge; 5 days (120 hours), the value is <code>yes</code>, otherwise <code>no</code> (if only 1 scan record exists, value is <code>no</code>).</li>
+                            </ul>
+                        </li>
+                        <li><strong>STR station last scan Option Logic</strong>:
+                            <ul>
+                                <li>When <code>STR station last scan</code> is checked, filters scan records for each waybill where <strong>Scanning DSP</strong> contains <code>"BAW"</code> (case-insensitive) and extracts the latest record's <code>date</code> (<code>yyyy/mm/dd</code>), <code>type/status</code>, and <code>station</code>.</li>
+                                <li>If a waybill has no scan record with <code>Scanning DSP</code> containing <code>"BAW"</code>, the waybill is retained and its <code>date</code>, <code>type</code>, and <code>station</code> values are left blank.</li>
                             </ul>
                         </li>
                         <li><strong>SLA Option Logic (latest scan + first scan)</strong>:
@@ -3014,8 +3024,12 @@
             }
             if (scanTypeIdx === -1) scanTypeIdx = 4; // fallback to index 4 (Column E)
 
-            // Find "Scanning Site"
+            // Find "Scanning Site" / "Scanning DSP"
             const scanningSiteHeaders = [
+                "scanning dsp",
+                "scanning_dsp",
+                "scan dsp",
+                "dsp",
                 "scanning site", 
                 "scanning_site", 
                 "scan site", 
@@ -3133,6 +3147,32 @@
                     station: stationVal,
                     prevNext: prevNextStr,
                     scanner: scannerVal
+                };
+            };
+
+            const extractStrStationLastScanData = (group) => {
+                if (!group || group.length === 0) {
+                    return { date: "", scanType: "", station: "" };
+                }
+                // group is already sorted descending by Scanning Time (newest first)
+                const matchedItem = group.find(it => {
+                    let dspVal = scanningSiteIdx !== -1 ? String(it.row[scanningSiteIdx] !== undefined ? it.row[scanningSiteIdx] : '').trim() : '';
+                    if (!dspVal && it.row[6] !== undefined) {
+                        dspVal = String(it.row[6]).trim();
+                    }
+                    return dspVal.toUpperCase().includes("BAW");
+                });
+                if (!matchedItem) {
+                    return { date: "", scanType: "", station: "" };
+                }
+                let dspVal = scanningSiteIdx !== -1 ? String(matchedItem.row[scanningSiteIdx] !== undefined ? matchedItem.row[scanningSiteIdx] : '').trim() : '';
+                if (!dspVal && matchedItem.row[6] !== undefined) {
+                    dspVal = String(matchedItem.row[6]).trim();
+                }
+                return {
+                    date: formatDateToYYYYMMDD(matchedItem.date),
+                    scanType: String(matchedItem.row[scanTypeIdx] !== undefined ? matchedItem.row[scanTypeIdx] : '').trim(),
+                    station: dspVal
                 };
             };
 
@@ -3460,6 +3500,32 @@
                             }
                         }
                     }
+                } else if (singleOpt === 'str-station-last-scan') {
+                    sheetName = "STRStationLastScan";
+                    fileName = "STRStationLastScan.xlsx";
+                    exportHeaders = ["waybill", "client"];
+                    if (hasNoUpdateMoreThan5) exportHeaders.push("NoUpdate more than 5");
+                    exportHeaders = exportHeaders.concat([
+                        "STR station last scan date",
+                        "STR station last scan type",
+                        "STR station last scan station"
+                    ]);
+
+                    for (const waybill in waybillGroups) {
+                        const group = waybillGroups[waybill];
+                        const d = extractStrStationLastScanData(group);
+                        const rowObj = {
+                            "waybill": waybill,
+                            "client": getClientValue(waybill, group[0].row)
+                        };
+                        if (hasNoUpdateMoreThan5) {
+                            rowObj["NoUpdate more than 5"] = getNoUpdateMoreThan5(group);
+                        }
+                        rowObj["STR station last scan date"] = d.date;
+                        rowObj["STR station last scan type"] = d.scanType;
+                        rowObj["STR station last scan station"] = d.station;
+                        processedRecords.push(rowObj);
+                    }
                 } else {
                     // Single scan type selected (e.g. other departure, STR arrive)
                     const typeName = singleOpt;
@@ -3506,22 +3572,26 @@
                     if (tOpt === "second-latest") prefix = "latest second scan";
                     else if (tOpt === "first") prefix = "first scan";
                     else if (tOpt === "multiple-transfer-over-5") prefix = "Multiple Transfer Over 5";
+                    else if (tOpt === "str-station-last-scan") prefix = "STR station last scan";
 
                     if (tOpt === "multiple-transfer-over-5") {
-                        optDescriptors.push({ type: 'time', key: tOpt, prefix: prefix, isMultiTransfer: true });
+                        optDescriptors.push({ type: 'time', key: tOpt, prefix: prefix, isMultiTransfer: true, isStrStationLastScan: false });
+                    } else if (tOpt === "str-station-last-scan") {
+                        optDescriptors.push({ type: 'time', key: tOpt, prefix: prefix, isMultiTransfer: false, isStrStationLastScan: true });
                     } else {
-                        optDescriptors.push({ type: 'time', key: tOpt, prefix: prefix, isMultiTransfer: false });
+                        optDescriptors.push({ type: 'time', key: tOpt, prefix: prefix, isMultiTransfer: false, isStrStationLastScan: false });
                     }
                 });
 
                 selectedTypeOpts.forEach(stOpt => {
-                    optDescriptors.push({ type: 'type', key: stOpt, prefix: stOpt, isMultiTransfer: false });
+                    optDescriptors.push({ type: 'type', key: stOpt, prefix: stOpt, isMultiTransfer: false, isStrStationLastScan: false });
                 });
 
                 // Sort descriptors: first scan is ALWAYS first, latest scan is ALWAYS last, intermediate options in middle
                 const getOptionPriority = (desc) => {
                     if (desc.type === 'time') {
                         if (desc.key === 'first') return 1;                   // first scan always first
+                        if (desc.key === 'str-station-last-scan') return 70;  // STR station last scan
                         if (desc.key === 'second-latest') return 80;          // latest second scan
                         if (desc.key === 'multiple-transfer-over-5') return 90;
                         if (desc.key === 'latest') return 999;                // latest scan always last
@@ -3552,6 +3622,13 @@
                             "lifecycle"
                         ];
                         exportHeaders = exportHeaders.concat(multiCols);
+                    } else if (desc.isStrStationLastScan) {
+                        const strCols = [
+                            `${desc.prefix}-scan date`,
+                            `${desc.prefix}-scan type`,
+                            `${desc.prefix}-scan station`
+                        ];
+                        exportHeaders = exportHeaders.concat(strCols);
                     } else {
                         const cols = [
                             `${desc.prefix}-scan date`,
@@ -3645,6 +3722,12 @@
                                 rowObj["Mutiple Transfer Over 5"] = "";
                                 rowObj["lifecycle"] = "";
                             }
+                        } else if (desc.isStrStationLastScan) {
+                            const d = extractStrStationLastScanData(group);
+                            rowObj[`${desc.prefix}-scan date`] = d.date;
+                            rowObj[`${desc.prefix}-scan type`] = d.scanType;
+                            rowObj[`${desc.prefix}-scan station`] = d.station;
+                            hasAnyMatchedData = true;
                         } else if (desc.type === 'time') {
                             let item = null;
                             const isLatest = (desc.key === 'latest');
@@ -3806,6 +3889,18 @@
                             <li><code>oldest STR scan type</code> (last scan type of the oldest ST/BAW scan)</li>
                             <li><code>Mutiple Transfer Over 5</code> (interval days between these two trajectories, as integer)</li>
                             <li><code>lifecycle</code> (days between Parcel Signed scan and oldest ST/BAW scan, as integer)</li>
+                        `;
+                    }
+                } else if (singleOpt === 'str-station-last-scan') {
+                    if (tabScanRecords) tabScanRecords.textContent = "STR station last scan";
+                    if (titleElem) titleElem.innerHTML = "STR station last scan Data Cleaning Logic";
+                    if (descElem) descElem.innerHTML = "For each unique <strong>waybill (Column A)</strong>, filters scan records where <strong>Scanning DSP</strong> contains <code>BAW</code> (case-insensitive) and retains the record with the latest <strong>scan time</strong> (if no matching BAW record exists, keeps the waybill and leaves date, type, and station blank).";
+                    if (columnsElem) {
+                        columnsElem.innerHTML = `
+                            ${getBaseColumnsHtml()}
+                            <li><code>STR station last scan date</code> (Latest BAW scan time, formatted as yyyy/mm/dd)</li>
+                            <li><code>STR station last scan type</code> (Latest BAW status / scan type)</li>
+                            <li><code>STR station last scan station</code> (Latest BAW Scanning DSP)</li>
                         `;
                     }
                 } else if (singleOpt === 'other departure') {
