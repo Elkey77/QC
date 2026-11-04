@@ -661,7 +661,7 @@
                                 <li><code>client</code> (Identified by waybill prefix or raw client column)</li>
                                 <li><code>last scan date</code> (Column F, formatted as yyyy/mm/dd)</li>
                                 <li><code>last scan type</code> (Column E)</li>
-                                <li><code>last scan station</code> (Column G, 若存在下一站 next station 则赋值为下一站)</li>
+                                <li><code>last scan station</code> (Column G; 全局规则：若 <code>last scan type = Outgoing Scan</code>，则当 <code>Previous stop or next stop</code> 列包含 <code>BAW</code> 时取该列值，否则为 <code>Stuttgart HUB</code>；其他扫描类型若存在下一站则赋值为下一站)</li>
                                 <li><code>Scanner</code> (Column Y, or Dispatcher or receiver if it has a value)</li>
                             </ul>
                         </li>
@@ -711,12 +711,18 @@
                                     <ul>
                                         <li><code>last scan type</code> = <code>Return registration</code></li>
                                         <li><code>last scan date</code> = <code>Application time</code> from Return scan (formatted as <code>yyyy/mm/dd</code>)</li>
+                                        <li>若 <code>last scan type = "Return registration"</code>，则 <code>last scan station = "Stuttgart HUB"</code></li>
                                     </ul>
                                 </li>
                                 <li><strong>SLA (Hours)</strong>: 仅当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时计算小时数差值（保留小数）：<code>(last scan time - Ascan time)</code>；其余状态不计算（留空）。</li>
                                 <li><strong>Appeal</strong>: 计算了 <code>SLA</code> 时，若 <code>SLA &le; (client == "TT" ? 144 : 240)</code> &rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>；未计算 <code>SLA</code> 时留空。</li>
                                 <li><strong>reason</strong>: 计算了 <code>SLA</code> 时（无论 <code>"in SLA"</code> 或 <code>"Over"</code>），格式为 <code>=SLA &amp; " hours " &amp; last scan type</code>（例如 <code>120.5 hours Parcel Signed</code>）；未计算 <code>SLA</code> 时留空。</li>
-                                <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> (Sheet: <code>LostAppeal</code>) with columns: <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
+                                <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> with two sheets:
+                                    <ul>
+                                        <li><strong>Sheet 1 (<code>LostAppeal</code>)</strong>: Columns <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
+                                        <li><strong>Sheet 2 (<code>total</code>)</strong>: 过滤掉 <code>Appeal = "in SLA"</code> 的数据后，首列为 <code>station</code>，首行为各 <code>client</code>，单元格值为 <code>waybill count</code>，最后一列为每个站点的 <code>total lost</code>，底部增加一行 <code>Total</code> 汇总行。</li>
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                     </ol>
@@ -1274,6 +1280,53 @@
                 if (idx !== -1) return idx;
             }
             return -1;
+        }
+
+        // Global Helper: Locate Previous/Next Stop column index in Scan records
+        function findPrevNextStopColIdx(headersLower) {
+            if (!Array.isArray(headersLower)) return 7;
+            const prevStationHeaders = [
+                "previous stop or next stop",
+                "previous/next stop",
+                "previous / next stop",
+                "next station",
+                "next stop",
+                "next site",
+                "next_station",
+                "下一站",
+                "上一站/下一站",
+                "下一站/上一站",
+                "previous station",
+                "previous stop",
+                "上一站"
+            ];
+            for (const psh of prevStationHeaders) {
+                const idx = headersLower.findIndex(h => h === psh || h.includes(psh));
+                if (idx !== -1) return idx;
+            }
+            return 7; // Default fallback to Column H (index 7)
+        }
+
+        // Global Helper: Check if a scan type is Outgoing Scan
+        function isOutgoingScanType(scanType) {
+            if (!scanType) return false;
+            const lower = String(scanType).trim().toLowerCase().replace(/\s+/g, ' ');
+            return lower === "outgoing scan" || lower === "out going scan";
+        }
+
+        // Global Helper: Resolve last scan station according to global Outgoing Scan rule
+        // Rule: If last scan type = Outgoing Scan, check Previous stop or next stop column in uploaded scan records:
+        //   - If it contains "BAW" (case-insensitive) -> value of Previous stop or next stop
+        //   - Otherwise -> "Stuttgart HUB"
+        function resolveOutgoingScanStation(scanType, prevNextStopVal, fallbackStation) {
+            if (isOutgoingScanType(scanType)) {
+                const prevStr = String(prevNextStopVal !== undefined && prevNextStopVal !== null ? prevNextStopVal : '').trim();
+                if (prevStr.toUpperCase().includes("BAW")) {
+                    return prevStr;
+                }
+                return "Stuttgart HUB";
+            }
+            return fallbackStation;
         }
 
         // Global Helper: Get client by waybill number prefix
@@ -2965,26 +3018,7 @@
             if (scanTimeIdx === -1) scanTimeIdx = 5;
 
             // Find "Previous/Next Stop" or "Next Station"
-            const prevStationHeaders = [
-                "next station", 
-                "next stop", 
-                "next site", 
-                "next_station", 
-                "下一站", 
-                "previous/next stop", 
-                "previous / next stop", 
-                "上一站/下一站", 
-                "下一站/上一站", 
-                "previous station", 
-                "previous stop", 
-                "上一站"
-            ];
-            let prevStationIdx = -1;
-            for (const psh of prevStationHeaders) {
-                prevStationIdx = headers.findIndex(h => h.includes(psh));
-                if (prevStationIdx !== -1) break;
-            }
-            if (prevStationIdx === -1) prevStationIdx = 7;
+            const prevStationIdx = findPrevNextStopColIdx(headers);
             
             // Find "Dispatcher or receiver"
             const dispRecHeaders = ["dispatcher or receiver", "dispatcher/receiver", "dispatcher or receiver name", "\u6d3e\u9001\u5458\u6216\u63a5\u6536\u5458", "\u6536\u53d1\u5458"];
@@ -3137,13 +3171,18 @@
                     ? item.row[prevStationIdx] 
                     : (item.row[7] !== undefined ? item.row[7] : '');
                 const prevNextStr = String(prevNextVal).trim();
+                const scanTypeStr = String(item.row[scanTypeIdx] !== undefined ? item.row[scanTypeIdx] : '').trim();
                 let stationVal = getStationValue(item.row, scannerVal);
-                if (isLatest && prevNextStr !== "") {
-                    stationVal = prevNextStr;
+                if (isLatest) {
+                    if (isOutgoingScanType(scanTypeStr)) {
+                        stationVal = resolveOutgoingScanStation(scanTypeStr, prevNextStr, stationVal);
+                    } else if (prevNextStr !== "") {
+                        stationVal = prevNextStr;
+                    }
                 }
                 return {
                     date: formatDateToYYYYMMDD(item.date),
-                    scanType: String(item.row[scanTypeIdx] !== undefined ? item.row[scanTypeIdx] : '').trim(),
+                    scanType: scanTypeStr,
                     station: stationVal,
                     prevNext: prevNextStr,
                     scanner: scannerVal
@@ -3303,7 +3342,9 @@
                     ? latestItem.row[prevStationIdx] 
                     : (latestItem.row[7] !== undefined ? latestItem.row[7] : '');
                 const prevNextStr = String(prevNextVal).trim();
-                if (prevNextStr !== "") {
+                if (isOutgoingScanType(lastScanType)) {
+                    stationVal = resolveOutgoingScanStation(lastScanType, prevNextStr, stationVal);
+                } else if (prevNextStr !== "") {
                     stationVal = prevNextStr;
                 }
 
@@ -4176,6 +4217,8 @@
             }
             if (scanningSiteIdx === -1) scanningSiteIdx = 6;
 
+            const prevStationIdx = findPrevNextStopColIdx(headers);
+
             const dispRecHeaders = ["dispatcher or receiver", "dispatcher/receiver", "dispatcher or receiver name", "派送员或接收员", "收发员"];
             let dispRecIdx = -1;
             for (const drh of dispRecHeaders) {
@@ -4262,9 +4305,20 @@
 
                 const ascanDate = formatDateToYYYYMMDD(firstItem.date);
                 const scannerVal = getScannerValue(latestItem.row);
-                const lastScanStation = getStationValue(latestItem.row, scannerVal);
+                const rawScanType = String(latestItem.row[scanTypeIdx] !== undefined ? latestItem.row[scanTypeIdx] : '').trim();
+                const prevNextVal = (prevStationIdx !== -1 && latestItem.row[prevStationIdx] !== undefined)
+                    ? latestItem.row[prevStationIdx]
+                    : (latestItem.row[7] !== undefined ? latestItem.row[7] : '');
+                const prevNextStr = String(prevNextVal).trim();
 
-                let lastScanType = String(latestItem.row[scanTypeIdx] !== undefined ? latestItem.row[scanTypeIdx] : '').trim();
+                let lastScanStation = getStationValue(latestItem.row, scannerVal);
+                if (isOutgoingScanType(rawScanType)) {
+                    lastScanStation = resolveOutgoingScanStation(rawScanType, prevNextStr, lastScanStation);
+                } else if (prevNextStr !== "") {
+                    lastScanStation = prevNextStr;
+                }
+
+                let lastScanType = rawScanType;
                 let lastScanDate = formatDateToYYYYMMDD(latestItem.date);
                 let lastScanDateObj = latestItem.date;
 
@@ -4278,6 +4332,11 @@
                     if (matchedReturn.date) {
                         lastScanDateObj = matchedReturn.date;
                     }
+                }
+
+                // Rule: In Lost Appeal, if last scan type = "Return registration", last scan station = "Stuttgart HUB"
+                if (lastScanType.trim().toLowerCase() === "return registration") {
+                    lastScanStation = "Stuttgart HUB";
                 }
 
                 // 1. SLA Calculation:
@@ -4340,8 +4399,77 @@
                 header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "SLA", "Appeal", "reason"]
             });
 
+            // Build Sheet 2 (total): filter out Appeal === "in SLA"
+            const totalFilteredRows = exportRows.filter(r => String(r["Appeal"] || "").trim().toLowerCase() !== "in sla");
+
+            // Collect unique clients and stations
+            const clientSet = new Set();
+            const stationClientMap = new Map();
+            const stationSet = new Set();
+
+            const sourceForClients = totalFilteredRows.length > 0 ? totalFilteredRows : exportRows;
+            sourceForClients.forEach(r => {
+                const c = String(r["client"] || "").trim() || "Others";
+                clientSet.add(c);
+            });
+
+            totalFilteredRows.forEach(r => {
+                const st = String(r["last scan station"] || "").trim() || "Unknown";
+                const cl = String(r["client"] || "").trim() || "Others";
+                stationSet.add(st);
+                clientSet.add(cl);
+                if (!stationClientMap.has(st)) {
+                    stationClientMap.set(st, new Map());
+                }
+                const cMap = stationClientMap.get(st);
+                cMap.set(cl, (cMap.get(cl) || 0) + 1);
+            });
+
+            const clientOrderPriority = ["TT", "Temu", "Shein", "FF", "SF"];
+            const sortedClients = Array.from(clientSet).sort((a, b) => {
+                const aUpper = a.toUpperCase();
+                const bUpper = b.toUpperCase();
+                if (aUpper === "OTHERS" && bUpper !== "OTHERS") return 1;
+                if (bUpper === "OTHERS" && aUpper !== "OTHERS") return -1;
+                const idxA = clientOrderPriority.findIndex(p => p.toUpperCase() === aUpper);
+                const idxB = clientOrderPriority.findIndex(p => p.toUpperCase() === bUpper);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+                return a.localeCompare(b, undefined, { numeric: true });
+            });
+
+            const sortedStations = Array.from(stationSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+            const totalHeader = ["station", ...sortedClients, "total lost"];
+            const totalAoa = [totalHeader];
+
+            const colTotals = new Array(sortedClients.length).fill(0);
+            let grandTotalLost = 0;
+
+            sortedStations.forEach(st => {
+                const cMap = stationClientMap.get(st) || new Map();
+                const rowCells = [st];
+                let stationTotalLost = 0;
+                sortedClients.forEach((cl, idx) => {
+                    const cnt = cMap.get(cl) || 0;
+                    rowCells.push(cnt);
+                    stationTotalLost += cnt;
+                    colTotals[idx] += cnt;
+                });
+                rowCells.push(stationTotalLost);
+                grandTotalLost += stationTotalLost;
+                totalAoa.push(rowCells);
+            });
+
+            // Bottom Total row
+            totalAoa.push(["Total", ...colTotals, grandTotalLost]);
+
+            const wsTotal = XLSX.utils.aoa_to_sheet(totalAoa);
+
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "LostAppeal");
+            XLSX.utils.book_append_sheet(wb, wsTotal, "total");
             XLSX.writeFile(wb, "LostAppeal.xlsx");
         }
 
@@ -6091,13 +6219,7 @@
             if (scanTypeIdx === -1) scanTypeIdx = 4; // fallback to index 4 (Column E)
 
             // Find "Previous/Next Stop"
-            const prevStationHeaders = ["previous station", "previous stop", "previous/next stop", "上一站", "上一站/下一站"];
-            let prevStationIdx = -1;
-            for (const psh of prevStationHeaders) {
-                prevStationIdx = headers.findIndex(h => h.includes(psh));
-                if (prevStationIdx !== -1) break;
-            }
-            if (prevStationIdx === -1) prevStationIdx = 7; // fallback to index 7
+            const prevStationIdx = findPrevNextStopColIdx(headers);
 
             // Find "Last Scan Station"
             const lastStationHeaders = ["last scan station", "latest scanning point", "scanning point", "scan station", "扫描点", "下一站"];
@@ -6170,9 +6292,14 @@
                     lastScanStation = "BackUp";
                 }
 
-                const prevStationVal = String(latestItem.row[prevStationIdx] !== undefined ? latestItem.row[prevStationIdx] : '').trim();
+                const prevStationVal = String(latestItem.row[prevStationIdx] !== undefined ? latestItem.row[prevStationIdx] : (latestItem.row[7] !== undefined ? latestItem.row[7] : '')).trim();
                 const prevStationClean = prevStationVal.replace(/\s+/g, '').toUpperCase();
-                const stationForCS = (prevStationVal !== "" && prevStationClean !== "STUTTGART" && prevStationClean !== "DE-HQ") ? prevStationVal : lastScanStation;
+                let stationForCS = (prevStationVal !== "" && prevStationClean !== "STUTTGART" && prevStationClean !== "DE-HQ") ? prevStationVal : lastScanStation;
+
+                if (isOutgoingScanType(lastScanType)) {
+                    lastScanStation = resolveOutgoingScanStation(lastScanType, prevStationVal, lastScanStation);
+                    stationForCS = lastScanStation;
+                }
 
                 map[waybill] = {
                     waybill: waybill,
@@ -6198,12 +6325,10 @@
                     if (hasScan && scanMap[r.waybill]) {
                         const scanRec = scanMap[r.waybill];
                         
-                        // Station = if(last scan record.last scan type="Loading scan",export historical pending.station, if last scan type="Outgoing Scan" pending.deliveryOutlet, last scan record.last scan station)
+                        // Station = if(last scan record.last scan type="Loading scan", export historical pending.station, else last scan record.last scan station)
                         const lstVal = scanRec.lastScanType.trim().toLowerCase();
                         if (lstVal === "loading scan") {
                             matched.station = r.station;
-                        } else if (lstVal === "outgoing scan" || lstVal === "out going scan") {
-                            matched.station = r.deliveryOutlet || r.station;
                         } else {
                             matched.station = scanRec.lastScanStation;
                         }
@@ -7482,13 +7607,7 @@
             if (scanTypeIdx === -1) scanTypeIdx = 4; // fallback to index 4 (Column E)
 
             // Find "Previous/Next Stop"
-            const prevStationHeaders = ["previous station", "previous stop", "previous/next stop", "上一站", "上一站/下一站"];
-            let prevStationIdx = -1;
-            for (const psh of prevStationHeaders) {
-                prevStationIdx = headers.findIndex(h => h.includes(psh));
-                if (prevStationIdx !== -1) break;
-            }
-            if (prevStationIdx === -1) prevStationIdx = 7; // fallback to index 7
+            const prevStationIdx = findPrevNextStopColIdx(headers);
 
             // Find "Last Scan Station"
             const lastStationHeaders = ["last scan station", "latest scanning point", "scanning point", "scan station", "扫描点", "下一站"];
@@ -7581,11 +7700,18 @@
                     lastScanStation = "BackUp";
                 }
 
-                const prevStationVal = String(latestItem.row[prevStationIdx] !== undefined ? latestItem.row[prevStationIdx] : '').trim();
+                const prevStationVal = String(latestItem.row[prevStationIdx] !== undefined ? latestItem.row[prevStationIdx] : (latestItem.row[7] !== undefined ? latestItem.row[7] : '')).trim();
                 const prevStationClean = prevStationVal.replace(/\s+/g, '').toUpperCase();
                 const hasValidPrevNext = (prevStationVal !== "" && prevStationClean !== "STUTTGART" && prevStationClean !== "DE-HQ");
-                const station = hasValidPrevNext ? prevStationVal : lastScanStation;
-                const rawLatestScanStation = hasValidPrevNext ? prevStationVal : rawSiteStation;
+                let station = hasValidPrevNext ? prevStationVal : lastScanStation;
+                let rawLatestScanStation = hasValidPrevNext ? prevStationVal : rawSiteStation;
+
+                if (isOutgoingScanType(lastScanType)) {
+                    const resolvedOutgoing = resolveOutgoingScanStation(lastScanType, prevStationVal, lastScanStation);
+                    lastScanStation = resolvedOutgoing;
+                    station = resolvedOutgoing;
+                    rawLatestScanStation = resolvedOutgoing;
+                }
 
                 // Extract latest non-empty problem reason from scan records
                 let lastProblem = "";
@@ -8844,6 +8970,8 @@
             }
             if (scanningSiteIdx === -1) scanningSiteIdx = 6;
 
+            const prevStationIdx = findPrevNextStopColIdx(headers);
+
             // 5. Scanner number column (for problem scan exclusion filter)
             const scannerNumberHeaders = ["scanner number", "scanner no", "扫描枪编号", "扫描枪", "扫描号"];
             let scannerNumberIdx = -1;
@@ -8924,6 +9052,10 @@
                 const scannerVal = getScannerValue(latestItem.row);
                 if (scannerVal.toLowerCase().includes("backup")) {
                     lastScanStation = "BackUp";
+                }
+                const prevStationVal = String(latestItem.row[prevStationIdx] !== undefined ? latestItem.row[prevStationIdx] : (latestItem.row[7] !== undefined ? latestItem.row[7] : '')).trim();
+                if (isOutgoingScanType(lastScanType)) {
+                    lastScanStation = resolveOutgoingScanStation(lastScanType, prevStationVal, lastScanStation);
                 }
 
                 map[cleanWb] = {
