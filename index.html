@@ -714,12 +714,31 @@
                                         <li>若 <code>last scan type = "Return registration"</code>，则 <code>last scan station = "Stuttgart HUB"</code></li>
                                     </ul>
                                 </li>
-                                <li><strong>SLA (Hours)</strong>: 仅当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时计算小时数差值（保留小数）：<code>(last scan time - Ascan time)</code>；其余状态不计算（留空）。</li>
-                                <li><strong>Appeal</strong>: 计算了 <code>SLA</code> 时，若 <code>SLA &le; (client == "TT" ? 144 : 240)</code> &rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>；未计算 <code>SLA</code> 时留空。</li>
-                                <li><strong>reason</strong>: 计算了 <code>SLA</code> 时（无论 <code>"in SLA"</code> 或 <code>"Over"</code>），格式为 <code>=SLA &amp; " hours " &amp; last scan type</code>（例如 <code>120.5 hours Parcel Signed</code>）；未计算 <code>SLA</code> 时留空。</li>
+                                <li><strong>NoUpdateScanType</strong>:
+                                    <ul>
+                                        <li>按该运单在 <strong>Scan records</strong> 中的所有扫描记录按扫描时间从早到晚升序排列，依次计算每两条相邻扫描记录之间的时间间隔（小时数）：<code>gapHours = (R[k+1].time - R[k].time)</code>。</li>
+                                        <li>若存在相邻两条扫描记录间隔时间 <code>&gt; 120</code> 小时，取该次超期断更对应的<strong>上一条扫描记录（<code>R[k]</code>）的扫描类型</strong>作为 <code>NoUpdateScanType</code>（若出现多次 <code>&gt; 120</code> 小时，则取<strong>最新一次</strong>）；若所有相邻扫描间隔均 <code>&le; 120</code> 小时，则留空。</li>
+                                    </ul>
+                                </li>
+                                <li><strong>SLA (Hours)</strong>:
+                                    <ul>
+                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：<code>SLA = (last scan time - Ascan time)</code>（小时数，保留两位小数）。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时（同样视作完结）：<code>SLA = (now - last scan time)</code>（小时数，保留两位小数）。</li>
+                                        <li>其余状态不计算（留空）。</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Appeal</strong>:
+                                    <ul>
+                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：若 <code>SLA &le; (client == "TT" ? 144 : 240)</code> &rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时：若 <code>SLA &gt; 24 * 8</code>（即 &gt; 192 小时）&rarr; <code>"Over"</code>，否则 &rarr; <code>"in SLA"</code>。</li>
+                                        <li>未计算 <code>SLA</code> 时默认留空。</li>
+                                        <li><strong>NoUpdate &gt; 120h 优先判定</strong>：若该运单存在相邻扫描间隔 <code>&gt; 120</code> 小时（即 <code>NoUpdate &gt; 120</code> / <code>NoUpdateScanType</code> 非空），则无论原本 <code>SLA</code> 判定结果如何，<code>Appeal</code> 均强制设为 <code>"Over"</code>。</li>
+                                    </ul>
+                                </li>
+                                <li><strong>reason</strong>: 计算了 <code>SLA</code> 时（无论 <code>"in SLA"</code> 或 <code>"Over"</code>），格式为 <code>=SLA &amp; " hours " &amp; last scan type</code>（例如 <code>120.5 hours Parcel Signed</code> 或 <code>150.25 hours Scan Inbound parcel</code>）；未计算 <code>SLA</code> 时留空。</li>
                                 <li><strong>Export Format</strong>: Exports as <code>LostAppeal.xlsx</code> with two sheets:
                                     <ul>
-                                        <li><strong>Sheet 1 (<code>LostAppeal</code>)</strong>: Columns <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
+                                        <li><strong>Sheet 1 (<code>LostAppeal</code>)</strong>: Columns <code>waybill</code>, <code>client</code>, <code>AscanDate</code>, <code>last scan station</code>, <code>last scan type</code>, <code>last scan date</code>, <code>NoUpdateScanType</code>, <code>SLA</code>, <code>Appeal</code>, <code>reason</code>（按 <code>AscanDate</code> 从小到大升序排序）.</li>
                                         <li><strong>Sheet 2 (<code>total</code>)</strong>: 过滤掉 <code>Appeal = "in SLA"</code> 的数据后，首列为 <code>station</code>，首行为各 <code>client</code>，单元格值为 <code>waybill count</code>，最后一列为每个站点的 <code>total lost</code>，底部增加一行 <code>Total</code> 汇总行。</li>
                                     </ul>
                                 </li>
@@ -4339,10 +4358,27 @@
                     lastScanStation = "Stuttgart HUB";
                 }
 
-                // 1. SLA Calculation:
-                // 仅当 last scan type 为 "Return registration" 或 "Parcel Signed" 时才计算 SLA (小时数，保留小数)
-                const lstLower = lastScanType.toLowerCase();
+                // Check all adjacent scan records (sorted chronologically ascending) for gap > 120 hours.
+                // If multiple gaps > 120h exist, take the latest one.
+                const ascGroup = [...group].sort((a, b) => a.date - b.date);
+                let noUpdateScanType = "";
+                let hasNoUpdateOver120 = false;
+                if (ascGroup.length >= 2) {
+                    for (let k = 0; k < ascGroup.length - 1; k++) {
+                        const gapHours = (ascGroup[k + 1].date.getTime() - ascGroup[k].date.getTime()) / (1000 * 60 * 60);
+                        if (gapHours > 120) {
+                            hasNoUpdateOver120 = true;
+                            noUpdateScanType = String(ascGroup[k].row[scanTypeIdx] !== undefined ? ascGroup[k].row[scanTypeIdx] : '').trim();
+                        }
+                    }
+                }
+
+                // 1. SLA & Appeal & Reason Calculation:
+                // - "Return registration" / "Parcel Signed": SLA = (last scan time - Ascan time); Appeal = SLA <= (TT ? 144 : 240) ? "in SLA" : "Over"
+                // - "Scan Inbound parcel": SLA = (now - last scan time); Appeal = SLA > 24 * 8 (192h) ? "Over" : "in SLA"
+                const lstLower = lastScanType.trim().toLowerCase().replace(/\s+/g, ' ');
                 const isSignedOrReturn = (lstLower === "return registration" || lstLower === "parcel signed");
+                const isScanInboundParcel = (lstLower === "scan inbound parcel");
 
                 const firstMs = firstItem.date.getTime();
                 let sla = "";
@@ -4359,18 +4395,24 @@
                     } else {
                         sla = "";
                     }
+                } else if (isScanInboundParcel) {
+                    if (lastScanDateObj) {
+                        const lastMs = lastScanDateObj.getTime();
+                        sla = Math.round(((nowUTCMs - lastMs) / (1000 * 60 * 60)) * 100) / 100;
+                        const inboundThreshold = 24 * 8; // 192 hours
+                        appeal = (sla > inboundThreshold) ? "Over" : "in SLA";
+                        reason = `${sla} hours ${lastScanType}`;
+                    } else {
+                        sla = "";
+                    }
                 } else {
                     // Other scan types: do not calculate SLA, Appeal, or reason
                 }
 
-                // 2. Appeal Calculation:
-                // TT SLA <= 144h, 其他 <= 240h 时，Appeal = "in SLA"，否则 "Over"
-                // 2. Appeal & Reason Calculation handled above when SLA is calculated
-
-
-                // 3. Reason Calculation:
-                // 3. Reason Calculation: 格式为 ${sla} hours ${lastScanType} (仅当 SLA 计算时有值)
-
+                // Rule: If NoUpdate > 120 hours (adjacent scan gap > 120h), Appeal is forced to "Over"
+                if (hasNoUpdateOver120) {
+                    appeal = "Over";
+                }
 
                 exportRows.push({
                     "waybill": waybill,
@@ -4379,6 +4421,7 @@
                     "last scan station": lastScanStation,
                     "last scan type": lastScanType,
                     "last scan date": lastScanDate,
+                    "NoUpdateScanType": noUpdateScanType,
                     "SLA": sla,
                     "Appeal": appeal,
                     "reason": reason,
@@ -4396,7 +4439,7 @@
             exportRows.forEach(item => { delete item._ascanTs; });
 
             const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "SLA", "Appeal", "reason"]
+                header: ["waybill", "client", "AscanDate", "last scan station", "last scan type", "last scan date", "NoUpdateScanType", "SLA", "Appeal", "reason"]
             });
 
             // Build Sheet 2 (total): filter out Appeal === "in SLA"
