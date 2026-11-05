@@ -758,6 +758,7 @@
                     <button class="btn-primary" id="btn-export-will-lost" onclick="exportWillLost()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export WillLost</button>
                     <button class="btn-primary" id="btn-export-shipping-noupdate" onclick="exportShippingNoUpdate()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate</button>
                     <button class="btn-primary" id="btn-export-final-lost" onclick="exportFinalLost()" style="background-color: #b82525; color: #ffffff;" disabled>export final Lost</button>
+                    <button class="btn-primary" id="btn-export-pudo" onclick="exportShippingPudo()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export PUDO</button>
                 </div>
 
                 <!-- WillLost Deadline Date & NoUpdate Filter Group (for export final Lost) -->
@@ -801,7 +802,7 @@
                     <h3>Shipping-Signed Data Cleaning Logic</h3>
                     <ol>
                         <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间直接过滤剔除 <strong>Delivery outlet</strong> 不包含 <code>"BAW"</code> 的数据，大幅提升大文件解析与合并速度。</li>
-                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>，该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code> 和 <code>final Lost</code>）。</li>
+                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>，该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code>、<code>PUDO</code> 和 <code>final Lost</code>）。</li>
                         <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> or <code>Pickup time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM)。<strong>所有包含 AscanDate 列的导出均严格按 AscanDate 从小到大升序排序</strong>。</li>
                         <li><strong>Client Identification</strong>: 优先读取 <code>Order source name</code> 或 <code>Client's name</code> 列（若有 <code>"-"</code> 则截取 <code>"-"</code> 之前的字段，若无则取整个值）；若为空、无此列或值为加密串/乱码（如 <code>Y!$U#1#...===$=</code>），则按单号前缀规律自动兜底推导。</li>
                         <li><strong>Station Mapping</strong>:
@@ -855,6 +856,12 @@
                                 <li><strong>export WillLost</strong>：针对未签收且未退件包裹，仅保留满足 <code>today() - 1 &le; Deadline Date &le; today() + 3</code> 的记录；<strong>去除 <code>Latest scanning point</code>（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，且将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>。导出 <code>WillLost.xlsx</code>（Sheet: <code>WillLost</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>, <code>Deadline Date</code>。</li>
                                 <li><strong>export NoUpdate</strong>：针对未签收且未退件包裹，保留满足 <code>4 &le; NoUpdate &le; 5</code>（停滞未更新天数在 4 至 5 天之间）的记录。导出 <code>NoUpdate.xlsx</code>（Sheet: <code>NoUpdate</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
                                 <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost），同时支持勾选 <strong>NoUpdate（4 / 5）</strong> 将断更超 4 天或 5 天的数据一并纳入参与 <code>final Lost</code> 计算（按运单去重合并）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
+                            </ul>
+                        </li>
+                        <li><strong>export PUDO</strong>:
+                            <ul>
+                                <li>筛选上传的 <strong>48h Shipping records</strong> 中 <code>Delivery outlet</code> 包含 <code>"BAW"</code> 且 <code>Latest scan type = "Scan Inbound parcel"</code> 的包裹。</li>
+                                <li>导出 <code>PUDO.xlsx</code>（Sheet: <code>PUDO</code>），包含 7 列：<code>PUDO InBound Date</code>（取 <code>Latest scan time</code>，格式化为 <code>mm/dd</code>）、<code>station</code>（取 <code>Delivery outlet</code>）、<code>PUDO</code>（取 <code>Latest scanning point</code>）、<code>waybill</code>（取 <code>Waybill Number</code>）、<code>client</code>（优先取上传表中的客户列值，缺失或乱码时按运单号前缀推导）、<code>postcode</code>（取 <code>Receiving postal code</code>）、<code>PUDO stay days</code>（<code>now - PUDO InBound Date</code>，精确到天）。</li>
                             </ul>
                         </li>
                     </ol>
@@ -1024,7 +1031,7 @@
                         <li><strong>Filter valid Signing time</strong>: 首先过滤掉所有 <strong>Signing time 为空</strong> 的数据（剔除未签收或时间缺失的无效行后，再进行后续的随机抽样与异常分析）。</li>
                         <li>Filters rows from Driver signed where <strong>Delivery outlet</strong> represents Station.</li>
                         <li>Column F (index 5) is treated as the <strong>courier ID / driver ID</strong>.</li>
-                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE000000</code> / <code>JTDE200000</code> &rarr; <code>TT</code>, <code>JTDE00000</code> &rarr; <code>FF</code>, <code>JTDE1000</code> / <code>JTDE30000</code> / <code>JTDE40000</code> &rarr; <code>Temu</code>, <code>JTDE80000</code> &rarr; <code>Shein</code>, <code>JTDE90000</code> &rarr; <code>SF</code>, others &rarr; <code>Others</code>).</li>
+                        <li><strong>Client Identification</strong>: Identifies client by waybill prefix (<code>JTDE000000</code> / <code>JTDE200000</code> / <code>JTDE2800</code> &rarr; <code>TT</code>, <code>JTDE00000</code> &rarr; <code>FF</code>, <code>JTDE1000</code> / <code>JTDE30000</code> / <code>JTDE40000</code> &rarr; <code>Temu</code>, <code>JTDE80000</code> &rarr; <code>Shein</code>, <code>JTDE90000</code> &rarr; <code>SF</code>, others &rarr; <code>Others</code>).</li>
                         <li><strong>优先抽检与总单量控制 (Special Driver & Total SpotCheck)</strong>:
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li>若填入了 <strong>special driver</strong>：系统优先筛选 F 列 Courier ID 匹配该名单的司机，并按配置的配额（<code>TT Signed per driver</code> 与 <code>Others Signed per driver</code>）在对应包裹池中通过 Fisher-Yates 随机抽取。</li>
@@ -1158,6 +1165,7 @@
         let finalShippingTodayUnfinished15DaysData = [];
         let finalShippingWillLostData = [];
         let finalShippingNoUpdateData = [];
+        let finalShippingPudoData = [];
         let finalSignedShippingData = [];
         let rawPendingRows = [];
         let finalPendingRecords = [];
@@ -1175,6 +1183,7 @@
             prefixRules: [
                 { prefix: "JTDE000000", client: "TT" },
                 { prefix: "JTDE200000", client: "TT" },
+                { prefix: "JTDE2800",   client: "TT" },
                 { prefix: "JTDE00000",  client: "FF" },
                 { prefix: "JTDE1000",   client: "Temu" },
                 { prefix: "JTDE30000",  client: "Temu" },
@@ -1187,6 +1196,7 @@
             prefixMap: {
                 "JTDE000000": "TT",
                 "JTDE200000": "TT",
+                "JTDE2800": "TT",
                 "JTDE00000": "FF",
                 "JTDE1000": "Temu",
                 "JTDE30000": "Temu",
@@ -4727,6 +4737,7 @@
             const shippingTodayUnfinished15DaysList = [];
             const shippingWillLostList = [];
             const shippingNoUpdateList = [];
+            const shippingPudoList = [];
             const todayStr = getTodayMMDD();
             const nowBerlin = getBerlinNowDate();
             const todayCalUTC = Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate());
@@ -4965,6 +4976,25 @@
                         deadlineDate: deadlineDate,
                         sla: sla,
                         lastProblem: rawProblemReason
+                    });
+                }
+
+                // PUDO Filter: Delivery outlet contains "BAW" (already pre-filtered) and Latest scan type = "Scan Inbound parcel"
+                if (lstLower.replace(/\s+/g, ' ') === "scan inbound parcel") {
+                    let pudoStayDays = "";
+                    if (latestScanTime) {
+                        const diffPudoMs = nowBerlin.getTime() - latestScanTime.getTime();
+                        pudoStayDays = Math.floor(diffPudoMs / (1000 * 60 * 60 * 24));
+                    }
+                    shippingPudoList.push({
+                        pudoInboundDate: lastScanDate,
+                        pudoInboundRawDate: latestScanTime,
+                        station: deliveryOutlet,
+                        pudo: latestScanPoint,
+                        waybill: waybillNum,
+                        client: clientVal,
+                        postcode: postcodeVal,
+                        pudoStayDays: pudoStayDays
                     });
                 }
 
@@ -5243,10 +5273,21 @@
             // Sort by AscanDate from smallest to largest (ascending)
             finalShippingNoUpdateData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
+            // Build de-duplicated PUDO records from Shipping
+            const uniquePudoMap = new Map();
+            shippingPudoList.forEach(r => {
+                if (r.waybill) {
+                    uniquePudoMap.set(r.waybill, r);
+                }
+            });
+            finalShippingPudoData = Array.from(uniquePudoMap.values());
+            // Sort by PUDO InBound Date from smallest to largest (ascending)
+            finalShippingPudoData.sort((a, b) => compareAscanDateAsc(a.pudoInboundDate, b.pudoInboundDate, a.pudoInboundRawDate, b.pudoInboundRawDate));
+
             if (detailedRecords.length > 0) {
-                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length})`;
+                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length})`;
             } else {
-                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length})`;
+                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length})`;
             }
             document.getElementById('btn-export-shipping').disabled = (finalShippingData.length === 0);
             document.getElementById('btn-export-shipping-month').disabled = (finalShippingMonthData.length === 0);
@@ -5262,6 +5303,10 @@
             const btnShippingNoUpdate = document.getElementById('btn-export-shipping-noupdate');
             if (btnShippingNoUpdate) {
                 btnShippingNoUpdate.disabled = (finalShippingNoUpdateData.length === 0);
+            }
+            const btnPudo = document.getElementById('btn-export-pudo');
+            if (btnPudo) {
+                btnPudo.disabled = (finalShippingPudoData.length === 0);
             }
             updateWillLostDeadlineOptions();
             checkShippingFinalLostBtn();
@@ -5634,6 +5679,33 @@
             XLSX.writeFile(wb, "NoUpdate.xlsx");
         }
 
+        function exportShippingPudo() {
+            if (!finalShippingPudoData || finalShippingPudoData.length === 0) {
+                alert('No PUDO records (Delivery outlet contains BAW and Latest scan type = "Scan Inbound parcel") found in the uploaded Shipping records.');
+                return;
+            }
+
+            // Sort by PUDO InBound Date from smallest to largest (ascending)
+            finalShippingPudoData.sort((a, b) => compareAscanDateAsc(a.pudoInboundDate, b.pudoInboundDate, a.pudoInboundRawDate, b.pudoInboundRawDate));
+
+            const exportRows = finalShippingPudoData.map(r => ({
+                "PUDO InBound Date": r.pudoInboundDate,
+                "station": r.station,
+                "PUDO": r.pudo,
+                "waybill": r.waybill,
+                "client": r.client || getWaybillClient(r.waybill),
+                "postcode": r.postcode,
+                "PUDO stay days": r.pudoStayDays
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: ["PUDO InBound Date", "station", "PUDO", "waybill", "client", "postcode", "PUDO stay days"]
+            });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "PUDO");
+            XLSX.writeFile(wb, "PUDO.xlsx");
+        }
+
         function exportFinalLost() {
             const hasWillLost = finalShippingWillLostData && finalShippingWillLostData.length > 0;
             const hasNoUpdate = finalShippingNoUpdateData && finalShippingNoUpdateData.length > 0;
@@ -5751,6 +5823,7 @@
             finalShippingTodayUnfinished15DaysData = [];
             finalShippingWillLostData = [];
             finalShippingNoUpdateData = [];
+            finalShippingPudoData = [];
             document.getElementById('file-shipping').value = '';
             document.getElementById('name-shipping').textContent = 'No file chosen';
             document.getElementById('status-shipping').textContent = '';
@@ -5763,6 +5836,8 @@
             if (btnWillLost) btnWillLost.disabled = true;
             const btnShippingNoUpdate = document.getElementById('btn-export-shipping-noupdate');
             if (btnShippingNoUpdate) btnShippingNoUpdate.disabled = true;
+            const btnPudo = document.getElementById('btn-export-pudo');
+            if (btnPudo) btnPudo.disabled = true;
             const dlContainer = document.getElementById('container-willlost-deadlines');
             if (dlContainer) dlContainer.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
             const dlHint = document.getElementById('willlost-deadline-hint');
