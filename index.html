@@ -729,8 +729,8 @@
                                 </li>
                                 <li><strong>Appeal</strong>:
                                     <ul>
-                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：若 <code>SLA &le; (client == "TT" ? 144 : 240)</code> &rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>。</li>
-                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时：若 <code>SLA &gt; 24 * 8</code>（即 &gt; 192 小时）&rarr; <code>"Over"</code>，否则 &rarr; <code>"in SLA"</code>。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：若 <code>SLA &le; 240</code>（所有客户含 TT 均为 10 天 = 240 小时）&rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时：若 <code>SLA &ge; 24 * 8</code>（即 &ge; 192 小时，满 8 天视作遗失）&rarr; <code>"Over"</code>，否则 &rarr; <code>"in SLA"</code>。</li>
                                         <li>未计算 <code>SLA</code> 时默认留空。</li>
                                         <li><strong>NoUpdate &gt; 120h 优先判定</strong>：若该运单存在相邻扫描间隔 <code>&gt; 120</code> 小时（即 <code>NoUpdate &gt; 120</code> / <code>NoUpdateScanType</code> 非空），则无论原本 <code>SLA</code> 判定结果如何，<code>Appeal</code> 均强制设为 <code>"Over"</code>。</li>
                                     </ul>
@@ -852,10 +852,10 @@
                             <ul>
                                 <li><strong>SLA（小时维度）</strong>：若 <code>Sign for identification = "Undelivered"</code>，<code>SLA = now - Pickup time (Entry time)</code>；若为其他值，<code>SLA = Latest scan time - Pickup time (Entry time)</code>。</li>
                                 <li><strong>NoUpdate（天维度，向下取整）</strong>：若 <code>Sign for identification = "Undelivered"</code>，<code>NoUpdate = Math.floor(now - Latest scan time)</code>。</li>
-                                <li><strong>Deadline Date</strong>：<code>AscanDate + 客户的 LifeCycle 标准</code>（TT: 5天，其余: 9天）。</li>
-                                <li><strong>export WillLost</strong>：针对未签收且未退件包裹，仅保留满足 <code>today() - 1 &le; Deadline Date &le; today() + 3</code> 的记录；<strong>去除 <code>Latest scanning point</code>（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，且将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>。导出 <code>WillLost.xlsx</code>（Sheet: <code>WillLost</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>, <code>Deadline Date</code>。</li>
+                                <li><strong>Deadline Date</strong>：常规包裹为 <code>AscanDate + 客户的 LifeCycle 标准</code>（所有客户含 TT 均为 9 天，即 <code>Ascan + 10</code> 视作遗失）；当 <code>latest scan type = "Scan Inbound parcel"</code>（放入 PUDO 点后）时，按 <code>now - latest scan time &ge; 8 days (192h)</code> 视作遗失，其 <code>Deadline Date = latest scan date + 8</code>。</li>
+                                <li><strong>export WillLost</strong>：针对未签收且未退件包裹，仅保留满足 <code>today() - 1 &le; Deadline Date &le; today() + 3</code> 的记录；<strong>站点取值规则：当 <code>latest scan type</code> 为 <code>"Scan Inbound parcel"</code>（PUDO 包裹）时，<code>station</code> 取 <code>Delivery outlet</code>；其余包裹取 <code>Latest scanning point</code>（去除不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，且将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code>）</strong>。导出 <code>WillLost.xlsx</code>（Sheet: <code>WillLost</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>, <code>Deadline Date</code>。</li>
                                 <li><strong>export NoUpdate</strong>：针对未签收且未退件包裹，保留满足 <code>4 &le; NoUpdate &le; 5</code>（停滞未更新天数在 4 至 5 天之间）的记录。导出 <code>NoUpdate.xlsx</code>（Sheet: <code>NoUpdate</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
-                                <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost），同时支持勾选 <strong>NoUpdate（4 / 5）</strong> 将断更超 4 天或 5 天的数据一并纳入参与 <code>final Lost</code> 计算（按运单去重合并）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
+                                <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost），同时支持勾选 <strong>NoUpdate（4 / 5）</strong> 将断更超 4 天或 5 天的数据一并纳入参与 <code>final Lost</code> 计算（按运单去重合并）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>；若最新扫描为 <code>Scan Inbound parcel</code> 则 <code>station</code> 取 <code>Delivery outlet</code> 且 <code>DeadLine = last scan date + 8</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
                             </ul>
                         </li>
                         <li><strong>export PUDO</strong>:
@@ -970,7 +970,7 @@
                                 <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
                                 <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
                                 <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
-                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：<code>TT = 5</code> 天，其余客户（<code>SF / TEMU / Shein / speed / others</code>）均为 <code>9</code> 天。</li>
+                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：所有客户（<code>TT / SF / TEMU / Shein / speed / others</code>）均为 <code>9</code> 天（<code>Ascan + 10</code> 视作遗失）。</li>
                                 <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                                 <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
                             </ul>
@@ -1210,22 +1210,22 @@
 
             },
             defaultClient: "Others",
-            // SLA thresholds in days by client
+            // SLA thresholds in days by client (all clients including TT: 10 days)
             slaThresholds: {
-                "TT": 7,
-                "TIKTOK": 7,
+                "TT": 10,
+                "TIKTOK": 10,
                 "default": 10
             },
-            // Lost Appeal SLA thresholds in hours by client
+            // Lost Appeal SLA thresholds in hours by client (all clients including TT: 240 hours / 10 days)
             lostAppealSlaHours: {
-                "TT": 144,
-                "TIKTOK": 144,
+                "TT": 240,
+                "TIKTOK": 240,
                 "default": 240
             },
-            // LifeCycle days by client
+            // LifeCycle days by client (all clients including TT: 9 days, Ascan + 10 regarded as lost)
             lifeCycles: {
-                "TT": 5,
-                "TIKTOK": 5,
+                "TT": 9,
+                "TIKTOK": 9,
                 "SF": 9,
                 "TEMU": 9,
                 "SHEIN": 9,
@@ -1341,6 +1341,13 @@
             if (!scanType) return false;
             const lower = String(scanType).trim().toLowerCase().replace(/\s+/g, ' ');
             return lower === "outgoing scan" || lower === "out going scan";
+        }
+
+        // Global Helper: Check if a scan type is Scan Inbound parcel (PUDO inbound)
+        function isScanInboundType(scanType) {
+            if (!scanType) return false;
+            const lower = String(scanType).trim().toLowerCase().replace(/\s+/g, ' ');
+            return lower === "scan inbound parcel";
         }
 
         // Global Helper: Resolve last scan station according to global Outgoing Scan rule
@@ -4001,7 +4008,7 @@
                 if (descElem) {
                     let descHtml = "For each unique <strong>waybill (Column A)</strong>, dynamically extracts and horizontally aligns all selected scan time and scan type records in sequential order.";
                     if (hasBothFirstAndLatest) {
-                        descHtml += `<br><span style="color: #b82525; font-weight: 600;">SLA Rule:</span> If <code>latest scan-scan type</code> contains <code>signed</code> &rarr; <code>(latest scan date - first scan date &le; (client == 'TT' ? 7 : 10)) ? 'in SLA' : 'Over'</code>; otherwise &rarr; <code>(today - first scan date &le; (client == 'TT' ? 7 : 10)) ? 'in SLA' : 'Over'</code>.`;
+                        descHtml += `<br><span style="color: #b82525; font-weight: 600;">SLA Rule:</span> If <code>latest scan-scan type</code> contains <code>signed</code> &rarr; <code>(latest scan date - first scan date &le; 10) ? 'in SLA' : 'Over'</code>; otherwise &rarr; <code>(today - first scan date &le; 10) ? 'in SLA' : 'Over'</code>.`;
                     }
                     descElem.innerHTML = descHtml;
                 }
@@ -4384,11 +4391,11 @@
                 }
 
                 // 1. SLA & Appeal & Reason Calculation:
-                // - "Return registration" / "Parcel Signed": SLA = (last scan time - Ascan time); Appeal = SLA <= (TT ? 144 : 240) ? "in SLA" : "Over"
-                // - "Scan Inbound parcel": SLA = (now - last scan time); Appeal = SLA > 24 * 8 (192h) ? "Over" : "in SLA"
+                // - "Return registration" / "Parcel Signed": SLA = (last scan time - Ascan time); Appeal = SLA <= 240 ? "in SLA" : "Over"
+                // - "Scan inbound" / "Scan Inbound parcel": SLA = (now - last scan time); Appeal = SLA >= 24 * 8 (192h) ? "Over" : "in SLA"
                 const lstLower = lastScanType.trim().toLowerCase().replace(/\s+/g, ' ');
                 const isSignedOrReturn = (lstLower === "return registration" || lstLower === "parcel signed");
-                const isScanInboundParcel = (lstLower === "scan inbound parcel");
+                const isScanInboundParcel = isScanInboundType(lastScanType);
 
                 const firstMs = firstItem.date.getTime();
                 let sla = "";
@@ -4409,8 +4416,8 @@
                     if (lastScanDateObj) {
                         const lastMs = lastScanDateObj.getTime();
                         sla = Math.round(((nowUTCMs - lastMs) / (1000 * 60 * 60)) * 100) / 100;
-                        const inboundThreshold = 24 * 8; // 192 hours
-                        appeal = (sla > inboundThreshold) ? "Over" : "in SLA";
+                        const inboundThreshold = 24 * 8; // 192 hours (8 days)
+                        appeal = (sla >= inboundThreshold) ? "Over" : "in SLA";
                         reason = `${sla} hours ${lastScanType}`;
                     } else {
                         sla = "";
@@ -4935,24 +4942,46 @@
                     }
                 }
 
-                // WillLost Filter: Undelivered & not returned & (today() - 1 <= Deadline Date <= today() + 3)
-                // Also exclude latest scan station not containing BAW or ST; unify ST to "Stuttgart HUB"
-                const isDeadlineInWindow = (diffDeadlineDays >= -1 && diffDeadlineDays <= 3);
+                // WillLost Filter:
+                // - Standard parcels: Deadline Date = AscanDate + LifeCycle (9 days, i.e., Ascan + 10 regarded as lost); station = Latest scanning point (filtered by BAW/ST)
+                // - PUDO parcels (latest scan type = "Scan inbound" / "Scan Inbound parcel"):
+                //   now - latest scan time >= 8 days (8 * 24 = 192 hours) regarded as lost;
+                //   Deadline Date = latest scan date + 8 (latestScanTime + 192h); station = Delivery outlet
+                //   Window (Method B): today() - 1 <= Deadline Date <= today() + 3
+                const isScanInbound = isScanInboundType(latestScanType);
+                let willLostDeadlineDate = deadlineDate;
+                let isDeadlineInWindow = false;
+                if (isScanInbound) {
+                    if (latestScanTime) {
+                        // 8 days calculated by hours (8 * 24 = 192 hours)
+                        const inboundLostTime = new Date(latestScanTime.getTime() + 8 * 24 * 3600 * 1000);
+                        willLostDeadlineDate = calculateDeadLine(latestScanTime, lastScanDate, 8);
+                        const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
+                        const diffInboundDeadlineDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
+                        isDeadlineInWindow = (diffInboundDeadlineDays >= -1 && diffInboundDeadlineDays <= 3);
+                    }
+                } else {
+                    isDeadlineInWindow = (diffDeadlineDays >= -1 && diffDeadlineDays <= 3);
+                }
+
                 if (isUndelivered && !isReturn && isDeadlineInWindow) {
-                    const willLostStation = normalizeAndFilterWillLostStation(latestScanPoint);
+                    const willLostStation = isScanInbound
+                        ? normalizeAndFilterWillLostStation(deliveryOutlet)
+                        : normalizeAndFilterWillLostStation(latestScanPoint);
                     if (willLostStation !== null) {
                         shippingWillLostList.push({
                             waybill: waybillNum,
                             ascanDate: ascanDate,
                             ascanRawDate: entryTime,
                             station: willLostStation,
+                            deliveryOutlet: deliveryOutlet,
                             lastScanDate: lastScanDate,
                             lastScanRawDate: latestScanTime,
                             lastScanType: latestScanType,
                             client: clientVal,
                             postcode: postcodeVal,
                             noUpdate: noUpdateDays,
-                            deadlineDate: deadlineDate,
+                            deadlineDate: willLostDeadlineDate,
                             sla: sla,
                             lastProblem: rawProblemReason
                         });
@@ -4967,20 +4996,21 @@
                         ascanDate: ascanDate,
                         ascanRawDate: entryTime,
                         station: station,
+                        deliveryOutlet: deliveryOutlet,
                         lastScanDate: lastScanDate,
                         lastScanRawDate: latestScanTime,
                         lastScanType: latestScanType,
                         client: clientVal,
                         postcode: postcodeVal,
                         noUpdate: noUpdateDays,
-                        deadlineDate: deadlineDate,
+                        deadlineDate: isScanInbound ? willLostDeadlineDate : deadlineDate,
                         sla: sla,
                         lastProblem: rawProblemReason
                     });
                 }
 
-                // PUDO Filter: Delivery outlet contains "BAW" (already pre-filtered) and Latest scan type = "Scan Inbound parcel"
-                if (lstLower.replace(/\s+/g, ' ') === "scan inbound parcel") {
+                // PUDO Filter: Delivery outlet contains "BAW" (already pre-filtered) and Latest scan type = "Scan inbound" / "Scan Inbound parcel"
+                if (isScanInbound) {
                     let pudoStayDays = "";
                     if (latestScanTime) {
                         const diffPudoMs = nowBerlin.getTime() - latestScanTime.getTime();
@@ -5760,13 +5790,23 @@
             candidateList.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             const scanInfoMap = getScanRecordsInfoMap();
+            const nowBerlin = getBerlinNowDate();
+            const todayCalUTC = Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate());
 
             const exportRows = [];
             for (let i = 0; i < candidateList.length; i++) {
                 const r = candidateList[i];
 
                 const scanInfo = scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null;
-                const rawCandidateStation = scanInfo ? (scanInfo.rawLatestScanStation || scanInfo.station || "") : r.station;
+                const lastScanDate = (scanInfo && scanInfo.lastScanDate) ? scanInfo.lastScanDate : "";
+                const lastScanType = (scanInfo && scanInfo.lastScanType) ? scanInfo.lastScanType : "";
+                const effectiveScanType = lastScanType || r.lastScanType || "";
+                const isInbound = isScanInboundType(effectiveScanType);
+
+                // For PUDO parcels (Scan inbound), station takes Delivery outlet; otherwise takes latest scan station
+                const rawCandidateStation = isInbound
+                    ? (r.deliveryOutlet || r.station || "")
+                    : (scanInfo ? (scanInfo.rawLatestScanStation || scanInfo.station || "") : r.station);
                 const station = normalizeAndFilterWillLostStation(rawCandidateStation);
 
                 // Filter out records where latest scan station does NOT contain BAW or ST (and unify ST -> "Stuttgart HUB")
@@ -5774,12 +5814,35 @@
                     continue;
                 }
 
-                const lastScanDate = (scanInfo && scanInfo.lastScanDate) ? scanInfo.lastScanDate : "";
-                const lastScanType = (scanInfo && scanInfo.lastScanType) ? scanInfo.lastScanType : "";
-
                 // Filter out records where latest scan contains signed, returned, etc.
                 if (isFinalLostExcludedScanType(lastScanType) || (!lastScanType && isFinalLostExcludedScanType(r.lastScanType))) {
                     continue;
+                }
+
+                let finalDeadline = r.deadlineDate;
+                if (isInbound) {
+                    const inboundRawDate = (scanInfo && scanInfo.lastScanRawDate) ? scanInfo.lastScanRawDate : r.lastScanRawDate;
+                    const inboundDateStr = lastScanDate || r.lastScanDate;
+                    if (inboundRawDate || inboundDateStr) {
+                        finalDeadline = calculateDeadLine(inboundRawDate, inboundDateStr, 8);
+                    }
+                    // If this parcel was NOT originally Scan inbound in Shipping (e.g. newly put into PUDO in Scan records)
+                    // and was not added via NoUpdate (4/5), verify its new PUDO deadline is within the WillLost window
+                    if (!isScanInboundType(r.lastScanType) && inboundRawDate instanceof Date && !isNaN(inboundRawDate.getTime())) {
+                        const nuVal = typeof r.noUpdate === 'number' ? r.noUpdate : parseInt(String(r.noUpdate).trim(), 10);
+                        const addedViaNoUpdate = filterByNoUpdate && selectedNoUpdateSet.has(nuVal);
+                        if (!addedViaNoUpdate) {
+                            const inboundLostTime = new Date(inboundRawDate.getTime() + 8 * 24 * 3600 * 1000);
+                            const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
+                            const diffInboundDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
+                            if (diffInboundDays < -1 || diffInboundDays > 3) {
+                                continue;
+                            }
+                            if (filterByDeadline && !selectedDeadlineSet.has(String(finalDeadline || '').trim())) {
+                                continue;
+                            }
+                        }
+                    }
                 }
 
                 const driver = (scanInfo && scanInfo.driver) ? scanInfo.driver : "";
@@ -5798,7 +5861,7 @@
                     "Client": client,
                     "NoUpdate": r.noUpdate,
                     "Last Problem": lastProblem,
-                    "DeadLine": r.deadlineDate
+                    "DeadLine": finalDeadline
                 });
             }
 
