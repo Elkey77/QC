@@ -580,10 +580,11 @@
                                 <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
                                 <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Date（登记时间）升序排序</strong>。</li>
                                 <li><strong>Problem 规则</strong>：位于 <code>Total hours</code> 列之后，取自上传文件的 <code>Problem Description</code> 列。</li>
+                                <li><strong>total Sheet（每小时各网点工单量）</strong>：导出文件中额外增加 <code>total</code> Sheet，统计<strong>离今天（柏林时间）最近的上一个有工单的日期</strong>（一律不统计今天，自动跳过周末/无工单日）。<strong>首行</strong>注明统计日期（如 <code>2026/11/05</code>）；表头为 <code>station</code>（取自 <code>Responsible node with forwarding orderorders</code>，空值归入 <code>Unknown</code>）+ <code>Check-in time</code> 的小时（<code>hh</code>，直接取文件原始时间）+ <code>Total</code>；单元格为<strong>工单行数</strong>；只展示有工单的小时，值为 0 时留空；末列 <code>Total</code> 为各网点合计，底部 <code>Total</code> 行为各小时合计。</li>
                                 <li><strong>专用公共假期</strong>：<code>2026-12-25, 2027-01-01, 2027-01-06, 2027-03-26, 2027-03-29, 2027-05-06, 2027-05-17, 2027-05-27, 2027-11-01</code>。</li>
                             </ul>
                         </li>
-                        <li><strong>export CS driver</strong>: 需上传 <strong>CS Record</strong> 和 <strong>Scan records</strong>。系统以 <code>waybill</code> 为主键进行关联（Left Join），导出包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Time</code>、<code>Signed date</code>、<code>Last Scan Type</code>、<code>Station</code>、<code>Driver</code>、<code>Total hours</code>。</li>
+                        <li><strong>export CS driver</strong>: 需上传 <strong>CS Record</strong> 和 <strong>Scan records</strong>。系统以 <code>waybill</code> 为主键进行关联（Left Join），导出包含 <code>waybill</code>、<code>complaint Date</code>（<code>Check-in time</code> 格式化为 <code>mm/dd</code>）、<code>Signed date</code>、<code>Last Scan Type</code>、<code>Station</code>、<code>Driver</code>。</li>
                         <li><strong>Total hours 计算规则</strong>:
                             <ul>
                                 <li><strong>统计起点</strong>：<code>Check-in time</code>（M列 / 登记时间）。</li>
@@ -2164,7 +2165,98 @@
 
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "CS_SLA");
+
+            // total sheet: tickets per station per Check-in hour on the latest day before today that has tickets
+            const totalAoa = buildCSSLAHourlyTotalAoa(dataRows, { waybillIdx, checkInIdx, stationIdx }, todayDate);
+            if (totalAoa) {
+                const wsTotal = XLSX.utils.aoa_to_sheet(totalAoa);
+                XLSX.utils.book_append_sheet(wb, wsTotal, "total");
+            }
+
             XLSX.writeFile(wb, "CS_SLA.xlsx");
+        }
+
+        // Build "total" sheet rows (array of arrays) for export CS SLA:
+        // - Date: the latest Check-in date strictly before today (Berlin) that has tickets (weekends/holidays skipped naturally)
+        // - Row 1: that date (yyyy/mm/dd); Row 2: header [station, hh..., Total]; then one row per station; last row: Total
+        // - Count by ticket rows; only hours with tickets are shown; zero cells are left blank; blank station -> "Unknown"
+        function buildCSSLAHourlyTotalAoa(dataRows, idx, todayDate) {
+            const todayMs = todayDate.getTime();
+            const records = [];
+            let latestDayMs = -Infinity;
+
+            for (let i = 0; i < dataRows.length; i++) {
+                const row = dataRows[i];
+                if (!row || row.length === 0) continue;
+                const waybill = String(row[idx.waybillIdx] !== undefined ? row[idx.waybillIdx] : '').trim();
+                if (waybill === '') continue;
+
+                const checkIn = getJSDate(row[idx.checkInIdx]);
+                if (!checkIn) continue;
+
+                // Original file time (same UTC-field convention as Complaint Date)
+                const dayMs = Date.UTC(checkIn.getUTCFullYear(), checkIn.getUTCMonth(), checkIn.getUTCDate());
+                if (dayMs >= todayMs) continue; // never count today (or later)
+
+                let station = (idx.stationIdx !== -1 && row[idx.stationIdx] !== undefined && row[idx.stationIdx] !== null)
+                    ? String(row[idx.stationIdx]).trim()
+                    : '';
+                if (station === '') station = 'Unknown';
+
+                records.push({ dayMs: dayMs, hour: checkIn.getUTCHours(), station: station });
+                if (dayMs > latestDayMs) latestDayMs = dayMs;
+            }
+
+            if (records.length === 0 || latestDayMs === -Infinity) return null;
+
+            const stationHourMap = new Map();
+            const hourTotals = new Map();
+            records.forEach(r => {
+                if (r.dayMs !== latestDayMs) return;
+                if (!stationHourMap.has(r.station)) stationHourMap.set(r.station, new Map());
+                const hm = stationHourMap.get(r.station);
+                hm.set(r.hour, (hm.get(r.hour) || 0) + 1);
+                hourTotals.set(r.hour, (hourTotals.get(r.hour) || 0) + 1);
+            });
+
+            const hours = Array.from(hourTotals.keys()).sort((a, b) => a - b);
+            const stations = Array.from(stationHourMap.keys()).sort((a, b) => {
+                if (a === 'Unknown') return 1;
+                if (b === 'Unknown') return -1;
+                return a.localeCompare(b);
+            });
+
+            const d = new Date(latestDayMs);
+            const dateLabel = `${d.getUTCFullYear()}/${String(d.getUTCMonth() + 1).padStart(2, '0')}/${String(d.getUTCDate()).padStart(2, '0')}`;
+
+            const aoa = [];
+            aoa.push([dateLabel]);
+            aoa.push(["station"].concat(hours.map(h => String(h).padStart(2, '0'))).concat(["Total"]));
+
+            let grandTotal = 0;
+            stations.forEach(st => {
+                const hm = stationHourMap.get(st);
+                let rowTotal = 0;
+                const line = [st];
+                hours.forEach(h => {
+                    const c = hm.get(h) || 0;
+                    rowTotal += c;
+                    line.push(c > 0 ? c : "");
+                });
+                line.push(rowTotal > 0 ? rowTotal : "");
+                grandTotal += rowTotal;
+                aoa.push(line);
+            });
+
+            const totalLine = ["Total"];
+            hours.forEach(h => {
+                const c = hourTotals.get(h) || 0;
+                totalLine.push(c > 0 ? c : "");
+            });
+            totalLine.push(grandTotal > 0 ? grandTotal : "");
+            aoa.push(totalLine);
+
+            return aoa;
         }
 
         function exportCSDriver() {
@@ -2178,8 +2270,7 @@
 
             // 2. Parse CS file headers
             const headers = rawCSRows[0].map(h => String(h).trim().toLowerCase());
-            const { waybillIdx, channelIdx, checkInIdx, statusIdx, lastUpdateIdx } = getCSColumnIndices(headers);
-            const holidaysSet = getPublicHolidaysSet();
+            const { waybillIdx, checkInIdx } = getCSColumnIndices(headers);
 
             const dataRows = rawCSRows.slice(1);
             const exportData = [];
@@ -2191,15 +2282,8 @@
                 const waybill = String(row[waybillIdx] !== undefined ? row[waybillIdx] : '').trim();
                 if (waybill === '') continue;
 
-                // Channel: remove Chinese, keep only English letters; if starts with C or I take first 2 chars, else first 4 chars
-                const rawChannel = String(row[channelIdx] !== undefined ? row[channelIdx] : '').trim();
-                const channel = cleanCSChannel(rawChannel);
-
-                // Complaint Time: check-in time formatted to MM/DD hh:mm:ss
-                const checkInVal = row[checkInIdx];
-                const cellAddress = rawCSSheet ? XLSX.utils.encode_cell({ r: i + 1, c: checkInIdx }) : null;
-                const cell = (rawCSSheet && cellAddress) ? rawCSSheet[cellAddress] : null;
-                const complaintTime = formatComplaintTime(checkInVal, cell);
+                // complaint Date: check-in time formatted to mm/dd
+                const complaintDate = formatComplaintDateMMDD(row[checkInIdx]);
 
                 // Matching latest scan record
                 let signedDate = '';
@@ -2215,21 +2299,13 @@
                     lastScanType = scanRec.lastScanType;
                 }
 
-                // Status & Last update for Total hours
-                const statusVal = (statusIdx !== -1 && row[statusIdx] !== undefined) ? row[statusIdx] : '';
-                const lastUpdateVal = (lastUpdateIdx !== -1 && row[lastUpdateIdx] !== undefined) ? row[lastUpdateIdx] : '';
-
-                const totalHours = calculateTotalHours(checkInVal, statusVal, lastUpdateVal, holidaysSet);
-
                 exportData.push({
                     "waybill": waybill,
-                    "channel": channel,
-                    "Complaint Time": complaintTime,
+                    "complaint Date": complaintDate,
                     "Signed date": signedDate,
                     "Last Scan Type": lastScanType,
                     "Station": station,
-                    "Driver": driverName,
-                    "Total hours": totalHours
+                    "Driver": driverName
                 });
             }
 
@@ -2239,7 +2315,7 @@
             }
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
-                header: ["waybill", "channel", "Complaint Time", "Signed date", "Last Scan Type", "Station", "Driver", "Total hours"]
+                header: ["waybill", "complaint Date", "Signed date", "Last Scan Type", "Station", "Driver"]
             });
 
             const wb = XLSX.utils.book_new();
