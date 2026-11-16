@@ -432,6 +432,17 @@
                 <div class="upload-status success" id="status-shipping"></div>
             </div>
 
+            <!-- 48h Shipping records (Chinese) upload group -->
+            <div class="upload-group">
+                <div class="upload-label" style="color: #b82525;">48h Shipping records (中文)</div>
+                <div class="file-input-wrapper" style="border-color: #ebdcdc;">
+                    <button class="file-input-btn" style="background-color: #fff0f0;" onclick="document.getElementById('file-shipping-zh').click()">Choose file</button>
+                    <span class="file-name" id="name-shipping-zh">No file chosen</span>
+                </div>
+                <input type="file" id="file-shipping-zh" style="display:none;" accept=".xlsx, .xls, .csv" multiple onchange="handleShippingZhFile(this)">
+                <div class="upload-status success" id="status-shipping-zh"></div>
+            </div>
+
 
             <!-- Signed Shipping record upload group -->
             <div class="upload-group">
@@ -760,6 +771,8 @@
                     <button class="btn-primary" id="btn-export-shipping-noupdate" onclick="exportShippingNoUpdate()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate</button>
                     <button class="btn-primary" id="btn-export-final-lost" onclick="exportFinalLost()" style="background-color: #b82525; color: #ffffff;" disabled>export final Lost</button>
                     <button class="btn-primary" id="btn-export-pudo" onclick="exportShippingPudo()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export PUDO</button>
+                    <button class="btn-primary" id="btn-export-return-parcel" onclick="exportReturnParcel()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export driver return data</button>
+                    <button class="btn-primary" id="btn-export-final-return" onclick="exportFinalReturn()" style="background-color: #b82525; color: #ffffff;" disabled>export driver return</button>
                 </div>
 
                 <!-- WillLost Deadline Date & NoUpdate Filter Group (for export final Lost) -->
@@ -803,7 +816,15 @@
                     <h3>Shipping-Signed Data Cleaning Logic</h3>
                     <ol>
                         <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间直接过滤剔除 <strong>Delivery outlet</strong> 不包含 <code>"BAW"</code> 的数据，大幅提升大文件解析与合并速度。</li>
-                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>，该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code>、<code>PUDO</code> 和 <code>final Lost</code>）。</li>
+                        <li><strong>48h Shipping records (中文) 兼容与映射</strong>:
+                            <ul>
+                                <li><strong>单 Sheet 极速加载</strong>：中文表含 3 个 Sheet，解析时直接读取 Sheet 2 <code>"组件1"</code> 并删除其余 2 个 Sheet，大幅提高计算效率。</li>
+                                <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>，再执行 <code>派件网点名称</code> 包含 <code>"BAW"</code> 过滤。</li>
+                                <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>pick up</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间 &rarr; Latest scan time / last scan date</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
+                                <li><strong>参与计算范围</strong>：支持单独上传或与英文版合并计算，参与 <code>export today Nodispatch</code>、<code>export WillLost</code>、<code>export NoUpdate</code>、<code>export PUDO</code>、<code>export final Lost</code>、<code>export driver return data</code> 及 <code>export driver return</code> 的计算。</li>
+                            </ul>
+                        </li>
+                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>（含中文未签收表），该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code>、<code>PUDO</code>、<code>final Lost</code>、<code>driver return data</code> 和 <code>driver return</code>）。</li>
                         <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> or <code>Pickup time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM)。<strong>所有包含 AscanDate 列的导出均严格按 AscanDate 从小到大升序排序</strong>。</li>
                         <li><strong>Client Identification</strong>: 优先读取 <code>Order source name</code> 或 <code>Client's name</code> 列（若有 <code>"-"</code> 则截取 <code>"-"</code> 之前的字段，若无则取整个值）；若为空、无此列或值为加密串/乱码（如 <code>Y!$U#1#...===$=</code>），则按单号前缀规律自动兜底推导。</li>
                         <li><strong>Station Mapping</strong>:
@@ -863,6 +884,21 @@
                             <ul>
                                 <li>筛选上传的 <strong>48h Shipping records</strong> 中 <code>Delivery outlet</code> 包含 <code>"BAW"</code> 且 <code>Latest scan type = "Scan Inbound parcel"</code> 的包裹。</li>
                                 <li>导出 <code>PUDO.xlsx</code>（Sheet: <code>PUDO</code>），包含 7 列：<code>PUDO InBound Date</code>（取 <code>Latest scan time</code>，格式化为 <code>mm/dd</code>）、<code>station</code>（取 <code>Delivery outlet</code>）、<code>PUDO</code>（取 <code>Latest scanning point</code>）、<code>waybill</code>（取 <code>Waybill Number</code>）、<code>client</code>（优先取上传表中的客户列值，缺失或乱码时按运单号前缀推导）、<code>postcode</code>（取 <code>Receiving postal code</code>）、<code>PUDO stay days</code>（<code>now - PUDO InBound Date</code>，精确到天）。</li>
+                            </ul>
+                        </li>
+                        <li><strong>export driver return data</strong>:
+                            <ul>
+                                <li>筛选 <strong>48h Shipping records</strong> 中 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>（忽略大小写），且 <code>NoUpdate = now() - Latest scan time &le; 100</code> 小时（向上取整）且 <code>last scan date &ne; today()</code>的未签收包裹。</li>
+                                <li>导出 <code>Driver_Return_Data.xlsx</code>（Sheet: <code>driver return data</code>），8 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>（按 <code>AscanDate</code> 升序）。</li>
+                            </ul>
+                        </li>
+                        <li><strong>export driver return</strong>（需上传 Scan records，司机手中未退返包裹）:
+                            <ul>
+                                <li>以 <code>waybill</code> 关联 <code>export driver return data</code> 运单与 <strong>Scan records</strong> 最新扫描记录；仅保留 Scan records 最新 <code>last scan type</code> 为 <code>"Out of warehouse scan"</code> / <code>"Receive scan"</code> / <code>"Problem scan"</code>（忽略大小写）的运单。</li>
+                                <li>若运单在 Scan records 中未找到：保留该行，仅填 <code>waybill</code>, <code>AscanDate</code>, <code>Client</code>，其余列留空（可重新上传 Scan records 后再导出）。</li>
+                                <li><code>waybill</code>, <code>AscanDate</code>, <code>Client</code> 取自 driver return data；<code>station</code>（Scan records last scan station）、<code>last scan date</code>（MM/DD）、<code>last scan type</code>、<code>Driver</code>、<code>Problem</code>（最新非空问题原因）取自 Scan records。</li>
+                                <li><code>NoUpdate = ceil(now() - Scan records latest scan time)</code>（小时，向上取整）。</li>
+                                <li>导出 <code>Driver_Return.xlsx</code>（Sheet: <code>driver return</code>），9 列，按 <code>AscanDate</code> 升序。</li>
                             </ul>
                         </li>
                     </ol>
@@ -1167,6 +1203,7 @@
         let finalShippingWillLostData = [];
         let finalShippingNoUpdateData = [];
         let finalShippingPudoData = [];
+        let finalShippingReturnParcelData = [];
         let finalSignedShippingData = [];
         let rawPendingRows = [];
         let finalPendingRecords = [];
@@ -4701,28 +4738,228 @@
 
             Promise.all(promises)
                 .then(allCleanedFiles => {
-                    let combinedHeader = [];
-                    const combinedData = [];
-
-                    for (let i = 0; i < allCleanedFiles.length; i++) {
-                        const cleaned = allCleanedFiles[i];
-                        if (!cleaned) continue;
-                        if (combinedHeader.length === 0 && cleaned.header && cleaned.header.length > 0) {
-                            combinedHeader = cleaned.header;
-                        }
-                        if (cleaned.data && cleaned.data.length > 0) {
-                            for (let r = 0; r < cleaned.data.length; r++) {
-                                combinedData.push(cleaned.data[r]);
-                            }
-                        }
-                    }
-
-                    processShipping({ header: combinedHeader, data: combinedData });
+                    shippingEnCleanedFiles = allCleanedFiles;
+                    rebuildShippingFromSources();
                 })
                 .catch(error => {
                     alert('Failed to parse file. Error: ' + error.message);
                     resetShipping();
                 });
+        }
+
+        // ---- 48h Shipping records (Chinese version) ----
+        let shippingEnCleanedFiles = [];
+        let shippingZhCleanedFiles = [];
+
+        const SHIPPING_ZH_SCAN_TYPE_MAP = {
+            "卸车到件": "loaded",
+            "派件扫描": "Out of warehouse scan",
+            "留仓件入仓": "warehousing",
+            "装车发件": "Outgoing Scan",
+            "问题件扫描": "Problem scan",
+            "10": "pick up",
+            "220": "Scan Inbound parcel",
+            "30": "Package scan",
+            "501": "Loading scan"
+        };
+
+        // Standard English-layout header used for converted Chinese rows
+        const SHIPPING_ZH_STD_HEADER = ["Waybill Number", "Pickup time", "Delivery outlet", "Receiving postal code", "Latest scanning point", "Latest scan type", "Latest scan time", "Sign for identification", "Transfer and return identification"];
+
+        // Read Chinese 48h Shipping Excel file: only parse Sheet 2 ("组件1") and delete the other 2 sheets for speed
+        function readZhShippingExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const metaWb = XLSX.read(data, { type: 'array', bookSheets: true });
+                        const sheetNames = (metaWb && Array.isArray(metaWb.SheetNames)) ? metaWb.SheetNames : [];
+                        if (sheetNames.length === 0) {
+                            resolve([]);
+                            return;
+                        }
+                        let targetSheetName = sheetNames.find(n => String(n).trim() === "组件1");
+                        if (!targetSheetName) {
+                            targetSheetName = sheetNames.find(n => String(n).includes("组件1"));
+                        }
+                        if (!targetSheetName) {
+                            targetSheetName = sheetNames.length >= 2 ? sheetNames[1] : sheetNames[0];
+                        }
+                        const workbook = XLSX.read(data, { type: 'array', cellDates: true, sheets: targetSheetName });
+                        if (workbook && workbook.Sheets) {
+                            for (const sn of Object.keys(workbook.Sheets)) {
+                                if (sn !== targetSheetName) {
+                                    delete workbook.Sheets[sn];
+                                }
+                            }
+                        }
+                        if (workbook && Array.isArray(workbook.SheetNames)) {
+                            workbook.SheetNames = [targetSheetName];
+                        }
+                        const sheet = workbook.Sheets[targetSheetName];
+                        const rawRows = sheet ? XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" }) : [];
+                        resolve(rawRows);
+                    } catch (err) {
+                        reject(err);
+                    }
+                };
+                reader.onerror = function() {
+                    reject(new Error("File reading error"));
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // Convert one Chinese file's raw rows into English-layout rows (STUTTGART filter -> mapping -> BAW filter)
+        function extractZhShippingRowsFromFile(rawRows) {
+            if (!rawRows || rawRows.length === 0) return { header: SHIPPING_ZH_STD_HEADER.slice(), data: [] };
+            let headerRowIdx = -1;
+            const scanLimit = Math.min(rawRows.length, 15);
+            for (let i = 0; i < scanLimit && headerRowIdx === -1; i++) {
+                const row = rawRows[i] || [];
+                for (let c = 0; c < row.length; c++) {
+                    const s = String(row[c] !== undefined ? row[c] : '').trim();
+                    if (s === "运单号" || s.includes("运单号")) { headerRowIdx = i; break; }
+                }
+            }
+            if (headerRowIdx === -1) throw new Error("中文表（Sheet2 组件1）未找到表头“运单号”");
+            const h = (rawRows[headerRowIdx] || []).map(x => String(x === undefined || x === null ? '' : x).replace(/\s+/g, '').trim().toLowerCase());
+            const idx = (name) => h.findIndex(x => x === name.toLowerCase());
+            const lastIdx = (name) => {
+                const target = name.toLowerCase();
+                for (let i = h.length - 1; i >= 0; i--) if (h[i] === target) return i;
+                return -1;
+            };
+
+            const iWaybill = idx("运单号");
+            const iAscan = idx("揽收时间");
+            const iRegion = idx("区域name");
+            const iOutlet = idx("派件网点名称");
+            const iZip = idx("三段码");
+            const iReturn = idx("退件标识");
+            const iPoint = idx("最新扫描机构名称");
+            const iType = idx("最新扫描类型");
+            const iLastTime = lastIdx("最新扫描时间");
+            const missing = [];
+            [["运单号", iWaybill], ["揽收时间", iAscan], ["区域name", iRegion], ["派件网点名称", iOutlet], ["三段码", iZip],
+             ["最新扫描机构名称", iPoint], ["最新扫描类型", iType], ["最新扫描时间", iLastTime]].forEach(p => { if (p[1] === -1) missing.push(p[0]); });
+            if (missing.length > 0) throw new Error("中文表缺少列: " + missing.join(", "));
+
+            const out = [];
+            let valid = 0;
+            for (let i = headerRowIdx + 1; i < rawRows.length; i++) {
+                const row = rawRows[i];
+                if (!row || row.length === 0) continue;
+                // Global rule: only region name = STUTTGART
+                const region = String(row[iRegion] !== undefined ? row[iRegion] : '').trim().toUpperCase();
+                if (region !== "STUTTGART") continue;
+                const waybill = String(row[iWaybill] !== undefined ? row[iWaybill] : '').trim();
+                if (waybill === "" || waybill.includes("运单号")) continue;
+                // Then BAW filter as usual
+                const outlet = String(row[iOutlet] !== undefined ? row[iOutlet] : '').trim();
+                if (!outlet.toLowerCase().includes("baw")) continue;
+
+                const zip = String(row[iZip] !== undefined ? row[iZip] : '').trim();
+                const rawType = String(row[iType] !== undefined ? row[iType] : '').trim();
+                const mappedType = Object.prototype.hasOwnProperty.call(SHIPPING_ZH_SCAN_TYPE_MAP, rawType) ? SHIPPING_ZH_SCAN_TYPE_MAP[rawType] : rawType;
+                const retRaw = iReturn !== -1 ? String(row[iReturn] !== undefined ? row[iReturn] : '').trim() : '';
+
+                const nr = [
+                    waybill,
+                    row[iAscan],
+                    outlet,
+                    zip.slice(-3),
+                    String(row[iPoint] !== undefined ? row[iPoint] : '').trim(),
+                    mappedType,
+                    row[iLastTime],
+                    "Undelivered",
+                    retRaw === "" ? "未退件" : retRaw
+                ];
+                out.push(nr);
+                valid++;
+            }
+            // All Chinese-table rows are Undelivered => excluded from signed-rate metrics (same as English >90% Undelivered rule)
+            for (let i = 0; i < out.length; i++) out[i]._skipSignedMetrics = true;
+            return { header: SHIPPING_ZH_STD_HEADER.slice(), data: out };
+        }
+
+        function handleShippingZhFile(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+            const names = [];
+            for (let i = 0; i < files.length; i++) names.push(files[i].name);
+            document.getElementById('name-shipping-zh').textContent = names.join(", ");
+            document.getElementById('status-shipping-zh').textContent = "Loading & filtering STUTTGART/BAW records...";
+
+            const promises = [];
+            for (let i = 0; i < files.length; i++) {
+                promises.push(readZhShippingExcelFile(files[i]).then(rawRows => extractZhShippingRowsFromFile(rawRows)));
+            }
+            Promise.all(promises)
+                .then(all => {
+                    shippingZhCleanedFiles = all;
+                    rebuildShippingFromSources();
+                    let n = 0;
+                    all.forEach(f => { n += (f && f.data) ? f.data.length : 0; });
+                    document.getElementById('status-shipping-zh').textContent = "Loaded " + n + " records (STUTTGART + BAW)";
+                })
+                .catch(error => {
+                    alert('Failed to parse Chinese file. Error: ' + error.message);
+                    shippingZhCleanedFiles = [];
+                    document.getElementById('file-shipping-zh').value = '';
+                    document.getElementById('name-shipping-zh').textContent = 'No file chosen';
+                    document.getElementById('status-shipping-zh').textContent = '';
+                    rebuildShippingFromSources();
+                });
+        }
+
+        // Merge English-version files and converted Chinese-version files, then run the normal Shipping pipeline
+        function rebuildShippingFromSources() {
+            let combinedHeader = [];
+            const combinedData = [];
+            for (let i = 0; i < shippingEnCleanedFiles.length; i++) {
+                const cleaned = shippingEnCleanedFiles[i];
+                if (!cleaned) continue;
+                if (combinedHeader.length === 0 && cleaned.header && cleaned.header.length > 0) combinedHeader = cleaned.header;
+                if (cleaned.data) for (let r = 0; r < cleaned.data.length; r++) combinedData.push(cleaned.data[r]);
+            }
+
+            const zhRows = [];
+            shippingZhCleanedFiles.forEach(f => { if (f && f.data) f.data.forEach(r => zhRows.push(r)); });
+
+            if (zhRows.length > 0) {
+                if (combinedHeader.length === 0) {
+                    combinedHeader = SHIPPING_ZH_STD_HEADER.slice();
+                    zhRows.forEach(r => combinedData.push(r));
+                } else {
+                    // Remap Chinese standard columns into the English file's header layout
+                    const hl = combinedHeader.map(x => String(x).trim().toLowerCase());
+                    const find = (pred) => hl.findIndex(pred);
+                    const target = [
+                        find(h => h.includes("waybill") || h.includes("运单号") || h === "tracking number"),
+                        findEntryTimeColIdx(hl),
+                        find(h => h === "delivery outlet" || h.includes("delivery outlet") || h.includes("派送网点")),
+                        find(h => h === "receiving postal code" || h.includes("收件邮编") || h === "postcode" || h === "postal code"),
+                        find(h => h === "latest scanning point" || h.includes("latest scanning point") || h.includes("最新扫描点")),
+                        find(h => h === "latest scan type" || h === "last scan type" || h.includes("扫描类型") || h.includes("scan type")),
+                        find(h => h === "latest scan time" || h.includes("latest scan time") || h.includes("最新扫描时间")),
+                        find(h => h === "sign for identification" || h.includes("sign for identification") || h.includes("签收标识")),
+                        find(h => h === "transfer and return identification" || h.includes("退件") || h.includes("return identification"))
+                    ];
+                    zhRows.forEach(r => {
+                        const nr = new Array(combinedHeader.length).fill("");
+                        for (let k = 0; k < target.length; k++) {
+                            if (target[k] !== -1) nr[target[k]] = r[k];
+                        }
+                        nr._skipSignedMetrics = true;
+                        combinedData.push(nr);
+                    });
+                }
+            }
+
+            if (combinedHeader.length === 0) return;
+            processShipping({ header: combinedHeader, data: combinedData });
         }
 
         function getPercentile(sortedArr, p) {
@@ -4821,6 +5058,7 @@
             const shippingWillLostList = [];
             const shippingNoUpdateList = [];
             const shippingPudoList = [];
+            const shippingReturnParcelList = [];
             const todayStr = getTodayMMDD();
             const nowBerlin = getBerlinNowDate();
             const todayCalUTC = Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate());
@@ -5102,6 +5340,30 @@
                         postcode: postcodeVal,
                         pudoStayDays: pudoStayDays
                     });
+                }
+
+                // Return Parcel Filter: last scan type = Problem scan / Out of warehouse scan / Receive Scan (or pick up from code 10)
+                // and NoUpdate = now() - Latest scan time <= 100 hours (signed parcels excluded)
+                if (latestScanTime && !isSignedIdent && !isParcelSigned &&
+                    (lstLower === "problem scan" || lstLower === "out of warehouse scan" || lstLower === "receive scan" || lstLower === "pick up")) {
+                    const stayHours = Math.ceil((nowBerlin.getTime() - latestScanTime.getTime()) / (3600 * 1000));
+                    const lastScanCalUTC = Date.UTC(latestScanTime.getUTCFullYear(), latestScanTime.getUTCMonth(), latestScanTime.getUTCDate());
+                    const isLastScanToday = (lastScanCalUTC === todayCalUTC);
+                    if (stayHours <= 100 && !isLastScanToday) {
+                        shippingReturnParcelList.push({
+                            waybill: waybillNum,
+                            ascanDate: ascanDate,
+                            ascanRawDate: entryTime,
+                            station: station,
+                            lastScanDate: lastScanDate,
+                            lastScanRawDate: latestScanTime,
+                            lastScanType: latestScanType,
+                            client: clientVal,
+                            postcode: postcodeVal,
+                            noUpdateHours: stayHours,
+                            lastProblem: rawProblemReason
+                        });
+                    }
                 }
 
                 if (!skipSignedForRow) {
@@ -5390,10 +5652,24 @@
             // Sort by PUDO InBound Date from smallest to largest (ascending)
             finalShippingPudoData.sort((a, b) => compareAscanDateAsc(a.pudoInboundDate, b.pudoInboundDate, a.pudoInboundRawDate, b.pudoInboundRawDate));
 
+            // Build de-duplicated Return Parcel records from Shipping
+            const uniqueReturnParcelMap = new Map();
+            shippingReturnParcelList.forEach(r => {
+                if (r.waybill) {
+                    uniqueReturnParcelMap.set(r.waybill, r);
+                }
+            });
+            finalShippingReturnParcelData = Array.from(uniqueReturnParcelMap.values());
+            finalShippingReturnParcelData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            const btnReturnParcel = document.getElementById('btn-export-return-parcel');
+            if (btnReturnParcel) btnReturnParcel.disabled = (finalShippingReturnParcelData.length === 0);
+            const btnFinalReturn = document.getElementById('btn-export-final-return');
+            if (btnFinalReturn) btnFinalReturn.disabled = (finalShippingReturnParcelData.length === 0);
+
             if (detailedRecords.length > 0) {
-                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length})`;
+                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length}, DriverReturn: ${finalShippingReturnParcelData.length})`;
             } else {
-                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length})`;
+                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length}, DriverReturn: ${finalShippingReturnParcelData.length})`;
             }
             document.getElementById('btn-export-shipping').disabled = (finalShippingData.length === 0);
             document.getElementById('btn-export-shipping-month').disabled = (finalShippingMonthData.length === 0);
@@ -5954,6 +6230,118 @@
             XLSX.writeFile(wb, "FinalLost.xlsx");
         }
 
+        function exportReturnParcel() {
+            if (!finalShippingReturnParcelData || finalShippingReturnParcelData.length === 0) {
+                alert('No driver return data records (last scan type = Problem scan / Out of warehouse scan / Receive Scan and NoUpdate <= 100h and last scan date <> today) found in the uploaded Shipping records.');
+                return;
+            }
+            finalShippingReturnParcelData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            const exportRows = finalShippingReturnParcelData.map(r => ({
+                "waybill": r.waybill,
+                "AscanDate": r.ascanDate,
+                "station": r.station,
+                "last scan date": r.lastScanDate,
+                "last scan type": r.lastScanType,
+                "client": r.client || getWaybillClient(r.waybill),
+                "postcode": r.postcode,
+                "NoUpdate": r.noUpdateHours
+            }));
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "client", "postcode", "NoUpdate"]
+            });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "driver return data");
+            XLSX.writeFile(wb, "Driver_Return_Data.xlsx");
+        }
+
+        function isReturnSignedScanType(scanType) {
+            const lower = String(scanType || '').trim().toLowerCase();
+            if (!lower) return false;
+            return (lower.includes("signed") && !lower.includes("not signed") && !lower.includes("unsigned")) ||
+                   (lower.includes("delivered") && !lower.includes("undelivered") && !lower.includes("not delivered")) ||
+                   lower.includes("签收") || lower.includes("妥投");
+        }
+
+        function exportFinalReturn() {
+            if (!finalShippingReturnParcelData || finalShippingReturnParcelData.length === 0) {
+                alert('No driver return data records available. Please upload 48h Shipping records first.');
+                return;
+            }
+            if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) {
+                alert('Please upload Scan records file first to export driver return.');
+                return;
+            }
+
+            const scanInfoMap = getScanRecordsInfoMap();
+            const nowBerlin = getBerlinNowDate();
+            const candidates = finalShippingReturnParcelData.slice();
+            candidates.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+
+            const exportRows = [];
+            for (let i = 0; i < candidates.length; i++) {
+                const r = candidates[i];
+                const scanInfo = scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null;
+                const clientVal = r.client || getWaybillClient(r.waybill);
+
+                // Waybill not found in Scan records: keep row, leave Scan-derived fields empty (re-upload Scan records later)
+                if (!scanInfo) {
+                    exportRows.push({
+                        "waybill": r.waybill,
+                        "AscanDate": r.ascanDate,
+                        "Client": clientVal,
+                        "station": "",
+                        "last scan date": "",
+                        "last scan type": "",
+                        "Driver": "",
+                        "NoUpdate": "",
+                        "Problem": ""
+                    });
+                    continue;
+                }
+
+                const lastScanType = scanInfo.lastScanType || "";
+                // Keep only parcels still in driver's hands (not returned)
+                const lstLowerDR = lastScanType.trim().toLowerCase();
+                if (lstLowerDR !== "out of warehouse scan" && lstLowerDR !== "receive scan" && lstLowerDR !== "problem scan") continue;
+
+                const lastScanRaw = scanInfo.lastScanRawDate;
+                const lastScanDate = scanInfo.lastScanDate || "";
+
+                let noUpdateHours = "";
+                if (lastScanRaw instanceof Date && !isNaN(lastScanRaw.getTime())) {
+                    noUpdateHours = Math.ceil((nowBerlin.getTime() - lastScanRaw.getTime()) / (3600 * 1000));
+                }
+
+                const station = scanInfo.rawLatestScanStation || scanInfo.station || "";
+                const driver = scanInfo.driver || "";
+                const problem = scanInfo.lastProblem || "";
+
+                exportRows.push({
+                    "waybill": r.waybill,
+                    "AscanDate": r.ascanDate,
+                    "Client": clientVal,
+                    "station": station,
+                    "last scan date": lastScanDate,
+                    "last scan type": lastScanType,
+                    "Driver": driver,
+                    "NoUpdate": noUpdateHours,
+                    "Problem": problem
+                });
+            }
+
+            if (exportRows.length === 0) {
+                alert('No driver return records remaining (latest scan type in Scan records must be Out of warehouse scan / Receive scan / Problem scan).');
+                return;
+            }
+
+            const ws = XLSX.utils.json_to_sheet(exportRows, {
+                header: ["waybill", "AscanDate", "Client", "station", "last scan date", "last scan type", "Driver", "NoUpdate", "Problem"]
+            });
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "driver return");
+            XLSX.writeFile(wb, "Driver_Return.xlsx");
+        }
+
         function resetShipping() {
             finalShippingData = [];
             finalShippingMonthData = [];
@@ -5963,6 +6351,14 @@
             finalShippingWillLostData = [];
             finalShippingNoUpdateData = [];
             finalShippingPudoData = [];
+            shippingEnCleanedFiles = [];
+            shippingZhCleanedFiles = [];
+            const zhFileEl = document.getElementById('file-shipping-zh');
+            if (zhFileEl) {
+                zhFileEl.value = '';
+                document.getElementById('name-shipping-zh').textContent = 'No file chosen';
+                document.getElementById('status-shipping-zh').textContent = '';
+            }
             document.getElementById('file-shipping').value = '';
             document.getElementById('name-shipping').textContent = 'No file chosen';
             document.getElementById('status-shipping').textContent = '';
@@ -5977,6 +6373,11 @@
             if (btnShippingNoUpdate) btnShippingNoUpdate.disabled = true;
             const btnPudo = document.getElementById('btn-export-pudo');
             if (btnPudo) btnPudo.disabled = true;
+            finalShippingReturnParcelData = [];
+            const btnReturnParcelR = document.getElementById('btn-export-return-parcel');
+            if (btnReturnParcelR) btnReturnParcelR.disabled = true;
+            const btnFinalReturnR = document.getElementById('btn-export-final-return');
+            if (btnFinalReturnR) btnFinalReturnR.disabled = true;
             const dlContainer = document.getElementById('container-willlost-deadlines');
             if (dlContainer) dlContainer.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
             const dlHint = document.getElementById('willlost-deadline-hint');
