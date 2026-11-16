@@ -888,7 +888,7 @@
                         </li>
                         <li><strong>export driver return data</strong>:
                             <ul>
-                                <li>筛选 <strong>48h Shipping records</strong> 中 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>（忽略大小写），且 <code>NoUpdate = now() - Latest scan time &le; 100</code> 小时（向上取整）且 <code>last scan date &ne; today()</code>的未签收包裹。</li>
+                                <li>筛选 <strong>48h Shipping records</strong> 中 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>（忽略大小写），且 <code>NoUpdate = now() - Latest scan time &le; 144</code> 小时（向上取整）且 <code>last scan date &ne; today()</code>的未签收包裹。</li>
                                 <li>导出 <code>Driver_Return_Data.xlsx</code>（Sheet: <code>driver return data</code>），8 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>（按 <code>AscanDate</code> 升序）。</li>
                             </ul>
                         </li>
@@ -5343,13 +5343,13 @@
                 }
 
                 // Return Parcel Filter: last scan type = Problem scan / Out of warehouse scan / Receive Scan (or pick up from code 10)
-                // and NoUpdate = now() - Latest scan time <= 100 hours (signed parcels excluded)
+                // and last scan date <> today, NoUpdate = now() - Latest scan time <= 144 hours (signed parcels excluded)
                 if (latestScanTime && !isSignedIdent && !isParcelSigned &&
                     (lstLower === "problem scan" || lstLower === "out of warehouse scan" || lstLower === "receive scan" || lstLower === "pick up")) {
                     const stayHours = Math.ceil((nowBerlin.getTime() - latestScanTime.getTime()) / (3600 * 1000));
                     const lastScanCalUTC = Date.UTC(latestScanTime.getUTCFullYear(), latestScanTime.getUTCMonth(), latestScanTime.getUTCDate());
-                    const isLastScanToday = (lastScanCalUTC === todayCalUTC);
-                    if (stayHours <= 100 && !isLastScanToday) {
+                    const isLastScanToday = (lastScanCalUTC === todayCalUTC || lastScanDate === todayStr);
+                    if (stayHours <= 144 && !isLastScanToday) {
                         shippingReturnParcelList.push({
                             waybill: waybillNum,
                             ascanDate: ascanDate,
@@ -6232,7 +6232,7 @@
 
         function exportReturnParcel() {
             if (!finalShippingReturnParcelData || finalShippingReturnParcelData.length === 0) {
-                alert('No driver return data records (last scan type = Problem scan / Out of warehouse scan / Receive Scan and NoUpdate <= 100h and last scan date <> today) found in the uploaded Shipping records.');
+                alert('No driver return data records (last scan type = Problem scan / Out of warehouse scan / Receive Scan and NoUpdate <= 144h and last scan date <> today) found in the uploaded Shipping records.');
                 return;
             }
             finalShippingReturnParcelData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
