@@ -480,56 +480,6 @@
     }
 
     /* --- Slogan Tab Styling --- */
-    .slogan-form {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 16px 18px;
-      margin-bottom: 20px;
-    }
-
-    .slogan-main-row {
-      display: flex;
-      gap: 12px;
-      align-items: flex-end;
-      flex-wrap: wrap;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group label {
-      font-size: 13px;
-      color: var(--ink);
-    }
-
-    .form-group.flex-2 { flex: 2; min-width: 200px; }
-    .form-group.flex-1 { flex: 1; min-width: 110px; }
-    .form-group.btn-group { min-width: 130px; }
-
-    .slogan-form input[type="text"],
-    .slogan-form input[type="number"] {
-      padding: 9px 12px;
-      border: 1px solid #c2cad6;
-      border-radius: 6px;
-      font-size: 14px;
-      font-family: inherit;
-      color: var(--ink);
-      background: #fff;
-      box-sizing: border-box;
-      width: 100%;
-    }
-
-    .slogan-form input[type="text"]:focus,
-    .slogan-form input[type="number"]:focus {
-      outline: none;
-      border-color: var(--blue);
-      box-shadow: 0 0 0 2px rgba(23, 59, 102, 0.15);
-    }
-
     .btn-slogan-print,
     #printSloganBtnTop {
       background: var(--orange) !important;
@@ -538,42 +488,20 @@
       border-radius: 6px !important;
       padding: 9px 18px !important;
       margin: 0 !important;
-      width: 100% !important;
+      width: auto !important;
       border: none !important;
       cursor: pointer !important;
       transition: background 0.15s ease !important;
       white-space: nowrap !important;
     }
 
-    .btn-slogan-print:hover,
-    #printSloganBtnTop:hover {
+    .btn-slogan-print:hover:not(:disabled),
+    #printSloganBtnTop:hover:not(:disabled) {
       background: #d8571c !important;
     }
 
-    .slogan-options-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed #e2e7ef;
-      font-size: 13px;
-      color: var(--muted);
-      flex-wrap: wrap;
-    }
-
-    .checkbox-label {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      color: var(--ink);
-    }
-
     .slogan-preview-section {
-      margin-top: 12px;
+      margin-top: 4px;
     }
 
     .slogan-preview-title {
@@ -608,38 +536,325 @@
     }
 
     .slogan-paper {
-      width: 100mm;
-      height: 120mm;
+      width: 210mm;
+      height: 297mm;
+      min-height: 297mm;
+      max-height: 297mm;
       background: #fff;
       border: 1px solid #c9d2de;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
       box-sizing: border-box;
-      padding: 4mm;
-      display: grid;
-      gap: 2mm;
+      padding: 8mm 10mm;
+      display: flex;
+      flex-direction: column;
+      gap: 4mm;
       page-break-after: always;
       break-after: page;
       overflow: hidden;
       position: relative;
     }
 
-    .slogan-cell {
+    .slogan-group-block {
+      flex: 1 1 0;
+      min-height: 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 2mm;
-      box-sizing: border-box;
-      font-weight: 900;
-      color: #000;
-      word-break: break-word;
-      line-height: 1.35;
+      flex-direction: column;
+      overflow: hidden;
       background: #fff;
     }
 
-    .slogan-cell.with-border {
-      border: 1.5px dashed #9aa5b5;
-      border-radius: 3px;
+    .slogan-group-title {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-bottom: 1px solid #cbd5e1;
+      font-weight: 400;
+      font-size: 11px;
+      line-height: 1.3;
+      padding: 1.8mm 3mm;
+      text-align: left;
+      word-break: break-word;
+      flex: 0 0 auto;
+    }
+
+    .slogan-group-pods {
+      flex: 1 1 0;
+      min-height: 0;
+      padding: 2mm;
+      display: grid;
+      gap: 2mm;
+      align-items: center;
+      justify-items: center;
+      overflow: hidden;
+      background: #ffffff;
+    }
+
+    .slogan-pod-item {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      padding: 1mm;
+      box-sizing: border-box;
+    }
+
+    .slogan-pod-item img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* --- DNR Summarize Tab Styling --- */
+    .btn-dnr-export {
+      background: #0d9488 !important;
+      color: #fff !important;
+      font-weight: 700 !important;
+    }
+    .btn-dnr-export:hover:not(:disabled) {
+      background: #0f766e !important;
+    }
+    .dnr-reports-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .dnr-station-block {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dnr-station-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #eef2f6;
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #cfd8e3;
+    }
+    .dnr-station-toolbar-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--blue);
+    }
+    .btn-single-dnr-png {
+      width: auto !important;
+      margin: 0 !important;
+      padding: 6px 12px !important;
+      font-size: 12px !important;
+      background: var(--blue) !important;
+      border-radius: 5px !important;
+    }
+    .dnr-report-card {
+      width: 940px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 24px 28px;
+      color: #0f172a;
+      box-sizing: border-box;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+    }
+    .dnr-report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 2.5px solid var(--blue);
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    .dnr-report-title {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--blue);
+      margin: 0;
+      letter-spacing: 0.3px;
+    }
+    .dnr-report-subtitle {
+      font-size: 14px;
+      font-weight: 700;
+      color: #334155;
+      margin-top: 4px;
+    }
+    .dnr-report-meta {
+      text-align: right;
+      font-size: 12.5px;
+      color: #475569;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .dnr-section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #fff;
+      background: var(--blue);
+      padding: 7px 12px;
+      border-radius: 5px;
+      margin: 0 0 10px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dnr-section-title.bad-pod-title {
+      background: #b91c1c;
+      margin-top: 22px;
+    }
+    .dnr-summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+    .dnr-summary-table th,
+    .dnr-summary-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .dnr-summary-table th {
+      background: #f1f5f9;
+      color: #1e293b;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .dnr-summary-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .dnr-summary-table tr.dnr-total-row td {
+      background: #e2e8f0;
+      font-weight: 900;
+      color: #0f172a;
+      border-top: 2px solid #64748b;
+    }
+    .dnr-summary-table td.num-col,
+    .dnr-summary-table th.num-col {
+      text-align: center;
+      width: 75px;
+      font-weight: 800;
+    }
+    .dnr-summary-table td.driver-col {
+      font-weight: 800;
+      white-space: nowrap;
+      width: 140px;
+    }
+    .dnr-bad-pod-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+    .dnr-bad-pod-card {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fafbfc;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .dnr-bad-pod-info {
+      padding: 10px 12px;
+      background: #f1f5f9;
+      border-bottom: 1px solid #cbd5e1;
+      font-size: 12.5px;
+      line-height: 1.45;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .dnr-bad-pod-info-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      align-items: baseline;
+    }
+    .dnr-bad-pod-todo {
+      margin-top: 2px;
+      padding: 4px 8px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 4px;
+      color: #991b1b;
+      font-weight: 800;
+      font-size: 12.5px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .dnr-pod-images-grid {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      background: #ffffff;
+      flex: 1;
+      align-items: center;
+      justify-items: center;
+    }
+    .dnr-pod-images-grid.count-1 {
+      grid-template-columns: 1fr;
+    }
+    .dnr-pod-images-grid.count-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dnr-pod-images-grid.count-3,
+    .dnr-pod-images-grid.count-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dnr-pod-images-grid.count-many {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .dnr-pod-img-box {
+      width: 100%;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      box-sizing: border-box;
+    }
+    .dnr-pod-img-box img {
+      max-width: 100%;
+      max-height: 260px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 2px;
+    }
+    .dnr-pod-images-grid.count-2 .dnr-pod-img-box img,
+    .dnr-pod-images-grid.count-3 .dnr-pod-img-box img,
+    .dnr-pod-images-grid.count-4 .dnr-pod-img-box img {
+      max-height: 210px;
+    }
+    .dnr-pod-img-caption {
+      font-size: 10.5px;
+      color: #64748b;
+      font-weight: 700;
+      margin-top: 3px;
+    }
+    .dnr-no-pod-placeholder {
+      padding: 16px;
+      text-align: center;
+      color: #64748b;
+      font-size: 12px;
+      font-style: italic;
     }
 
     @media print {
@@ -649,7 +864,9 @@
       .panel { border: 0 !important; padding: 0 !important; }
 
       /* When normal CS Paper is printed */
-      body:not(.printing-slogan) #sloganView { display: none !important; }
+      body:not(.printing-slogan) #sloganView,
+      body:not(.printing-slogan) #dnrSummarizeView { display: none !important; }
+      body:not(.printing-slogan) #csPaperView { display: block !important; }
       body:not(.printing-slogan) .paper {
         width: 210mm;
         height: 297mm;
@@ -666,7 +883,8 @@
       }
 
       /* When Slogan is printed */
-      body.printing-slogan #csPaperView { display: none !important; }
+      body.printing-slogan #csPaperView,
+      body.printing-slogan #dnrSummarizeView { display: none !important; }
       body.printing-slogan #sloganView { display: block !important; }
       body.printing-slogan .slogan-preview-section { margin: 0 !important; }
       body.printing-slogan .slogan-papers-container {
@@ -676,8 +894,8 @@
         gap: 0 !important;
       }
       body.printing-slogan .slogan-paper {
-        width: 100mm !important;
-        height: 120mm !important;
+        width: 210mm !important;
+        height: 297mm !important;
         margin: 0 !important;
         border: 0 !important;
         box-shadow: none !important;
@@ -700,6 +918,7 @@
       <input id="excelFile" type="file" accept=".xlsx,.xls">
       <button id="printBtn" disabled>print CS paper</button>
       <button id="exportHubBtn" disabled>export paper by hub</button>
+      <button id="exportDnrPngBtn" class="btn-dnr-export" disabled>export DNR PNGs</button>
       <div id="status" class="status">Waiting for Excel file.</div>
     </aside>
 
@@ -707,14 +926,18 @@
       <div class="result-head">
         <div class="tabs-nav">
           <button type="button" class="tab-btn active" id="tabCsPaper" data-tab="csPaper">CS Paper</button>
+          <button type="button" class="tab-btn" id="tabDnrSummarize" data-tab="dnrSummarize">DNR Summarize</button>
           <button type="button" class="tab-btn" id="tabSlogan" data-tab="slogan">Slogan Tab</button>
         </div>
         <div class="result-actions" id="csPaperActions">
           <button id="exportHubBtnTop" disabled>export paper by hub</button>
           <button id="printBtnTop" disabled>print CS paper</button>
         </div>
+        <div class="result-actions" id="dnrTopActions" style="display: none;">
+          <button type="button" id="exportDnrPngBtnTop" class="btn-dnr-export" disabled>Export All DNR PNGs (ZIP)</button>
+        </div>
         <div class="result-actions" id="sloganTopActions" style="display: none;">
-          <button type="button" id="printSloganBtnTop">Print slogan</button>
+          <button type="button" id="printSloganBtnTop" disabled>Print Slogan</button>
         </div>
       </div>
 
@@ -723,38 +946,17 @@
         <div id="papers" class="empty">No printable paper generated yet.</div>
       </div>
 
+      <!-- DNR Summarize View -->
+      <div id="dnrSummarizeView" class="tab-view" style="display: none;">
+        <div id="dnrReports" class="empty">No DNR report generated yet. Please upload an Excel file.</div>
+      </div>
+
       <!-- Slogan Tab View -->
       <div id="sloganView" class="tab-view" style="display: none;">
-        <div class="slogan-form">
-          <div class="form-row slogan-main-row">
-            <div class="form-group flex-2">
-              <label for="sloganInput"><strong>Slogan 输入框 ({{input slogan}}):</strong></label>
-              <input type="text" id="sloganInput" value="妥投拍照 规范投递" placeholder="请输入口号或标语...">
-            </div>
-            <div class="form-group flex-1">
-              <label for="sloganNumber"><strong>number/page (默认9):</strong></label>
-              <input type="number" id="sloganNumber" value="9" min="1" max="100">
-            </div>
-            <div class="form-group flex-1">
-              <label for="sloganPages"><strong>打印页数:</strong></label>
-              <input type="number" id="sloganPages" value="1" min="1" max="50">
-            </div>
-            <div class="form-group btn-group">
-              <button type="button" id="printSloganBtn" class="btn-slogan-print">Print slogan</button>
-            </div>
-          </div>
-          <div class="slogan-options-row">
-            <label class="checkbox-label">
-              <input type="checkbox" id="sloganShowBorder" checked> 显示撕取裁切虚线
-            </label>
-            <span class="slogan-info-text">标准面单纸张打印：10cm × 12cm (100mm × 120mm) · 每张显示 <span id="sloganNumberDisplay">9</span> 个 · 字体加粗</span>
-          </div>
-        </div>
-
         <div class="slogan-preview-section">
           <div class="slogan-preview-title">
-            <span>面单预览（标准面单 10cm × 12cm）</span>
-            <span id="sloganStatusTag" class="slogan-badge">共 1 页，每页 9 个 Slogan</span>
+            <span>A4 Page Preview (210mm × 297mm · Max 5 Slogan Groups per Page)</span>
+            <span id="sloganStatusTag" class="slogan-badge">Waiting for Excel file</span>
           </div>
           <div id="sloganPapersContainer" class="slogan-papers-container">
             <!-- Rendered by JS -->
@@ -771,9 +973,11 @@
   <script>
     const fileInput = document.getElementById("excelFile");
     const papers = document.getElementById("papers");
+    const dnrReports = document.getElementById("dnrReports");
     const statusBox = document.getElementById("status");
     const printButtons = [document.getElementById("printBtn"), document.getElementById("printBtnTop")];
     const exportHubButtons = [document.getElementById("exportHubBtn"), document.getElementById("exportHubBtnTop")];
+    const exportDnrPngButtons = [document.getElementById("exportDnrPngBtn"), document.getElementById("exportDnrPngBtnTop")];
 
     const requiredColumns = {
       shipmentId: ["order number", "shipment id", "paketnummer", "sendungsnummer"],
@@ -786,13 +990,19 @@
       address: ["customer address", "address", "kundenadresse", "adresse"],
       phone: ["customer phone", "phone", "telephone", "telefonnummer", "tel"],
       firstCall: ["first call", "firstcall", "first_call"],
-      lastCall: ["last call", "lastcall", "last_call"],
+      lastCall: ["last call-how to find", "last call", "lastcall", "last_call"],
       podLocation: ["pod location", "podlocation", "pod_location", "pod ort"],
       systemDeliveryLocation: ["system delivery location", "system delivery", "system location", "system delievry location", "system ort"],
       realDeliveryLocation: ["real delivery location", "real location", "real ort", "real"],
       train: ["train", "training", "train check", "fehlerverhalten"],
       waybill: ["waybill", "waybill number", "waybill no", "tracking", "tracking number", "tracking no", "billcode", "bill code", "运单号"],
-      found: ["found", "gruende", "gründe", "grund", "reasons", "reason", "ursache", "客诉原因"]
+      found: ["found", "gruende", "gründe", "grund", "reasons", "reason", "ursache", "客诉原因"],
+      finalBlame: ["final blame", "finalblame", "final_blame"],
+      callTimes: ["call times", "calltimes", "call_times"],
+      customerReachable: ["customer reachable", "customerreachable", "reachable"],
+      times: ["times"],
+      postCode: ["postcode", "post code", "postal code", "zip", "plz"],
+      podToDo: ["pod to-do", "pod todo", "pod to do", "pod_todo", "pod_to_do"]
     };
 
     fileInput.addEventListener("change", async () => {
@@ -800,7 +1010,11 @@
       if (!file) return;
 
       try {
-        const workbook = await readWorkbook(file);
+        statusBox.innerHTML = `<strong>Status:</strong> Reading Excel file & extracting embedded POD images...`;
+        const [workbook, excelImageData] = await Promise.all([
+          readWorkbook(file),
+          extractExcelImages(file)
+        ]);
         let dataRows = [];
         let candidates = [];
         let printable = [];
@@ -816,9 +1030,15 @@
           dataRows = rows.slice(1);
           const index = buildColumnIndex(headers);
 
-          candidates = dataRows
-            .filter(row => row.some(cellHasContent))
-            .map((row, order) => ({ ...rowToRecord(row, index), order, row, index }));
+          candidates = [];
+          dataRows.forEach((row, idx) => {
+            if (!row.some(cellHasContent)) return;
+            const sheetRowIdx = idx + 1; // 0-based sheet row index (header is 0)
+            const order = candidates.length;
+            const record = rowToRecord(row, index, sheetRowIdx, excelImageData);
+            candidates.push({ ...record, order, row, index });
+          });
+
           missingCustomerInfoRows = candidates.filter(record => !hasRequiredCustomerInfo(record)).length;
           printable = candidates
             .map(({ row, index, ...record }) => record);
@@ -829,8 +1049,12 @@
           totalStations = paginated.totalStations;
 
           renderPapers(driverPages);
+          renderDnrReports(printable);
+          renderSlogan(printable);
         } catch (paperBuildError) {
           renderPapers([]);
+          renderDnrReports([]);
+          renderSlogan([]);
           paperError = paperBuildError.message || "CS paper could not be generated.";
           papers.className = "empty";
           papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>生成失败:</strong> ${escapeHtml(paperError)}</div>`;
@@ -840,6 +1064,8 @@
         updateStatus(file.name, dataRows.length, printable.length, totalDrivers, driverPages.length, missingCustomerInfoRows, paperError, totalStations);
       } catch (error) {
         renderPapers([]);
+        renderDnrReports([]);
+        renderSlogan([]);
         statusBox.textContent = `Excel file could not be read: ${error.message || error}`;
         papers.className = "empty";
         papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>Excel 读取错误:</strong> ${escapeHtml(error.message || String(error))}</div>`;
@@ -1103,14 +1329,36 @@
     }
 
     function sheetToRows(sheet) {
-      if (!sheet["!ref"]) return [];
+      let maxR = 0;
+      let maxC = 0;
+      let minR = 0;
+      let minC = 0;
 
-      const range = XLSX.utils.decode_range(sheet["!ref"]);
+      if (sheet["!ref"]) {
+        const range = XLSX.utils.decode_range(sheet["!ref"]);
+        minR = range.s.r;
+        minC = range.s.c;
+        maxR = range.e.r;
+        maxC = range.e.c;
+      }
+
+      // Scan all actual cell keys in case sheet["!ref"] was not updated to cover newly added columns (e.g. POD2, POD3...)
+      Object.keys(sheet).forEach(key => {
+        if (key.startsWith("!")) return;
+        const decoded = XLSX.utils.decode_cell(key);
+        if (decoded) {
+          if (decoded.r > maxR) maxR = decoded.r;
+          if (decoded.c > maxC) maxC = decoded.c;
+        }
+      });
+
+      if (maxR === 0 && maxC === 0 && !sheet["A1"]) return [];
+
       const rows = [];
 
-      for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex += 1) {
+      for (let rowIndex = minR; rowIndex <= maxR; rowIndex += 1) {
         const row = [];
-        for (let columnIndex = range.s.c; columnIndex <= range.e.c; columnIndex += 1) {
+        for (let columnIndex = minC; columnIndex <= maxC; columnIndex += 1) {
           const address = XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
           row.push(cellValue(sheet[address]));
         }
@@ -1141,6 +1389,19 @@
         index[key] = findColumn(normalized, columnNames);
       }
 
+      index.podColumns = [];
+      normalized.forEach((h, colIdx) => {
+        if (!h) return;
+        const isPodLoc = requiredColumns.podLocation.some(name => h === name || h.includes(name));
+        const isPodTodo = requiredColumns.podToDo.some(name => h === name || h.includes(name));
+        if (!isPodLoc && !isPodTodo && /^pod(?:[\s_\-]*\d+)?$/i.test(h)) {
+          index.podColumns.push({
+            colIdx,
+            label: clean(headers[colIdx]) || `POD${index.podColumns.length + 1}`
+          });
+        }
+      });
+
       return index;
     }
 
@@ -1169,7 +1430,341 @@
       return clean(value).toLowerCase() === "yes";
     }
 
-    function rowToRecord(row, index) {
+    function parseExcelDateMmDd(cell) {
+      if (!cell) return { mmdd: "", sortVal: Infinity };
+      const raw = rawValue(cell);
+
+      if (raw instanceof Date && !isNaN(raw.getTime())) {
+        const m = String(raw.getMonth() + 1).padStart(2, "0");
+        const d = String(raw.getDate()).padStart(2, "0");
+        return { mmdd: `${m}/${d}`, sortVal: raw.getTime() };
+      }
+
+      if (typeof raw === "number" && Number.isFinite(raw) && raw > 1000) {
+        const date = XLSX.SSF.parse_date_code(raw);
+        if (date && date.m && date.d) {
+          const m = String(date.m).padStart(2, "0");
+          const d = String(date.d).padStart(2, "0");
+          const sortVal = new Date(date.y || 2026, date.m - 1, date.d).getTime();
+          return { mmdd: `${m}/${d}`, sortVal };
+        }
+      }
+
+      const str = clean(cell);
+      if (!str || str === "-") return { mmdd: "", sortVal: Infinity };
+
+      // Check YYYY-MM-DD or YYYY/MM/DD
+      let match = str.match(/^(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+      if (match) {
+        const y = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        const d = parseInt(match[3], 10);
+        return {
+          mmdd: `${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`,
+          sortVal: new Date(y, m - 1, d).getTime()
+        };
+      }
+
+      // Check DD.MM.YYYY or DD.MM.YY (German dot format)
+      match = str.match(/^(\d{1,2})\.(\d{1,2})(?:\.(\d{2,4}))?/);
+      if (match) {
+        const d = parseInt(match[1], 10);
+        const m = parseInt(match[2], 10);
+        let y = match[3] ? parseInt(match[3], 10) : 2026;
+        if (y < 100) y += 2000;
+        return {
+          mmdd: `${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`,
+          sortVal: new Date(y, m - 1, d).getTime()
+        };
+      }
+
+      // Check A/B/YYYY or A/B or A-B
+      match = str.match(/^(\d{1,2})[/\-](\d{1,2})(?:[/\-](\d{2,4}))?/);
+      if (match) {
+        const p1 = parseInt(match[1], 10);
+        const p2 = parseInt(match[2], 10);
+        let y = match[3] ? parseInt(match[3], 10) : 2026;
+        if (y < 100) y += 2000;
+        let m = p1;
+        let d = p2;
+        if (p1 > 12 && p2 <= 12) {
+          d = p1;
+          m = p2;
+        }
+        return {
+          mmdd: `${String(m).padStart(2, "0")}/${String(d).padStart(2, "0")}`,
+          sortVal: new Date(y, m - 1, d).getTime()
+        };
+      }
+
+      return { mmdd: str, sortVal: Infinity };
+    }
+
+    async function extractExcelImages(file) {
+      const result = {
+        byRowCol: new Map(), // key: `${row}_${col}` -> array of dataUrls
+        byDispId: new Map()  // key: dispId -> dataUrl
+      };
+      if (typeof JSZip === "undefined") return result;
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+
+        const getMimeType = (path) => {
+          const ext = (path.split(".").pop() || "").toLowerCase();
+          if (ext === "png") return "image/png";
+          if (ext === "gif") return "image/gif";
+          if (ext === "webp") return "image/webp";
+          if (ext === "bmp") return "image/bmp";
+          if (ext === "svg") return "image/svg+xml";
+          return "image/jpeg";
+        };
+
+        const resolveZipPath = (baseFile, target) => {
+          if (!target) return "";
+          let cleanTarget = target.replace(/^\/+/, "");
+          if (target.startsWith("/")) return cleanTarget;
+          const baseParts = baseFile.split("/");
+          baseParts.pop(); // remove filename
+          const relParts = cleanTarget.split("/");
+          for (const part of relParts) {
+            if (part === "." || part === "") continue;
+            if (part === "..") baseParts.pop();
+            else baseParts.push(part);
+          }
+          return baseParts.join("/");
+        };
+
+        const mediaCache = new Map();
+        const loadMediaDataUrl = async (mediaPath) => {
+          if (!mediaPath) return null;
+          if (mediaCache.has(mediaPath)) return mediaCache.get(mediaPath);
+          let zipEntry = zip.file(mediaPath);
+          if (!zipEntry) {
+            const lower = mediaPath.toLowerCase();
+            const matchedKey = Object.keys(zip.files).find(k => k.toLowerCase() === lower);
+            if (matchedKey) zipEntry = zip.file(matchedKey);
+          }
+          if (!zipEntry) return null;
+          const base64 = await zipEntry.async("base64");
+          const dataUrl = `data:${getMimeType(mediaPath)};base64,${base64}`;
+          mediaCache.set(mediaPath, dataUrl);
+          return dataUrl;
+        };
+
+        const parseXml = (xmlStr) => new DOMParser().parseFromString(xmlStr, "application/xml");
+
+        const parseRelsFile = async (relsPath) => {
+          const map = new Map();
+          const entry = zip.file(relsPath);
+          if (!entry) return map;
+          const xmlText = await entry.async("text");
+          const doc = parseXml(xmlText);
+          const rels = Array.from(doc.getElementsByTagName("Relationship"));
+          const ownerPath = relsPath.replace("/_rels/", "/").replace(/\.rels$/, "");
+          rels.forEach(rel => {
+            const id = rel.getAttribute("Id");
+            const target = rel.getAttribute("Target");
+            if (id && target) {
+              map.set(id, resolveZipPath(ownerPath, target));
+            }
+          });
+          return map;
+        };
+
+        // 1. Parse WPS / Excel DISPIMG cellimages.xml if present
+        const cellImagesPaths = Object.keys(zip.files).filter(p => /xl\/cellimages\d*\.xml$/i.test(p));
+        for (const ciPath of cellImagesPaths) {
+          const pathParts = ciPath.split("/");
+          const fileName = pathParts.pop();
+          const relsPath = [...pathParts, "_rels", `${fileName}.rels`].join("/");
+          const relsMap = await parseRelsFile(relsPath);
+          const xmlText = await zip.file(ciPath).async("text");
+          const doc = parseXml(xmlText);
+
+          const allElements = Array.from(doc.getElementsByTagName("*"));
+          const cellImgNodes = allElements.filter(el => el.localName === "cellImage");
+          for (const node of cellImgNodes) {
+            const subEls = Array.from(node.getElementsByTagName("*"));
+            const cNvPr = subEls.find(el => el.localName === "cNvPr");
+            const blip = subEls.find(el => el.localName === "blip");
+            if (!cNvPr || !blip) continue;
+            const name = cNvPr.getAttribute("name") || cNvPr.getAttribute("descr") || "";
+            const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed") ||
+              Array.from(blip.attributes).find(a => a.localName === "embed")?.value;
+            if (name && embedId && relsMap.has(embedId)) {
+              const dataUrl = await loadMediaDataUrl(relsMap.get(embedId));
+              if (dataUrl) {
+                result.byDispId.set(name, dataUrl);
+              }
+            }
+          }
+        }
+
+        // 2. Parse DrawingML floating/anchored images (xl/drawings/drawing*.xml)
+        const drawingPaths = Object.keys(zip.files).filter(p => /xl\/drawings\/drawing\d*\.xml$/i.test(p));
+        for (const dPath of drawingPaths) {
+          const pathParts = dPath.split("/");
+          const fileName = pathParts.pop();
+          const relsPath = [...pathParts, "_rels", `${fileName}.rels`].join("/");
+          const relsMap = await parseRelsFile(relsPath);
+          const xmlText = await zip.file(dPath).async("text");
+          const doc = parseXml(xmlText);
+
+          const allElements = Array.from(doc.getElementsByTagName("*"));
+          const anchors = allElements.filter(el => el.localName === "twoCellAnchor" || el.localName === "oneCellAnchor");
+          for (const anchor of anchors) {
+            const subEls = Array.from(anchor.getElementsByTagName("*"));
+            const fromNode = subEls.find(el => el.localName === "from");
+            const blip = subEls.find(el => el.localName === "blip");
+            if (!fromNode || !blip) continue;
+
+            const fromChildren = Array.from(fromNode.getElementsByTagName("*"));
+            const colNode = fromChildren.find(el => el.localName === "col");
+            const rowNode = fromChildren.find(el => el.localName === "row");
+            if (!colNode || !rowNode) continue;
+
+            const col = parseInt(colNode.textContent.trim(), 10);
+            const row = parseInt(rowNode.textContent.trim(), 10);
+            const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed") ||
+              Array.from(blip.attributes).find(a => a.localName === "embed")?.value;
+
+            if (Number.isFinite(row) && Number.isFinite(col) && embedId && relsMap.has(embedId)) {
+              const dataUrl = await loadMediaDataUrl(relsMap.get(embedId));
+              if (dataUrl) {
+                const key = `${row}_${col}`;
+                if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
+                result.byRowCol.get(key).push(dataUrl);
+              }
+            }
+          }
+        }
+
+        // 3. Parse RichData / Modern Excel Place-in-Cell images if present
+        const richRelPath = "xl/richData/_rels/richValueRel.xml.rels";
+        const richRelXmlPath = "xl/richData/richValueRel.xml";
+        if (zip.file(richRelPath) && zip.file(richRelXmlPath)) {
+          const relsMap = await parseRelsFile(richRelPath);
+          const relXmlText = await zip.file(richRelXmlPath).async("text");
+          const relDoc = parseXml(relXmlText);
+          const relNodes = Array.from(relDoc.getElementsByTagName("*")).filter(el => el.localName === "rel");
+          const orderedMediaUrls = [];
+          for (const rNode of relNodes) {
+            const rId = rNode.getAttribute("r:id") || Array.from(rNode.attributes).find(a => a.localName === "id")?.value;
+            const mediaPath = rId ? relsMap.get(rId) : null;
+            const dataUrl = mediaPath ? await loadMediaDataUrl(mediaPath) : null;
+            orderedMediaUrls.push(dataUrl);
+          }
+          // Map sheet1 cells with vm attribute if needed
+          const sheetPath = "xl/worksheets/sheet1.xml";
+          if (zip.file(sheetPath) && orderedMediaUrls.some(Boolean)) {
+            const sheetXml = await zip.file(sheetPath).async("text");
+            const sheetDoc = parseXml(sheetXml);
+            const cellNodes = Array.from(sheetDoc.getElementsByTagName("c"));
+            cellNodes.forEach(cNode => {
+              const vm = cNode.getAttribute("vm");
+              const ref = cNode.getAttribute("r");
+              if (vm && ref) {
+                const decoded = XLSX.utils.decode_cell(ref);
+                const vmIdx = parseInt(vm, 10) - 1;
+                const dataUrl = orderedMediaUrls[vmIdx];
+                if (dataUrl && decoded) {
+                  const key = `${decoded.r}_${decoded.c}`;
+                  if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
+                  if (!result.byRowCol.get(key).includes(dataUrl)) {
+                    result.byRowCol.get(key).push(dataUrl);
+                  }
+                }
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.warn("Could not extract embedded images from xlsx:", err);
+      }
+
+      return result;
+    }
+
+    function extractPodImagesForRow(row, sheetRowIdx, podColumns, excelImageData) {
+      const images = [];
+      const seen = new Set();
+
+      const addImg = (src, label = "") => {
+        if (!src || seen.has(src)) return;
+        seen.add(src);
+        images.push({ src, label });
+      };
+
+      const checkCell = (cell, colIdx, label = "") => {
+        if (excelImageData && excelImageData.byRowCol) {
+          const coordKey = `${sheetRowIdx}_${colIdx}`;
+          const anchored = excelImageData.byRowCol.get(coordKey) || [];
+          anchored.forEach(url => addImg(url, label));
+        }
+
+        if (!cell) return;
+        const rawStr = String(cell.raw ?? "");
+        const textStr = String(cell.text ?? "");
+        const formulaStr = String(cell.formula ?? "");
+        const combined = `${rawStr} ${textStr} ${formulaStr}`;
+
+        // Match all DISPIMG("ID_...", 1) occurrences in the cell
+        const dispRegex = /DISPIMG\(\s*["']([^"']+)["']/gi;
+        let match;
+        while ((match = dispRegex.exec(combined)) !== null) {
+          const id = match[1];
+          if (excelImageData && excelImageData.byDispId) {
+            const url = excelImageData.byDispId.get(id);
+            if (url) addImg(url, label);
+          }
+        }
+
+        // Also check if any known dispId appears directly in the cell text/formula
+        if (excelImageData && excelImageData.byDispId) {
+          for (const [id, url] of excelImageData.byDispId.entries()) {
+            if (id && combined.includes(id)) addImg(url, label);
+          }
+        }
+
+        // Check direct URL or data:image
+        const val = clean(cell);
+        if (/^(https?:\/\/|data:image\/)/i.test(val)) {
+          addImg(val, label);
+        }
+      };
+
+      // 1. First check explicitly named POD columns (POD, POD1, POD2, ... PODn) in order
+      if (podColumns && podColumns.length > 0) {
+        podColumns.forEach(({ colIdx, label }) => {
+          checkCell(row[colIdx], colIdx, label);
+        });
+      }
+
+      // 2. Also scan ALL columns in this row so that POD2..PODn without headers or images anchored on adjacent columns are never missed
+      for (let c = 0; c < row.length; c++) {
+        checkCell(row[c], c, `POD${images.length + 1}`);
+      }
+
+      // 3. Also check any DrawingML / RichData image anchored anywhere on this sheetRowIdx (even beyond row.length)
+      if (excelImageData && excelImageData.byRowCol) {
+        const rowEntries = [];
+        for (const [key, urls] of excelImageData.byRowCol.entries()) {
+          const [rStr, cStr] = key.split("_");
+          if (parseInt(rStr, 10) === sheetRowIdx) {
+            rowEntries.push({ col: parseInt(cStr, 10), urls });
+          }
+        }
+        rowEntries.sort((a, b) => a.col - b.col).forEach(entry => {
+          entry.urls.forEach(url => addImg(url, `POD${images.length + 1}`));
+        });
+      }
+
+      return images;
+    }
+
+    function rowToRecord(row, index, sheetRowIdx = -1, excelImageData = null) {
       const driver = valueAt(row, index.driver, 4);
       const client = valueAt(row, index.client);
       const customerName = valueAt(row, index.customerName, 5);
@@ -1189,19 +1784,29 @@
         deliveryDateDisplay = formatExcelDate(cellAt(row, index.deliveryDate, 1));
       }
 
+      const complaintDateCell = cellAt(row, index.complaintDate, 2);
+      const parsedComplaint = parseExcelDateMmDd(complaintDateCell);
       const firstCall = formatCallTime(cellAt(row, index.firstCall));
       const lastCall = formatCallTime(cellAt(row, index.lastCall));
       const podLocation = valueAt(row, index.podLocation);
       const systemDeliveryLocation = valueAt(row, index.systemDeliveryLocation);
       const realDeliveryLocation = valueAt(row, index.realDeliveryLocation);
       const train = valueAt(row, index.train);
+      const podToDo = valueAt(row, index.podToDo);
+      const finalBlame = valueAt(row, index.finalBlame);
+      const postCode = valueAt(row, index.postCode);
+      const podImages = sheetRowIdx >= 0
+        ? extractPodImagesForRow(row, sheetRowIdx, index.podColumns || [], excelImageData)
+        : [];
 
       return {
         waybill,
         shipmentId,
         found,
         deliveryDate: deliveryDateDisplay,
-        complaintDate: formatExcelDate(cellAt(row, index.complaintDate, 2)),
+        complaintDate: formatExcelDate(complaintDateCell),
+        complaintDateMmDd: parsedComplaint.mmdd,
+        complaintDateSort: parsedComplaint.sortVal,
         station: stationForDriver(valueAt(row, index.station, 3), driver),
         driver,
         client,
@@ -1213,7 +1818,11 @@
         podLocation,
         systemDeliveryLocation,
         realDeliveryLocation,
-        train
+        train,
+        podToDo,
+        finalBlame,
+        postCode,
+        podImages
       };
     }
 
@@ -1848,25 +2457,407 @@
       }[char]));
     }
 
+    function todayMmDd() {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${month}/${day}`;
+    }
+
+    function todayMmDdSafeFile() {
+      const now = new Date();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${month}-${day}`;
+    }
+
+    // ==========================================
+    // DNR Summarize Report & PNG Export Logic
+    // ==========================================
+    function renderDnrReports(records) {
+      exportDnrPngButtons.forEach(btn => { if (btn) btn.disabled = !records || records.length === 0; });
+
+      if (!dnrReports) return;
+      if (!records || !records.length) {
+        dnrReports.className = "empty";
+        dnrReports.textContent = "No DNR report data found in the Excel file.";
+        return;
+      }
+
+      // Group records by station
+      const sorted = [...records].sort(sortByStationAndDriver);
+      const stationMap = new Map();
+      sorted.forEach(rec => {
+        const st = rec.station || "Unknown";
+        if (!stationMap.has(st)) stationMap.set(st, []);
+        stationMap.get(st).push(rec);
+      });
+
+      const blocksHtml = [];
+      stationMap.forEach((stRecords, station) => {
+        blocksHtml.push(buildStationDnrReportHtml(station, stRecords));
+      });
+
+      dnrReports.className = "dnr-reports-wrapper";
+      dnrReports.innerHTML = blocksHtml.join("");
+
+      // Bind single station PNG export buttons
+      dnrReports.querySelectorAll(".btn-single-dnr-png").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const station = btn.dataset.station;
+          const block = btn.closest(".dnr-station-block");
+          const card = block ? block.querySelector(".dnr-report-card") : null;
+          if (card) {
+            await exportSingleDnrCardPng(card, station, btn);
+          }
+        });
+      });
+    }
+
+    function buildStationDnrReportHtml(station, stRecords) {
+      // 1. Min & Max Complaint Date (mm/dd)
+      let minSort = Infinity;
+      let maxSort = -Infinity;
+      let minMmDd = "-";
+      let maxMmDd = "-";
+
+      stRecords.forEach(r => {
+        if (r.complaintDateMmDd) {
+          if (Number.isFinite(r.complaintDateSort)) {
+            if (r.complaintDateSort < minSort) {
+              minSort = r.complaintDateSort;
+              minMmDd = r.complaintDateMmDd;
+            }
+            if (r.complaintDateSort > maxSort) {
+              maxSort = r.complaintDateSort;
+              maxMmDd = r.complaintDateMmDd;
+            }
+          } else {
+            if (minMmDd === "-") minMmDd = r.complaintDateMmDd;
+            maxMmDd = r.complaintDateMmDd;
+          }
+        }
+      });
+
+      // 2. Group by Driver for Summarize Table
+      const driverMap = new Map();
+      stRecords.forEach(r => {
+        const drv = r.driver || "Unknown";
+        if (!driverMap.has(drv)) {
+          driverMap.set(drv, {
+            driver: drv,
+            dnrCount: 0,
+            foundCount: 0,
+            podLocations: new Set(),
+            dnrDatesMap: new Map() // mmdd -> sortVal
+          });
+        }
+        const entry = driverMap.get(drv);
+        entry.dnrCount += 1;
+        if (isYes(r.found)) {
+          entry.foundCount += 1;
+        }
+        const loc = (r.podLocation || "").trim();
+        if (loc && loc !== "-") {
+          entry.podLocations.add(loc);
+        }
+        const dt = (r.complaintDateMmDd || "").trim();
+        if (dt && dt !== "-") {
+          const prevSort = entry.dnrDatesMap.get(dt) ?? Infinity;
+          entry.dnrDatesMap.set(dt, Math.min(prevSort, r.complaintDateSort ?? Infinity));
+        }
+      });
+
+      const driverRows = Array.from(driverMap.values()).sort((a, b) => {
+        if (b.dnrCount !== a.dnrCount) return b.dnrCount - a.dnrCount;
+        return a.driver.localeCompare(b.driver, undefined, { numeric: true, sensitivity: "base" });
+      });
+
+      let totalDnr = 0;
+      let totalFound = 0;
+
+      const tableRowsHtml = driverRows.map(d => {
+        totalDnr += d.dnrCount;
+        totalFound += d.foundCount;
+
+        const locJoined = Array.from(d.podLocations).join(", ") || "-";
+        const datesJoined = Array.from(d.dnrDatesMap.entries())
+          .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))
+          .map(e => e[0])
+          .join(", ") || "-";
+
+        return `
+          <tr>
+            <td class="driver-col">${escapeHtml(d.driver)}</td>
+            <td class="num-col">${d.dnrCount}</td>
+            <td class="num-col">${d.foundCount}</td>
+            <td>${escapeHtml(locJoined)}</td>
+            <td>${escapeHtml(datesJoined)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      // 3. Common Bad POD records (has POD image or POD To-Do non-empty)
+      const badPodRecords = stRecords.filter(r => {
+        const hasImgs = r.podImages && r.podImages.length > 0;
+        const todo = (r.podToDo || "").trim();
+        const hasTodo = Boolean(todo && todo !== "-");
+        return hasImgs || hasTodo;
+      });
+
+      let badPodSectionHtml = "";
+      if (badPodRecords.length > 0) {
+        const cardsHtml = badPodRecords.map(r => {
+          const imgs = r.podImages || [];
+          const countClass = imgs.length === 1 ? "count-1"
+            : imgs.length === 2 ? "count-2"
+            : imgs.length === 3 ? "count-3"
+            : imgs.length === 4 ? "count-4"
+            : "count-many";
+
+          const imgsHtml = imgs.length > 0
+            ? `<div class="dnr-pod-images-grid ${countClass}">
+                ${imgs.map((img, i) => `
+                  <div class="dnr-pod-img-box">
+                    <img src="${escapeHtml(img.src)}" alt="POD ${i + 1}" crossorigin="anonymous">
+                  </div>
+                `).join("")}
+               </div>`
+            : `<div class="dnr-no-pod-placeholder">No POD image embedded</div>`;
+
+          const todoText = (r.podToDo || "").trim();
+
+          return `
+            <div class="dnr-bad-pod-card">
+              <div class="dnr-bad-pod-info">
+                <div class="dnr-bad-pod-info-row">
+                  <span><span class="field-label">Driver:</span> <span class="field-value">${escapeHtml(r.driver || "-")}</span></span>
+                  <span><span class="field-label">Waybill:</span> <span class="field-value">${escapeHtml(r.waybill || "-")}</span></span>
+                </div>
+                <div class="dnr-bad-pod-info-row">
+                  <span><span class="field-label">POD Location:</span> <span class="field-value">${escapeHtml(r.podLocation || "-")}</span></span>
+                </div>
+                ${todoText && todoText !== "-" ? `<div class="dnr-bad-pod-todo">POD To-Do: ${escapeHtml(todoText)}</div>` : `<div class="dnr-bad-pod-info-row"><span class="field-label">POD To-Do:</span> <span class="field-value">-</span></div>`}
+              </div>
+              ${imgsHtml}
+            </div>
+          `;
+        }).join("");
+
+        badPodSectionHtml = `
+          <div class="dnr-section-title bad-pod-title">
+            <span>2. Common Bad POD</span>
+            <span style="font-size: 12px; font-weight: 700;">Cases: ${badPodRecords.length}</span>
+          </div>
+          <div class="dnr-bad-pod-grid">
+            ${cardsHtml}
+          </div>
+        `;
+      } else {
+        badPodSectionHtml = `
+          <div class="dnr-section-title bad-pod-title">
+            <span>2. Common Bad POD</span>
+            <span style="font-size: 12px; font-weight: 700;">0 Cases</span>
+          </div>
+          <div class="dnr-no-pod-placeholder" style="border: 1px dashed #cbd5e1; border-radius: 6px;">No Common Bad POD cases for this station.</div>
+        `;
+      }
+
+      const expDateDisplay = todayMmDd();
+      const safeFilePreview = `${todayMmDdSafeFile()}_${sanitizeFilename(station)}_DNR.png`;
+
+      return `
+        <div class="dnr-station-block" data-station="${escapeHtml(station)}">
+          <div class="dnr-station-toolbar">
+            <span class="dnr-station-toolbar-title">Station: ${escapeHtml(station)} (${ escapeHtml(expDateDisplay) }_${ escapeHtml(station) }_DNR.png)</span>
+            <button type="button" class="btn-single-dnr-png" data-station="${escapeHtml(station)}">Download ${escapeHtml(safeFilePreview)}</button>
+          </div>
+          <div class="dnr-report-card" data-station="${escapeHtml(station)}">
+            <div class="dnr-report-header">
+              <div>
+                <h2 class="dnr-report-title">${escapeHtml(station)} — DNR Report</h2>
+                <div class="dnr-report-subtitle">1. Summarize from ${escapeHtml(minMmDd)} to ${escapeHtml(maxMmDd)}</div>
+              </div>
+              <div class="dnr-report-meta">
+                <div>Export Date: ${escapeHtml(expDateDisplay)}</div>
+              </div>
+            </div>
+
+            <div class="dnr-section-title">
+              <span>1. Summarize from ${escapeHtml(minMmDd)} to ${escapeHtml(maxMmDd)}</span>
+              <span style="font-size: 12px; font-weight: 700;">Drivers: ${driverRows.length}</span>
+            </div>
+            <table class="dnr-summary-table">
+              <thead>
+                <tr>
+                  <th>Driver</th>
+                  <th class="num-col">DNR</th>
+                  <th class="num-col">FOUND</th>
+                  <th>POD Location</th>
+                  <th>DNR DATE</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHtml}
+              </tbody>
+            </table>
+
+            ${badPodSectionHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    async function waitForImagesInElement(rootEl) {
+      const imgs = Array.from(rootEl.querySelectorAll("img"));
+      const pending = imgs
+        .filter(img => img.src && !img.complete)
+        .map(img => new Promise(resolve => {
+          img.addEventListener("load", resolve, { once: true });
+          img.addEventListener("error", resolve, { once: true });
+          if (img.complete) resolve();
+        }));
+      await Promise.all(pending);
+    }
+
+    async function renderCardToPngBlob(cardEl) {
+      await ensurePdfLibrariesLoaded();
+      const tempHolder = document.createElement("div");
+      tempHolder.style.position = "fixed";
+      tempHolder.style.left = "-99999px";
+      tempHolder.style.top = "0";
+      tempHolder.style.width = "940px";
+      tempHolder.style.background = "#ffffff";
+      tempHolder.style.zIndex = "-9999";
+      document.body.appendChild(tempHolder);
+
+      try {
+        const clone = cardEl.cloneNode(true);
+        clone.style.margin = "0";
+        clone.style.boxShadow = "none";
+        tempHolder.appendChild(clone);
+        await waitForImagesInElement(clone);
+
+        const canvas = await html2canvas(clone, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: "#ffffff",
+          logging: false
+        });
+
+        return await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      } finally {
+        if (tempHolder.parentNode) tempHolder.parentNode.removeChild(tempHolder);
+      }
+    }
+
+    async function exportSingleDnrCardPng(cardEl, station, btn) {
+      const origText = btn ? btn.textContent : "";
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Generating PNG...";
+        }
+        const blob = await renderCardToPngBlob(cardEl);
+        const fileName = `${todayMmDdSafeFile()}_${sanitizeFilename(station)}_DNR.png`;
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to export PNG: " + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = origText;
+        }
+      }
+    }
+
+    async function exportAllDnrPngs() {
+      const setButtonsDisabled = (disabled) => {
+        exportDnrPngButtons.forEach(b => { if (b) b.disabled = disabled; });
+      };
+
+      const cards = Array.from(document.querySelectorAll(".dnr-report-card"));
+      if (cards.length === 0) {
+        alert("No DNR reports found to export.");
+        return;
+      }
+
+      const originalStatus = statusBox.innerHTML;
+      try {
+        setButtonsDisabled(true);
+        await ensurePdfLibrariesLoaded();
+
+        const datePrefix = todayMmDdSafeFile();
+        if (cards.length === 1) {
+          const station = cards[0].dataset.station || "Unknown";
+          statusBox.innerHTML = `<strong>Status:</strong> Exporting PNG for station "${escapeHtml(station)}"...`;
+          await exportSingleDnrCardPng(cards[0], station, null);
+          statusBox.innerHTML = originalStatus;
+          setButtonsDisabled(false);
+          return;
+        }
+
+        const zip = new JSZip();
+        for (let i = 0; i < cards.length; i++) {
+          const card = cards[i];
+          const station = card.dataset.station || `Station_${i + 1}`;
+          const safeStation = sanitizeFilename(station);
+          statusBox.innerHTML = `<strong>Status:</strong> Rendering DNR PNG for "${escapeHtml(station)}" (${i + 1}/${cards.length})...`;
+          await new Promise(r => setTimeout(r, 40));
+
+          const pngBlob = await renderCardToPngBlob(card);
+          const pngFileName = `${datePrefix}_${safeStation}_DNR.png`;
+          zip.file(pngFileName, pngBlob);
+        }
+
+        statusBox.innerHTML = `<strong>Status:</strong> Packaging DNR PNGs into ZIP...`;
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(zipBlob);
+        link.download = `${datePrefix}_DNR_Reports.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        statusBox.innerHTML = originalStatus;
+      } catch (err) {
+        console.error(err);
+        alert("Failed to batch export DNR PNGs: " + err.message);
+        statusBox.innerHTML = originalStatus;
+      } finally {
+        setButtonsDisabled(false);
+      }
+    }
+
+    exportDnrPngButtons.forEach(btn => {
+      if (btn) btn.addEventListener("click", exportAllDnrPngs);
+    });
+
     // ==========================================
     // Tab Switching & Slogan Printing Logic
     // ==========================================
     const tabCsPaper = document.getElementById("tabCsPaper");
+    const tabDnrSummarize = document.getElementById("tabDnrSummarize");
     const tabSlogan = document.getElementById("tabSlogan");
     const csPaperView = document.getElementById("csPaperView");
+    const dnrSummarizeView = document.getElementById("dnrSummarizeView");
     const sloganView = document.getElementById("sloganView");
     const csPaperActions = document.getElementById("csPaperActions");
+    const dnrTopActions = document.getElementById("dnrTopActions");
     const sloganTopActions = document.getElementById("sloganTopActions");
 
-    const sloganInput = document.getElementById("sloganInput");
-    const sloganNumber = document.getElementById("sloganNumber");
-    const sloganPages = document.getElementById("sloganPages");
-    const sloganShowBorder = document.getElementById("sloganShowBorder");
-    const sloganNumberDisplay = document.getElementById("sloganNumberDisplay");
     const sloganStatusTag = document.getElementById("sloganStatusTag");
     const sloganPapersContainer = document.getElementById("sloganPapersContainer");
-    const printSloganBtn = document.getElementById("printSloganBtn");
     const printSloganBtnTop = document.getElementById("printSloganBtnTop");
+
+    let currentAllRecords = [];
 
     function ensurePrintPageStyle(size) {
       let styleEl = document.getElementById("dynamic-print-page-style");
@@ -1879,114 +2870,126 @@
     }
 
     function switchTab(tab) {
-      if (tab === "slogan") {
-        if (tabCsPaper) tabCsPaper.classList.remove("active");
-        if (tabSlogan) tabSlogan.classList.add("active");
-        if (csPaperView) csPaperView.style.display = "none";
-        if (sloganView) sloganView.style.display = "block";
-        if (csPaperActions) csPaperActions.style.display = "none";
-        if (sloganTopActions) sloganTopActions.style.display = "flex";
-        renderSlogan();
-      } else {
-        if (tabSlogan) tabSlogan.classList.remove("active");
-        if (tabCsPaper) tabCsPaper.classList.add("active");
-        if (sloganView) sloganView.style.display = "none";
-        if (csPaperView) csPaperView.style.display = "block";
-        if (sloganTopActions) sloganTopActions.style.display = "none";
-        if (csPaperActions) csPaperActions.style.display = "flex";
-      }
+      if (tabCsPaper) tabCsPaper.classList.toggle("active", tab === "csPaper");
+      if (tabDnrSummarize) tabDnrSummarize.classList.toggle("active", tab === "dnrSummarize");
+      if (tabSlogan) tabSlogan.classList.toggle("active", tab === "slogan");
+
+      if (csPaperView) csPaperView.style.display = tab === "csPaper" ? "block" : "none";
+      if (dnrSummarizeView) dnrSummarizeView.style.display = tab === "dnrSummarize" ? "block" : "none";
+      if (sloganView) sloganView.style.display = tab === "slogan" ? "block" : "none";
+
+      if (csPaperActions) csPaperActions.style.display = tab === "csPaper" ? "flex" : "none";
+      if (dnrTopActions) dnrTopActions.style.display = tab === "dnrSummarize" ? "flex" : "none";
+      if (sloganTopActions) sloganTopActions.style.display = tab === "slogan" ? "flex" : "none";
     }
 
     if (tabCsPaper) tabCsPaper.addEventListener("click", () => switchTab("csPaper"));
+    if (tabDnrSummarize) tabDnrSummarize.addEventListener("click", () => switchTab("dnrSummarize"));
     if (tabSlogan) tabSlogan.addEventListener("click", () => switchTab("slogan"));
 
-    function getOptimalGrid(n) {
+    function getPodGridDimensions(n) {
       if (n <= 1) return { cols: 1, rows: 1 };
-      if (n === 2) return { cols: 1, rows: 2 };
-      if (n === 3) return { cols: 1, rows: 3 };
+      if (n === 2) return { cols: 2, rows: 1 };
+      if (n === 3) return { cols: 3, rows: 1 };
       if (n === 4) return { cols: 2, rows: 2 };
-      if (n <= 6) return { cols: 2, rows: 3 };
-      if (n <= 8) return { cols: 2, rows: 4 };
+      if (n <= 6) return { cols: 3, rows: 2 };
+      if (n <= 8) return { cols: 4, rows: 2 };
       if (n === 9) return { cols: 3, rows: 3 };
-      if (n <= 12) return { cols: 3, rows: 4 };
-      if (n <= 15) return { cols: 3, rows: 5 };
-      if (n <= 16) return { cols: 4, rows: 4 };
-      if (n <= 20) return { cols: 4, rows: 5 };
-      if (n <= 25) return { cols: 5, rows: 5 };
-      let cols = Math.max(1, Math.round(Math.sqrt(n * 0.82)));
-      let rows = Math.ceil(n / cols);
+      if (n <= 12) return { cols: 4, rows: 3 };
+      const cols = Math.ceil(Math.sqrt(n * 1.3));
+      const rows = Math.ceil(n / cols);
       return { cols, rows };
     }
 
-    function calculateFontSize(text, cols, rows) {
-      const cleanLen = (text || "Slogan").trim().length || 6;
-      const cellWidthMm = 90 / cols;
-      const cellHeightMm = 110 / rows;
-      const charsPerLine = Math.max(2, Math.ceil(Math.sqrt(cleanLen * (cellWidthMm / cellHeightMm) * 1.5)));
-      const lines = Math.ceil(cleanLen / charsPerLine);
+    const SLOGAN_GROUPS_PER_PAGE = 5;
 
-      const sizeBasedOnWidth = (cellWidthMm * 3.78 * 0.82) / Math.max(1, charsPerLine);
-      const sizeBasedOnHeight = (cellHeightMm * 3.78 * 0.78) / Math.max(1, lines * 1.35);
-
-      let size = Math.floor(Math.min(sizeBasedOnWidth, sizeBasedOnHeight));
-      return Math.max(10, Math.min(size, 40));
-    }
-
-    function renderSlogan() {
+    function renderSlogan(records) {
+      if (Array.isArray(records)) {
+        currentAllRecords = records;
+      }
       if (!sloganPapersContainer) return;
 
-      const text = (sloganInput ? sloganInput.value : "").trim() || "Slogan";
-      let count = parseInt(sloganNumber ? sloganNumber.value : 9, 10);
-      if (isNaN(count) || count < 1) count = 9;
+      // Each row with a non-empty Slogan (POD To-Do) + all its POD images counts as 1 group (max 5 groups per A4 page)
+      const groups = [];
 
-      let pages = parseInt(sloganPages ? sloganPages.value : 1, 10);
-      if (isNaN(pages) || pages < 1) pages = 1;
-      if (pages > 50) pages = 50;
+      currentAllRecords.forEach(r => {
+        const imgs = (r.podImages || []).filter(img => img && img.src);
+        if (imgs.length === 0) return;
 
-      const showBorder = sloganShowBorder ? sloganShowBorder.checked : true;
+        const todoRaw = (r.podToDo || "").trim();
+        if (!todoRaw || todoRaw === "-") return;
 
-      if (sloganNumberDisplay) sloganNumberDisplay.textContent = count;
-      if (sloganStatusTag) sloganStatusTag.textContent = `共 ${pages} 页，每页 ${count} 个 Slogan`;
+        groups.push({
+          sloganText: todoRaw,
+          images: imgs
+        });
+      });
 
-      const { cols, rows } = getOptimalGrid(count);
-      const fontSize = calculateFontSize(text, cols, rows);
+      if (printSloganBtnTop) {
+        printSloganBtnTop.disabled = groups.length === 0;
+      }
 
-      let html = "";
-      for (let p = 0; p < pages; p++) {
-        let cellsHtml = "";
-        for (let i = 0; i < count; i++) {
-          cellsHtml += `
-            <div class="slogan-cell ${showBorder ? "with-border" : ""}" style="font-size: ${fontSize}px;">
-              ${escapeHtml(text)}
+      if (groups.length === 0) {
+        if (sloganStatusTag) {
+          sloganStatusTag.textContent = currentAllRecords.length
+            ? "0 Slogan groups with POD images found"
+            : "Waiting for Excel file";
+        }
+        sloganPapersContainer.innerHTML = `
+          <div style="padding: 40px 20px; color: var(--muted); text-align: center; font-size: 14px;">
+            ${currentAllRecords.length
+              ? "No records with both POD To-Do and POD images found in the uploaded Excel."
+              : "No Slogan A4 page generated yet. Please upload an Excel file."}
+          </div>
+        `;
+        return;
+      }
+
+      const totalPages = Math.ceil(groups.length / SLOGAN_GROUPS_PER_PAGE);
+      if (sloganStatusTag) {
+        sloganStatusTag.textContent = `${totalPages} A4 Page${totalPages > 1 ? "s" : ""} · ${groups.length} Group${groups.length > 1 ? "s" : ""} (Max ${SLOGAN_GROUPS_PER_PAGE}/Page)`;
+      }
+
+      let pagesHtml = "";
+      for (let p = 0; p < totalPages; p++) {
+        const pageGroups = groups.slice(p * SLOGAN_GROUPS_PER_PAGE, (p + 1) * SLOGAN_GROUPS_PER_PAGE);
+
+        const blocksHtml = pageGroups.map(g => {
+          const { cols, rows } = getPodGridDimensions(g.images.length);
+          const imgsHtml = g.images.map((img, idx) => `
+            <div class="slogan-pod-item">
+              <img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.label || `POD${idx + 1}`)}" crossorigin="anonymous">
+            </div>
+          `).join("");
+
+          return `
+            <div class="slogan-group-block">
+              <div class="slogan-group-title">${escapeHtml(g.sloganText)}</div>
+              <div class="slogan-group-pods" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
+                ${imgsHtml}
+              </div>
             </div>
           `;
-        }
+        }).join("");
 
-        html += `
-          <div class="slogan-paper" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
-            ${cellsHtml}
+        pagesHtml += `
+          <div class="slogan-paper">
+            ${blocksHtml}
           </div>
         `;
       }
 
-      sloganPapersContainer.innerHTML = html;
+      sloganPapersContainer.innerHTML = pagesHtml;
     }
 
-    function printSlogan() {
-      renderSlogan();
-      ensurePrintPageStyle("100mm 120mm");
+    async function printSlogan() {
+      ensurePrintPageStyle("A4");
       document.body.classList.add("printing-slogan");
-
+      await waitForImagesInElement(sloganPapersContainer);
       window.print();
     }
 
-    if (printSloganBtn) printSloganBtn.addEventListener("click", printSlogan);
     if (printSloganBtnTop) printSloganBtnTop.addEventListener("click", printSlogan);
-
-    if (sloganInput) sloganInput.addEventListener("input", renderSlogan);
-    if (sloganNumber) sloganNumber.addEventListener("input", renderSlogan);
-    if (sloganPages) sloganPages.addEventListener("input", renderSlogan);
-    if (sloganShowBorder) sloganShowBorder.addEventListener("change", renderSlogan);
 
     window.addEventListener("afterprint", () => {
       document.body.classList.remove("printing-slogan");
@@ -1994,7 +2997,7 @@
     });
 
     // Initialize slogan preview on page load
-    renderSlogan();
+    renderSlogan([]);
   </script>
 </body>
 </html>
