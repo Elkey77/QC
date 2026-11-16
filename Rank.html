@@ -1139,11 +1139,11 @@
 
     /* ===================== Daily Station Report (Group Tabs) ===================== */
     body { padding-bottom: 2rem; }
-    body.view-daily { padding: 0.5rem 0.5rem 2rem; }
+    body.view-daily { padding: 0.35rem 0.35rem 1.5rem; }
     body.view-daily #rank-container { display: none; }
     #daily-view { display: none; }
     body.view-daily #daily-view { display: flex; }
-    #daily-view { max-width: 1120px; gap: 0.6rem; }
+    #daily-view { max-width: 100%; width: 100%; gap: 0.45rem; }
 
     /* Top tab bar */
     .dr-top-nav {
@@ -1210,10 +1210,16 @@
     .dr-toolbar .btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
     #dr-report-frame {
       background: #ffffff; color: #0f172a; padding: 6px; border-radius: 8px;
-      font-size: 11px; max-width: 440px; margin: 0 auto;
+      font-size: 11px; max-width: 500px; margin: 0 auto;
       box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     }
-    #dr-report-frame.is-region { max-width: 1100px; }
+    #dr-report-frame.is-region {
+      max-width: 100%;
+      width: fit-content;
+      padding: 4px;
+      margin: 0 auto;
+      overflow-x: auto;
+    }
     [data-theme="dark"] #dr-report-frame { background: #0b1220; color: #f8fafc; }
     .dr-banner {
       background: linear-gradient(135deg, #c0392b, #922b21); color: #fff;
@@ -1237,14 +1243,42 @@
     [data-theme="dark"] .dr-table th { background: #334155; color: #f8fafc; }
     .dr-table td.l, .dr-table th.l { text-align: left; }
     .dr-table td.wrap { white-space: normal; word-break: break-word; text-align: left; }
-    .dr-col-2cm { max-width: 76px; min-width: 52px; white-space: normal; word-break: break-word; }
-    .dr-col-st { width: 46px; max-width: 52px; min-width: 36px; padding: 2px 2px !important; font-size: 9.5px; white-space: normal; word-break: break-all; }
-    .dr-col-num { min-width: 28px; max-width: 42px; padding: 2px 1px; }
+    .dr-col-2cm { max-width: 76px; min-width: 50px; white-space: normal; word-break: break-word; }
+    .dr-col-st { width: 44px; max-width: 50px; min-width: 34px; padding: 2px 2px !important; font-size: 9.5px; white-space: normal; word-break: break-all; }
+    .dr-col-num { min-width: 24px; max-width: 36px; padding: 2px 1px; }
+
+    /* Region-specific ultra-compact layout */
+    #dr-report-frame.is-region .dr-banner { padding: 4px 8px; font-size: 13px; }
+    #dr-report-frame.is-region .dr-dates { padding: 2px 6px; margin-bottom: 4px; font-size: 10px; }
+    #dr-report-frame.is-region .dr-sec { margin: 2px 0 0; }
+    #dr-report-frame.is-region .dr-table { font-size: 10px; table-layout: fixed; width: auto; }
+    #dr-report-frame.is-region .dr-table th,
+    #dr-report-frame.is-region .dr-table td { padding: 1.5px 3px; line-height: 1.22; vertical-align: top; }
+    #dr-report-frame.is-region .dr-col-st { width: 46px; min-width: 38px; max-width: 52px; font-size: 9.5px; vertical-align: middle; }
+    #dr-report-frame.is-region .dr-col-num { width: 34px; min-width: 26px; max-width: 38px; padding: 1px 1px !important; font-size: 9.5px; vertical-align: middle; }
+    #dr-report-frame.is-region .dr-col-da { width: 3.6cm; min-width: 3cm; max-width: 4cm; white-space: normal; word-break: break-word; text-align: left; padding: 2px 4px !important; }
+    #dr-report-frame.is-region .dr-col-remark { width: 3.6cm; min-width: 3cm; max-width: 4.5cm; white-space: normal; word-break: break-word; text-align: left; padding: 0 !important; }
+    .dr-remark-edit {
+      width: 100%; min-height: 20px; height: 100%; padding: 2px 4px;
+      outline: none; white-space: pre-wrap; word-break: break-word;
+      text-align: left; font-size: 10px; color: inherit; cursor: text;
+    }
+    .dr-remark-edit:empty::before {
+      content: attr(data-placeholder);
+      color: #94a3b8; font-style: italic; pointer-events: none;
+    }
+    .dr-remark-edit:focus {
+      background: rgba(37, 99, 235, 0.06);
+      box-shadow: inset 0 0 0 1px #2563eb;
+    }
+
     .dr-table tr.dr-total td { font-weight: 800; background: #f1f5f9; }
     [data-theme="dark"] .dr-table tr.dr-total td { background: #1e293b; }
     .dr-table td.dr-bad { background: #fee2e2; color: #b91c1c; font-weight: 800; }
     .dr-bad-txt { color: #dc2626; font-weight: 800; background: #fee2e2; padding: 0 2px; border-radius: 2px; }
     [data-theme="dark"] .dr-bad-txt { color: #fca5a5; background: rgba(239, 68, 68, 0.25); }
+    .dr-blue-txt { color: #2563eb; font-weight: 800; background: #dbeafe; padding: 0 2px; border-radius: 2px; }
+    [data-theme="dark"] .dr-blue-txt { color: #93c5fd; background: rgba(37, 99, 235, 0.25); }
     .dr-table td.dr-warn { background: #ffedd5; color: #c2410c; font-weight: 800; }
     .dr-table td.dr-zero { color: #94a3b8; }
     .dr-empty { font-size: 11px; color: #64748b; padding: 3px 6px; border: 1px dashed #cbd5e1; }
@@ -1270,7 +1304,7 @@
             <svg style="width:15px;height:15px;fill:currentColor;margin-inline-end:4px;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
             <span id="ui-btn-import-rank">Import Station Rank</span>
           </button>
-          <button id="btn-import-todo" class="btn btn-primary" onclick="document.getElementById('dr-file-input').click()" title="Import To-Do List Excel (DA, Lost, Return, DNR, Pending, group)">
+          <button id="btn-import-todo" class="btn btn-primary" onclick="document.getElementById('dr-file-input').click()" title="Import To-Do List Excel (DA, Lost, Return1, Return2, DNR, Pending, group)">
             <svg style="width:15px;height:15px;fill:currentColor;margin-inline-end:4px;" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
             <span id="ui-btn-import-todo">Import To-Do List</span>
           </button>
@@ -1318,7 +1352,7 @@
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
           </svg>
           <p id="ui-upload-todo-prompt" style="font-weight:700;font-size:0.95rem;margin-top:0.35rem;">Import To-Do List</p>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Drop To-Do List (DA, Lost, Return, DNR, Pending, group) or <strong>click to browse</strong></p>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Drop To-Do List (DA, Lost, Return1, Return2, DNR, Pending, group) or <strong>click to browse</strong></p>
         </div>
       </div>
     </section>
@@ -1578,7 +1612,7 @@
     <section class="card" id="dr-setup">
       <h2 style="font-size:1.05rem;font-weight:700;">馃搨 Daily Report Data</h2>
       <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
-        Upload the workbook(s) containing sheets <b>DA</b>, <b>Lost</b>, <b>Return</b>, <b>DNR</b>, <b>Pending</b> and <b>Group</b> (station &rarr; responsibility mapping).
+        Upload the workbook(s) containing sheets <b>DA</b>, <b>Lost</b>, <b>Return1</b>, <b>Return2</b>, <b>DNR</b>, <b>Pending</b> and <b>Group</b> (station &rarr; responsibility mapping).
         You can select several files at once; sheets are matched by name.
       </p>
       <div class="upload-zone" id="dr-drop-zone" style="margin-top:0.75rem;padding:1.2rem;" onclick="document.getElementById('dr-file-input').click()">
@@ -4908,12 +4942,34 @@
     const DR_SPEC = {
       da:      { spec: { date: ['date','deliverydate','day','\u65e5\u671f'], station: ['station','\u7f51\u70b9','site'], driverid: ['driverid','userid','courierid','\u5de5\u53f7'], driver: ['driver','drivername','\u53f8\u673a'], signed: ['signedparcels','signedparcel','signed','\u7b7e\u6536'] }, req: ['date','station','driver','signed'] },
       lost:    { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], station: ['station','\u7f51\u70b9','site'], deadline: ['deadline','deadlinedate','duedate'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype','\u6700\u540e\u626b\u63cf\u7c7b\u578b','\u626b\u63cf\u7c7b\u578b'], driver: ['driver','drivername','\u53f8\u673a'], client: ['client','customer','\u5ba2\u6237'] }, req: ['station','driver'] },
-      return:  { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], ascandate: ['ascandate','scandate','arrivalscandate'], client: ['client','customer','\u5ba2\u6237'], station: ['station','\u7f51\u70b9','site'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], driver: ['driver','drivername','\u53f8\u673a'], noupdate: ['noupdate'], problem: ['problem'] }, req: ['station','driver'] },
-      dnr:     { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], station: ['station','\u7f51\u70b9','site'], times: ['times','\u6b21\u6570'], cdate: ['complaintdate','\u6295\u8bc9\u65e5\u671f'], pod: ['podlocation','pod','pod\u4f4d\u7f6e','\u51ed\u8bc1\u4f4d\u7f6e'], driver: ['driver','drivername','\u53f8\u673a'] }, req: ['station','times','cdate'] },
+      return1: { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], ascandate: ['ascandate','scandate','arrivalscandate'], client: ['client','customer','\u5ba2\u6237'], station: ['station','\u7f51\u70b9','site'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], driver: ['driver','drivername','\u53f8\u673a'], noupdate: ['noupdate'], problem: ['problem'] }, req: ['station','driver'] },
+      return2: { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], ascandate: ['ascandate','scandate','arrivalscandate'], client: ['client','customer','\u5ba2\u6237'], station: ['station','\u7f51\u70b9','site'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], driver: ['driver','drivername','\u53f8\u673a'], noupdate: ['noupdate'], problem: ['problem'] }, req: ['station','driver'] },
+      dnr:     { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], station: ['station','\u7f51\u70b9','site'], times: ['times','\u6b21\u6570'], cdate: ['complaintdate','\u6295\u8bc9\u65e5\u671f'], pod: ['podlocation','pod','pod\u4f4d\u7f6e','\u51ed\u8bc1\u4f4d\u7f6e'], driver: ['driver','drivername','\u53f8\u673a'], finalblame: ['finalblame','finalresponsibility','finalresp','responsibility','blame','\u8d23\u4efb\u5f52\u5c5e','\u6700\u7ec8\u8d23\u4efb','\u8d23\u4efb\u5224\u5b9a'] }, req: ['station','times','cdate'] },
       pending: { spec: { station: ['station','\u7f51\u70b9','site'], scandate: ['ascandate','scandate','arrivalscandate'], type: ['lastscantype','lastscantypename','scantype'], client: ['client','customer','\u5ba2\u6237'], postcode: ['postcode','plz','zipcode','zip','postalcode','\u90ae\u7f16'], third: ['3rdcode','thirdcode','3rd'] }, req: ['station','scandate','type','client','postcode','third'] },
       ofd:     { spec: { station: ['station','\u7f51\u70b9','site'], third: ['3rdcode','thirdcode','3rd'] }, req: ['station','third'] },
     };
-    const DR_KIND_LABEL = { da: 'DA', lost: 'Lost', return: 'Return', dnr: 'DNR', pending: 'Pending', group: 'Group' };
+    const DR_KIND_LABEL = { da: 'DA', lost: 'Lost', return1: 'Return1', return2: 'Return2', dnr: 'DNR', pending: 'Pending', group: 'Group' };
+    const DR_REMARK_STORAGE_KEY = 'str_dr_remarks_v1';
+    function drLoadRemarks() {
+      try { return JSON.parse(localStorage.getItem(DR_REMARK_STORAGE_KEY) || '{}') || {}; } catch (e) { return {}; }
+    }
+    function drGetRemark(date, stKey) {
+      const all = drLoadRemarks();
+      return all[`${date || ''}::${stKey || ''}`] || '';
+    }
+    function drSetRemark(date, stKey, val) {
+      try {
+        const all = drLoadRemarks();
+        const k = `${date || ''}::${stKey || ''}`;
+        if (val) all[k] = val; else delete all[k];
+        localStorage.setItem(DR_REMARK_STORAGE_KEY, JSON.stringify(all));
+      } catch (e) {}
+    }
+    function drOnRemarkInput(el) {
+      const stKey = el.getAttribute('data-st') || '';
+      const date = (DR.computed && DR.computed.today) || DR.today || '';
+      drSetRemark(date, stKey, el.innerText.replace(/\r\n/g, '\n'));
+    }
     const DR_MON = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
 
     // ---- helpers ----
@@ -4992,7 +5048,8 @@
       const n = drNormH(name);
       if (/^da\b|\u8fd0\u529b|capacity|driverattend/i.test(n)) return 'da';
       if (/^lost\b|\u9057\u5931|willlost/i.test(n)) return 'lost';
-      if (/^return\b|needreturn|\u9000\u56de|\u8fd4\u8fd8/i.test(n)) return 'return';
+      if (/^return2|returnresult/i.test(n)) return 'return2';
+      if (/^return1|^return\b|needreturn|\u9000\u56de|\u8fd4\u8fd8/i.test(n)) return 'return1';
       if (/^dnr\b|\u672a\u6536\u5230/i.test(n)) return 'dnr';
       if (/^pendingofd\b|^ofd\b/i.test(n)) return 'ofd';
       if (/^pending\b|backlog|\u79ef\u538b/i.test(n)) return 'pending';
@@ -5126,10 +5183,10 @@
         if (!s) {
           const disp = k === 'BACKUP' ? 'BackUp' : drTxt(raw);
           s = {
-            key: k, name: disp || k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, lostY: 0, lostT: 0,
-            lostTotal: 0, lostByDriver: 0, lostByHub: 0, returnTotal: 0,
+            key: k, name: disp || k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
+            lostTotal: 0, lostByDriver: 0, lostByHub: 0, return1Total: 0, return2Total: 0,
             pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
-            lostAllDrivers: new Map(), returnAllDrivers: new Map(), dnrAllDrivers: new Map(), driverDisplayNames: new Map()
+            lostAllDrivers: new Map(), return1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
           };
           st.set(k, s);
         } else if (preferDisplayName && k !== 'BACKUP') {
@@ -5146,6 +5203,7 @@
             key: k, name: drTxt(raw), signed: 0, hasY: false, hasT: false, dnr: 0,
             lost: 0, scanDates: new Map(),
             needReturn: 0, returnScanDates: new Map(),
+            returnResult: 0, returnResultScanDates: new Map(),
             pods: []
           };
           s.drivers.set(k, d);
@@ -5161,13 +5219,15 @@
       // Pre-register stations from all sheets to guarantee complete station universe
       const da = read('da');
       const lost = read('lost');
-      const ret = read('return');
+      const ret1 = read('return1');
+      const ret2 = read('return2');
       const dnr = read('dnr');
       const pend = read('pending');
 
       if (da) da.records.forEach(r => getSt(r.station, true));
       if (lost) lost.records.forEach(r => getSt(r.station));
-      if (ret) ret.records.forEach(r => getSt(r.station));
+      if (ret1) ret1.records.forEach(r => getSt(r.station));
+      if (ret2) ret2.records.forEach(r => getSt(r.station));
       if (dnr) dnr.records.forEach(r => getSt(r.station));
       if (pend) pend.records.forEach(r => getSt(r.station));
       if (DR.sheets.group) {
@@ -5244,15 +5304,15 @@
         }
       }
 
-      // Return: station total + Need Return details per valid driver
-      if (ret) for (const rec of ret.records) {
+      // Return1: station total + Need Return details per valid driver
+      if (ret1) for (const rec of ret1.records) {
         const s = getSt(rec.station); if (!s) continue;
-        if ('waybill' in ret.map && !drTxt(rec.waybill)) continue;
-        s.returnTotal++;
+        if ('waybill' in ret1.map && !drTxt(rec.waybill)) continue;
+        s.return1Total++;
         const raw = drTxt(rec.driver);
         if (drValidDrv(raw)) {
           const dk = drKey(raw);
-          s.returnAllDrivers.set(dk, (s.returnAllDrivers.get(dk) || 0) + 1);
+          s.return1AllDrivers.set(dk, (s.return1AllDrivers.get(dk) || 0) + 1);
           if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
           const d = getDrv(s, raw);
           if (d) {
@@ -5263,24 +5323,56 @@
         }
       }
 
-      // DNR: Times = 1 and Complaint Date = yesterday (weekday rule)
-      if (dnr && !dnr.missing.length) for (const rec of dnr.records) {
+      // Return2: station total + Return Result details per valid driver
+      if (ret2) for (const rec of ret2.records) {
         const s = getSt(rec.station); if (!s) continue;
-        if ('waybill' in dnr.map && !drTxt(rec.waybill)) continue;
+        if ('waybill' in ret2.map && !drTxt(rec.waybill)) continue;
+        s.return2Total++;
         const raw = drTxt(rec.driver);
         if (drValidDrv(raw)) {
           const dk = drKey(raw);
-          s.dnrAllDrivers.set(dk, (s.dnrAllDrivers.get(dk) || 0) + 1);
+          s.return2AllDrivers.set(dk, (s.return2AllDrivers.get(dk) || 0) + 1);
           if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
-        }
-        if (drDate(rec.cdate) !== yDnr || drNum(rec.times) !== 1) continue;
-        s.dnr++;
-        if (drValidDrv(raw)) {
           const d = getDrv(s, raw);
           if (d) {
-            d.dnr++;
-            const p = drTxt(rec.pod);
-            if (p && p !== '0') d.pods.push(p);
+            d.returnResult++;
+            const lsd = drDate(rec.lastscan);
+            if (lsd) d.returnResultScanDates.set(lsd, (d.returnResultScanDates.get(lsd) || 0) + 1);
+          }
+        }
+      }
+
+      // DNR:
+      // 1) Region DNR DA: all dates where finalBlame="Driver" and Times = 1
+      // 2) Station/Driver Yest DNR: Times = 1 and Complaint Date = yesterday (weekday rule)
+      if (dnr && !dnr.missing.length) {
+        if (!('finalblame' in dnr.map)) {
+          warnings.push('DNR sheet: column finalBlame / final responsibility not found (DNR DA may be 0)');
+        }
+        for (const rec of dnr.records) {
+          const s = getSt(rec.station); if (!s) continue;
+          if ('waybill' in dnr.map && !drTxt(rec.waybill)) continue;
+          const raw = drTxt(rec.driver);
+          const timesVal = drNum(rec.times);
+          const fb = ('finalblame' in dnr.map) ? drTxt(rec.finalblame).toLowerCase() : '';
+          const isDriverBlame = (fb === 'driver' || fb.includes('driver') || fb.includes('\u53f8\u673a'));
+          if (timesVal === 1 && isDriverBlame) {
+            s.dnrDriverTotal++;
+            if (drValidDrv(raw)) {
+              const dk = drKey(raw);
+              s.dnrDrivers.set(dk, (s.dnrDrivers.get(dk) || 0) + 1);
+              if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
+            }
+          }
+          if (drDate(rec.cdate) !== yDnr || timesVal !== 1) continue;
+          s.dnr++;
+          if (drValidDrv(raw)) {
+            const d = getDrv(s, raw);
+            if (d) {
+              d.dnr++;
+              const p = drTxt(rec.pod);
+              if (p && p !== '0') d.pods.push(p);
+            }
           }
         }
       }
@@ -5327,7 +5419,21 @@
         }
       }
 
-      return { today, yest, yDnr, st, warnings };
+      // Global rule: Drivers appearing in Lost, DNR (finalBlame=Driver && Times=1), and Return1
+      const globalLostSet = new Set();
+      const globalReturn1Set = new Set();
+      const globalDnrSet = new Set();
+      for (const s of st.values()) {
+        for (const [k, cnt] of s.lostAllDrivers.entries()) { if (cnt >= 1) globalLostSet.add(k); }
+        for (const [k, cnt] of s.return1AllDrivers.entries()) { if (cnt >= 1) globalReturn1Set.add(k); }
+        for (const [k, cnt] of s.dnrDrivers.entries()) { if (cnt >= 1) globalDnrSet.add(k); }
+      }
+      const triDriverSet = new Set();
+      for (const k of globalLostSet) {
+        if (globalReturn1Set.has(k) && globalDnrSet.has(k)) triDriverSet.add(k);
+      }
+
+      return { today, yest, yDnr, st, warnings, triDriverSet };
     }
 
     function drBuildGroups(C) {
@@ -5438,10 +5544,11 @@
       return lines.join('<br>');
     }
 
-    function drDriverHtml(s, daYCount, daTCount) {
+    function drDriverHtml(s, daYCount, daTCount, triDriverSet) {
       const list = Array.from(s.drivers.values()).sort((a, b) =>
-        (b.dnr + b.needReturn + b.lost) - (a.dnr + a.needReturn + a.lost) ||
+        (b.dnr + b.needReturn + b.returnResult + b.lost) - (a.dnr + a.needReturn + a.returnResult + a.lost) ||
         b.needReturn - a.needReturn ||
+        b.returnResult - a.returnResult ||
         b.lost - a.lost ||
         b.signed - a.signed ||
         a.name.localeCompare(b.name)
@@ -5456,20 +5563,25 @@
         `<th class="dr-col-num">Yest DNR</th>` +
         `<th class="l dr-col-2cm">POD</th>` +
         `<th class="l dr-col-2cm">Need Return</th>` +
+        `<th class="l dr-col-2cm">Return Result</th>` +
         `<th class="l dr-col-2cm">WillLost</th>` +
         `</tr></thead><tbody>`;
       for (const d of list) {
         const noAtt = !d.hasT;
         const returnDetails = drFormatScanDetails(d.needReturn, d.returnScanDates);
+        const returnResultDetails = drFormatScanDetails(d.returnResult, d.returnResultScanDates);
         const willLostDetails = drFormatScanDetails(d.lost, d.scanDates);
         const podStr = drFormatPods(d.pods);
+        const isTri = triDriverSet && triDriverSet.has(d.key);
+        const drvNameHtml = isTri ? `<span class="dr-bad-txt">${drEsc(d.name)}</span>` : drEsc(d.name);
         h += '<tr>' +
-          drCell(drEsc(d.name), 'l dr-col-2cm wrap') +
+          drCell(drvNameHtml, 'l dr-col-2cm wrap') +
           drZeroBlankCell(d.signed) +
           (noAtt ? drCell('No', 'dr-bad') : drCell('')) +
           drZeroBlankCell(d.dnr, 'dr-bad') +
           drCell(podStr, 'l dr-col-2cm wrap') +
           drCell(returnDetails, 'dr-col-2cm wrap') +
+          drCell(returnResultDetails, 'dr-col-2cm wrap') +
           drCell(willLostDetails, 'dr-col-2cm wrap') + '</tr>';
       }
       return h + '</tbody></table>';
@@ -5526,7 +5638,7 @@
       // 4. Drivers
       const daYCount = s.daY.size;
       const daTCount = s.daT.size;
-      const mDrv = drDriverHtml(s, daYCount, daTCount);
+      const mDrv = drDriverHtml(s, daYCount, daTCount, C.triDriverSet);
       if (mDrv) {
         h += `<div class="dr-sec"><div class="dr-sec-title sub">\uD83D\uDE97 Driver (yest: ${daYCount}, today: ${daTCount})</div>${mDrv}</div>`;
       }
@@ -5577,6 +5689,63 @@
       drRenderStation(s, g);
     }
 
+    function drGetRegionStations(C) {
+      const allStKeys = [];
+      DR.groups.forEach(g => {
+        g.stations.forEach(k => {
+          if (!allStKeys.includes(k)) allStKeys.push(k);
+        });
+      });
+      for (const k of C.st.keys()) {
+        if (!allStKeys.includes(k)) allStKeys.push(k);
+      }
+      return allStKeys.map(k => C.st.get(k) || {
+        key: k, name: k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
+        lostTotal: 0, lostByDriver: 0, lostByHub: 0, return1Total: 0, return2Total: 0,
+        pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
+        lostAllDrivers: new Map(), return1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
+      });
+    }
+
+    function drRegionDaLines(mapObj, s, triDriverSet, blueExcludeMap, asHtml) {
+      return Array.from(mapObj.entries())
+        .filter(([, cnt]) => cnt >= 1)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([k, cnt]) => {
+          const name = s.driverDisplayNames.get(k) || k;
+          if (!asHtml) return `${name}: ${cnt}`;
+          const escName = drEsc(name);
+          if (triDriverSet && triDriverSet.has(k)) {
+            return `<span class="dr-bad-txt">${escName}</span>: ${cnt}`;
+          }
+          if (blueExcludeMap && !blueExcludeMap.has(k)) {
+            return `<span class="dr-blue-txt">${escName}</span>: ${cnt}`;
+          }
+          return `${escName}: ${cnt}`;
+        });
+    }
+
+    function drRegionCellText(s, kind, triDriverSet, asHtml) {
+      const sep = asHtml ? '<br>' : '\n';
+      if (kind === 'dnr') {
+        if (!s.dnrDriverTotal) return '';
+        return [`Total:${s.dnrDriverTotal}`, ...drRegionDaLines(s.dnrDrivers, s, triDriverSet, null, asHtml)].join(sep);
+      }
+      if (kind === 'lost') {
+        if (!s.lostTotal) return '';
+        return [`Total:${s.lostTotal}`, `hub lost:${s.lostByHub}`, ...drRegionDaLines(s.lostAllDrivers, s, triDriverSet, null, asHtml)].join(sep);
+      }
+      if (kind === 'return1') {
+        if (!s.return1Total) return '';
+        return [`Total:${s.return1Total}`, ...drRegionDaLines(s.return1AllDrivers, s, triDriverSet, s.return2AllDrivers, asHtml)].join(sep);
+      }
+      if (kind === 'return2') {
+        if (!s.return2Total) return '';
+        return [`Total:${s.return2Total}`, ...drRegionDaLines(s.return2AllDrivers, s, triDriverSet, null, asHtml)].join(sep);
+      }
+      return '';
+    }
+
     function drRenderRegion(C) {
       const frame = document.getElementById('dr-report-frame');
       frame.className = 'is-region';
@@ -5595,6 +5764,7 @@
             <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
               <button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="document.getElementById('dr-file-input').click()">\uD83D\uDCCB Import To-Do List</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportImage()">\u2B07 Export Image</button>
+              <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportRegionExcel()">\uD83D\uDCE5 Export Region Excel</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubReport()">\uD83D\uDDBC Batch Export Hub Report</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubExcel()">\uD83D\uDCCA Batch Export Hub Excel</button>
             </div>
@@ -5603,40 +5773,11 @@
         drRenderToolbarPills();
       }
 
-      const allStKeys = [];
-      DR.groups.forEach(g => {
-        g.stations.forEach(k => {
-          if (!allStKeys.includes(k)) allStKeys.push(k);
-        });
-      });
-      // Guarantee all stations from uploaded data (C.st) are included
-      for (const k of C.st.keys()) {
-        if (!allStKeys.includes(k)) allStKeys.push(k);
-      }
-
-      const sts = allStKeys.map(k => C.st.get(k) || {
-        key: k, name: k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, lostY: 0, lostT: 0,
-        lostTotal: 0, lostByDriver: 0, lostByHub: 0, returnTotal: 0,
-        pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
-        lostAllDrivers: new Map(), returnAllDrivers: new Map(), dnrAllDrivers: new Map(), driverDisplayNames: new Map()
-      });
+      const sts = drGetRegionStations(C);
       const spr = s => s.daY.size ? Math.floor(s.signed / s.daY.size) : null;
       const sum = f => sts.reduce((a, s) => a + f(s), 0);
       const totDaY = sum(s => s.daY.size);
-
-      // Identify drivers appearing in all 3 displayed columns (Lost DA, Return DA, Train DA)
-      const globalLostSet = new Set();
-      const globalReturnSet = new Set();
-      const globalTrainSet = new Set();
-      for (const s of sts) {
-        for (const [k, cnt] of s.lostAllDrivers.entries()) { if (cnt >= 1) globalLostSet.add(k); }
-        for (const [k, cnt] of s.returnAllDrivers.entries()) { if (cnt >= 1) globalReturnSet.add(k); }
-        for (const [k, cnt] of s.dnrAllDrivers.entries()) { if (cnt >= 1) globalTrainSet.add(k); }
-      }
-      const triDriverSet = new Set();
-      for (const k of globalLostSet) {
-        if (globalReturnSet.has(k) && globalTrainSet.has(k)) triDriverSet.add(k);
-      }
+      const triDriverSet = C.triDriverSet || new Set();
 
       let h = `<div class="dr-banner"><span>${drMD(C.today)} Region Report</span><small>Update Time: ${drEsc(DR.updateTime || '--:--')}</small></div>`;
       h += `<div class="dr-dates"><span>All Stations \u00B7 Region Overview</span><span>Today ${drDayLabel(C.today)} \u00B7 Yest ${drDayLabel(C.yest)}${C.yDnr !== C.yest ? ' \u00B7 DNR yest ' + drDayLabel(C.yDnr) : ''}</span></div>`;
@@ -5646,73 +5787,122 @@
         '<th class="dr-col-num">Yest Signed</th>' +
         '<th class="dr-col-num">Yest SPR</th>' +
         '<th class="dr-col-num">Yest DA</th>' +
-        '<th class="dr-col-num">Lost</th>' +
-        '<th class="l dr-col-2cm">Lost Details</th>' +
-        '<th class="dr-col-2cm">Lost DA</th>' +
-        '<th class="dr-col-num">Return</th>' +
-        '<th class="dr-col-2cm">Return DA</th>' +
         '<th class="dr-col-num">Today DA</th>' +
         '<th class="dr-col-num">Pending</th>' +
-        '<th class="dr-col-num">Yest DNR</th>' +
-        '<th class="dr-col-2cm">Train DA</th>' +
+        '<th class="l dr-col-da">DNR DA</th>' +
+        '<th class="l dr-col-da">WillLost Details</th>' +
+        '<th class="l dr-col-da">Return DA</th>' +
+        '<th class="l dr-col-da">Return Result</th>' +
+        '<th class="l dr-col-remark">Remark</th>' +
         '</tr></thead><tbody>';
 
       for (const s of sts) {
-        const fmtDaHtml = mapObj => Array.from(mapObj.entries())
-          .filter(([k, cnt]) => cnt >= 1)
-          .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-          .map(([k, cnt]) => {
-            const txt = `${drEsc(s.driverDisplayNames.get(k) || k)}:${cnt}`;
-            return triDriverSet.has(k) ? `<span class="dr-bad-txt">${txt}</span>` : txt;
-          })
-          .join(', ');
-
-        const lostDaHtml = fmtDaHtml(s.lostAllDrivers);
-        const returnDaHtml = fmtDaHtml(s.returnAllDrivers);
-        const trainDaHtml = fmtDaHtml(s.dnrAllDrivers);
-        const stLostDetailsHtml = drFormatStationLostDetails(s);
+        const dnrDaHtml = drRegionCellText(s, 'dnr', triDriverSet, true);
+        const willLostHtml = drRegionCellText(s, 'lost', triDriverSet, true);
+        const returnDaHtml = drRegionCellText(s, 'return1', triDriverSet, true);
+        const returnResHtml = drRegionCellText(s, 'return2', triDriverSet, true);
+        const remarkVal = drGetRemark(C.today, s.key);
 
         h += '<tr>' +
           drCell(drEsc(s.name), 'l dr-col-st') +
           drZeroKeepCell(s.signed) +
           drZeroKeepCell(spr(s)) +
           drZeroKeepCell(s.daY.size) +
-          drZeroBlankCell(s.lostTotal, 'dr-bad') +
-          drCell(stLostDetailsHtml, 'l dr-col-2cm wrap') +
-          drCell(lostDaHtml, 'dr-col-2cm wrap') +
-          drZeroBlankCell(s.returnTotal, 'dr-bad') +
-          drCell(returnDaHtml, 'dr-col-2cm wrap') +
           drZeroKeepCell(s.daT.size) +
           drZeroKeepCell(s.pending.length) +
-          drZeroBlankCell(s.dnr, 'dr-bad') +
-          drCell(trainDaHtml, 'dr-col-2cm wrap') +
+          drCell(dnrDaHtml, 'l dr-col-da') +
+          drCell(willLostHtml, 'l dr-col-da') +
+          drCell(returnDaHtml, 'l dr-col-da') +
+          drCell(returnResHtml, 'l dr-col-da') +
+          `<td class="l dr-col-remark"><div class="dr-remark-edit" contenteditable="true" data-st="${drEsc(s.key)}" data-placeholder="Remark..." oninput="drOnRemarkInput(this)">${drEsc(remarkVal)}</div></td>` +
           '</tr>';
       }
 
       // Total row
-      const totalLostDetailsHtml = drFormatStationLostDetails({
-        lostByDriver: sum(s => s.lostByDriver),
-        lostByHub: sum(s => s.lostByHub)
-      });
+      const totDnr = sum(s => s.dnrDriverTotal);
+      const totLost = sum(s => s.lostTotal);
+      const totHubLost = sum(s => s.lostByHub);
+      const totRet1 = sum(s => s.return1Total);
+      const totRet2 = sum(s => s.return2Total);
       h += `<tr class="dr-total">` +
         `<td class="l dr-col-st">Total</td>` +
-        `<td>${sum(s => s.signed)}</td>` +
-        `<td>${totDaY ? Math.floor(sum(s => s.signed) / totDaY) : 0}</td>` +
-        `<td>${totDaY}</td>` +
-        `<td>${sum(s => s.lostTotal)}</td>` +
-        `<td class="l dr-col-2cm wrap">${totalLostDetailsHtml}</td>` +
-        `<td></td>` +
-        `<td>${sum(s => s.returnTotal)}</td>` +
-        `<td></td>` +
-        `<td>${sum(s => s.daT.size)}</td>` +
-        `<td>${sum(s => s.pending.length)}</td>` +
-        `<td>${sum(s => s.dnr)}</td>` +
-        `<td></td>` +
+        `<td class="dr-col-num">${sum(s => s.signed)}</td>` +
+        `<td class="dr-col-num">${totDaY ? Math.floor(sum(s => s.signed) / totDaY) : 0}</td>` +
+        `<td class="dr-col-num">${totDaY}</td>` +
+        `<td class="dr-col-num">${sum(s => s.daT.size)}</td>` +
+        `<td class="dr-col-num">${sum(s => s.pending.length)}</td>` +
+        `<td class="l dr-col-da">${totDnr ? 'Total:' + totDnr : ''}</td>` +
+        `<td class="l dr-col-da">${totLost ? 'Total:' + totLost + '<br>hub lost:' + totHubLost : ''}</td>` +
+        `<td class="l dr-col-da">${totRet1 ? 'Total:' + totRet1 : ''}</td>` +
+        `<td class="l dr-col-da">${totRet2 ? 'Total:' + totRet2 : ''}</td>` +
+        `<td class="l dr-col-remark"></td>` +
         `</tr>`;
 
       h += '</tbody></table></div>';
       h += '<div class="dr-foot">Generated by STR Performance Tool</div>';
       frame.innerHTML = h;
+    }
+
+    function drExportRegionExcel() {
+      const C = DR.computed;
+      if (!C) { showToast('Please import To-Do List data first'); return; }
+      const sts = drGetRegionStations(C);
+      const spr = s => s.daY.size ? Math.floor(s.signed / s.daY.size) : '';
+      const sum = f => sts.reduce((a, s) => a + f(s), 0);
+      const totDaY = sum(s => s.daY.size);
+      const triDriverSet = C.triDriverSet || new Set();
+
+      const header = [
+        'Station', 'Yest Signed', 'Yest SPR', 'Yest DA', 'Today DA', 'Pending',
+        'DNR DA', 'WillLost Details', 'Return DA', 'Return Result', 'Remark'
+      ];
+      const aoa = [header];
+
+      for (const s of sts) {
+        aoa.push([
+          s.name,
+          s.signed,
+          spr(s),
+          s.daY.size,
+          s.daT.size,
+          s.pending.length,
+          drRegionCellText(s, 'dnr', triDriverSet, false),
+          drRegionCellText(s, 'lost', triDriverSet, false),
+          drRegionCellText(s, 'return1', triDriverSet, false),
+          drRegionCellText(s, 'return2', triDriverSet, false),
+          drGetRemark(C.today, s.key)
+        ]);
+      }
+
+      const totDnr = sum(s => s.dnrDriverTotal);
+      const totLost = sum(s => s.lostTotal);
+      const totHubLost = sum(s => s.lostByHub);
+      const totRet1 = sum(s => s.return1Total);
+      const totRet2 = sum(s => s.return2Total);
+      aoa.push([
+        'Total',
+        sum(s => s.signed),
+        totDaY ? Math.floor(sum(s => s.signed) / totDaY) : 0,
+        totDaY,
+        sum(s => s.daT.size),
+        sum(s => s.pending.length),
+        totDnr ? `Total:${totDnr}` : '',
+        totLost ? `Total:${totLost}\nhub lost:${totHubLost}` : '',
+        totRet1 ? `Total:${totRet1}` : '',
+        totRet2 ? `Total:${totRet2}` : '',
+        ''
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = [
+        { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+        { wch: 24 }, { wch: 26 }, { wch: 24 }, { wch: 24 }, { wch: 28 }
+      ];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Region');
+      const mmdd = drMD(C.today).replace('/', '-');
+      XLSX.writeFile(wb, `${mmdd}_Region.xlsx`);
+      showToast(`Exported ${mmdd}_Region.xlsx`);
     }
 
     // ---- navigation / view ----
@@ -5817,7 +6007,7 @@
         return;
       }
       let h = `<div>Files: ${DR.files.map(drEsc).join(', ')} \u00B7 Update Time: <b>${drEsc(DR.updateTime)}</b></div>`;
-      for (const k of ['da', 'lost', 'return', 'dnr', 'pending', 'group']) {
+      for (const k of ['da', 'lost', 'return1', 'return2', 'dnr', 'pending', 'group']) {
         const sh = DR.sheets[k];
         h += sh ? `<div class="ok">\u2713 ${DR_KIND_LABEL[k]} \u2190 "${drEsc(sh.name)}" (${Math.max(0, sh.rows.length - 1)} rows)</div>`
                 : `<div class="bad">\u2717 ${DR_KIND_LABEL[k]} sheet not found</div>`;
@@ -5940,10 +6130,10 @@
           seen.add(stKey);
           const s = C.st.get(stKey) || {
             key: stKey, name: (g.stNames && g.stNames.get(stKey)) || stKey,
-            signed: 0, daY: new Set(), daT: new Set(), dnr: 0, lostY: 0, lostT: 0,
-            lostTotal: 0, lostByDriver: 0, lostByHub: 0, returnTotal: 0,
+            signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
+            lostTotal: 0, lostByDriver: 0, lostByHub: 0, return1Total: 0, return2Total: 0,
             pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
-            lostAllDrivers: new Map(), returnAllDrivers: new Map(), dnrAllDrivers: new Map(), driverDisplayNames: new Map()
+            lostAllDrivers: new Map(), return1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
           };
           result.push({ stKey, s, g });
         }
@@ -6052,7 +6242,7 @@
 
       isDrBatchExporting = true;
       const mmdd = drMD(C.today).replace('/', '-');
-      const sheetOrder = ['da', 'lost', 'return', 'dnr', 'pending', 'ofd', 'group'];
+      const sheetOrder = ['da', 'lost', 'return1', 'return2', 'dnr', 'pending', 'ofd', 'group'];
 
       try {
         for (let i = 0; i < list.length; i++) {
