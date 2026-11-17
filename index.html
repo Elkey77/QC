@@ -807,7 +807,7 @@
                                     </ul>
                                 </li>
                                 <li><strong>export to get driver</strong>: 从 <code>Pending.xlsx</code>（<code>detail</code>）数据池中筛选满足 <code>Remark = "DA Return"</code> 或（<code>Remark = "WillLost"</code> 且 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>，不排除今日扫描）<strong>且 <code>DriverID</code> 为空</strong>的包裹，导出 <code>Get_Driver.xlsx</code>（5 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>）；若符合条件的数据 <code>DriverID</code> 均不为空，则不反应。</li>
-                                <li><strong>export Final Pending</strong>: 基于 <code>Pending.xlsx</code> 全部 <code>detail</code> 包裹，对符合 <code>export to get driver</code> 条件且 <code>DriverID</code> 为空的运单关联 <strong>Scan records</strong>（scan query）更新 <code>last scan date</code>、<code>last scan type</code>、重算 <code>Remark</code> 并将提取到的司机填充至 <code>DriverID</code>（已有 <code>DriverID</code> 或不符合条件则保留原值；若均已有 <code>DriverID</code> 则无需上传 Scan records 可直接导出），导出 <code>Final_Pending.xlsx</code>（10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>3rdCode</code>, <code>Remark</code>, <code>DriverID</code>，其中 <code>NoUpdate = now - last scan time (days)</code> 向下取整）。</li>
+                                <li><strong>export Final Pending</strong>: 基于 <code>Pending.xlsx</code> 全部 <code>detail</code> 包裹，对符合 <code>export to get driver</code> 条件且 <code>DriverID</code> 为空的运单关联 <strong>Scan records</strong>（scan query）更新 <code>last scan date</code>、<code>last scan type</code>、重算 <code>Remark</code> 并将提取到的司机填充至 <code>DriverID</code>（已有 <code>DriverID</code> 或不符合条件则保留原值；若均已有 <code>DriverID</code> 则无需上传 Scan records 可直接导出），导出 <code>Final_Pending.xlsx</code>（11 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>3rdCode</code>, <code>Remark</code>, <code>DriverID</code>, <code>DeadLine</code>，其中 <code>NoUpdate = now - last scan time (days)</code> 向下取整；<code>DeadLine</code> 仅对近 3 天内到期即 <code>today - 1 &le; DeadLine &le; today + 3</code> 的运单显示 <code>mm/dd</code>，其余留空）。</li>
                             </ul>
                         </li>
                         <li><strong>export PUDO</strong>:
@@ -5593,22 +5593,21 @@
             return false;
         }
 
-        function computeNodispatchRemark(record, nowBerlin) {
-            if (!record) return "";
+        /**
+         * Compute deadline calendar info (day diff from Berlin today and mm/dd string) for a Nodispatch/Pending record.
+         */
+        function getNodispatchDeadlineInfo(record, nowBerlin) {
+            if (!record) return null;
             const refNow = nowBerlin || getBerlinNowDate();
             const todayCalUTC = Date.UTC(refNow.getUTCFullYear(), refNow.getUTCMonth(), refNow.getUTCDate());
             const lastScanType = String(record.lastScanType || '').trim();
+            let deadlineCalUTC = null;
 
-            // Priority 1: WillLost (Deadline is yesterday, today, or tomorrow: today()-1 <= Deadline <= today()+1)
             if (isScanInboundType(lastScanType)) {
                 const raw = record.lastScanRawDate;
                 if (raw instanceof Date && !isNaN(raw.getTime())) {
                     const inboundLostTime = new Date(raw.getTime() + 8 * 24 * 3600 * 1000);
-                    const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
-                    const diffDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
-                    if (diffDays >= -1 && diffDays <= 1) {
-                        return "WillLost";
-                    }
+                    deadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
                 }
             } else {
                 const ascanRaw = record.ascanRawDate;
@@ -5616,12 +5615,27 @@
                     const clientVal = record.client || getWaybillClient(record.waybill);
                     const lifeCycle = getClientLifeCycle(clientVal);
                     const entryCalUTC = Date.UTC(ascanRaw.getUTCFullYear(), ascanRaw.getUTCMonth(), ascanRaw.getUTCDate());
-                    const deadlineCalUTC = entryCalUTC + lifeCycle * 86400000;
-                    const diffDays = Math.round((deadlineCalUTC - todayCalUTC) / 86400000);
-                    if (diffDays >= -1 && diffDays <= 1) {
-                        return "WillLost";
-                    }
+                    deadlineCalUTC = entryCalUTC + lifeCycle * 86400000;
                 }
+            }
+
+            if (deadlineCalUTC === null) return null;
+            const diffDays = Math.round((deadlineCalUTC - todayCalUTC) / 86400000);
+            const deadlineDate = new Date(deadlineCalUTC);
+            const mm = String(deadlineDate.getUTCMonth() + 1).padStart(2, '0');
+            const dd = String(deadlineDate.getUTCDate()).padStart(2, '0');
+            return { diffDays, formattedMmDd: `${mm}/${dd}` };
+        }
+
+        function computeNodispatchRemark(record, nowBerlin) {
+            if (!record) return "";
+            const refNow = nowBerlin || getBerlinNowDate();
+            const lastScanType = String(record.lastScanType || '').trim();
+
+            // Priority 1: WillLost (Deadline is yesterday, today, or tomorrow: today()-1 <= Deadline <= today()+1)
+            const deadlineInfo = getNodispatchDeadlineInfo(record, refNow);
+            if (deadlineInfo && deadlineInfo.diffDays >= -1 && deadlineInfo.diffDays <= 1) {
+                return "WillLost";
             }
 
             // Priority 2: DA Return (Problem/Out of warehouse/Receive Scan, last scan date <> today, not signed)
@@ -5802,7 +5816,7 @@
                 : {};
 
             const aoa = [
-                ["waybill", "AscanDate", "station", "last scan date", "last scan type", "Client", "NoUpdate", "3rdCode", "Remark", "DriverID"]
+                ["waybill", "AscanDate", "station", "last scan date", "last scan type", "Client", "NoUpdate", "3rdCode", "Remark", "DriverID", "DeadLine"]
             ];
 
             bawDetailRecords.forEach(r => {
@@ -5832,14 +5846,19 @@
                     noUpdateDays = Math.floor(diffNoUpdateMs / (1000 * 60 * 60 * 24));
                 }
 
-                const remarkVal = computeNodispatchRemark({
+                const updatedRecord = {
                     waybill: r.waybill,
                     ascanRawDate: r.ascanRawDate,
                     client: clientVal,
                     lastScanDate: finalLastScanDate,
                     lastScanType: finalLastScanType,
                     lastScanRawDate: finalLastScanRawDate
-                }, nowBerlin);
+                };
+                const remarkVal = computeNodispatchRemark(updatedRecord, nowBerlin);
+                const deadlineInfo = getNodispatchDeadlineInfo(updatedRecord, nowBerlin);
+                const deadLineVal = (deadlineInfo && deadlineInfo.diffDays >= -1 && deadlineInfo.diffDays <= 3)
+                    ? deadlineInfo.formattedMmDd
+                    : "";
 
                 aoa.push([
                     r.waybill,
@@ -5851,7 +5870,8 @@
                     noUpdateDays,
                     r.postcode || "",
                     remarkVal,
-                    driverIdVal
+                    driverIdVal,
+                    deadLineVal
                 ]);
             });
 
