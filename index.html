@@ -455,28 +455,6 @@
                 <div class="upload-status success" id="status-signedshipping"></div>
             </div>
 
-            <!-- Pending records upload group -->
-            <div class="upload-group">
-                <div class="upload-label" style="color: #b82525;">Pending records</div>
-                <div class="file-input-wrapper" style="border-color: #ebdcdc;">
-                    <button class="file-input-btn" style="background-color: #fff0f0;" onclick="document.getElementById('file-pending').click()">Choose file</button>
-                    <span class="file-name" id="name-pending">No file chosen</span>
-                </div>
-                <input type="file" id="file-pending" style="display:none;" accept=".xlsx, .xls, .csv" onchange="handlePendingFile(this)">
-                <div class="upload-status success" id="status-pending"></div>
-            </div>
-
-            <!-- NoUpdate record upload group -->
-            <div class="upload-group">
-                <div class="upload-label" style="color: #b82525;">NoUpdate record</div>
-                <div class="file-input-wrapper" style="border-color: #ebdcdc;">
-                    <button class="file-input-btn" style="background-color: #fff0f0;" onclick="document.getElementById('file-noupdaterecord').click()">Choose file</button>
-                    <span class="file-name" id="name-noupdaterecord">No file chosen</span>
-                </div>
-                <input type="file" id="file-noupdaterecord" style="display:none;" accept=".xlsx, .xls, .csv" onchange="handleNoUpdateRecordFile(this)">
-                <div class="upload-status success" id="status-noupdaterecord"></div>
-            </div>
-
             <!-- Delivery times upload group -->
             <div class="upload-group">
                 <div class="upload-label" style="color: #b82525;">Delivery times</div>
@@ -543,7 +521,6 @@
                     <div class="tab" id="tab-scanrecords" onclick="switchTab('scanrecords')">latest Scan record</div>
                     <div class="tab" id="tab-shipping" onclick="switchTab('shipping')">Shipping-Signed</div>
                     <div class="tab" id="tab-signedshipping" onclick="switchTab('signedshipping')">Sign-Ascan avg timline</div>
-                    <div class="tab" id="tab-pending" onclick="switchTab('pending')">Pending</div>
                     <div class="tab" id="tab-driversigned" onclick="switchTab('driversigned')">Driver signed</div>
                     <div class="tab" id="tab-receive" onclick="switchTab('receive')">Receive</div>
                     <div class="tab" id="tab-addproblem" onclick="switchTab('addproblem')">add problem</div>
@@ -766,65 +743,25 @@
                     <button class="btn-primary" id="btn-export-shipping" onclick="exportShipping()" disabled>export 48hAscanSign</button>
                     <button class="btn-primary" id="btn-export-shipping-month" onclick="exportShippingMonth()" disabled>export Month</button>
                     <button class="btn-primary" id="btn-export-ascan-detail" onclick="exportAscanSignedData()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export AscanSignedData</button>
-                    <button class="btn-primary" id="btn-export-shipping-today-nodispatch" onclick="exportShippingTodayNodispatch()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export today Nodispatch</button>
-                    <button class="btn-primary" id="btn-export-will-lost" onclick="exportWillLost()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export WillLost</button>
-                    <button class="btn-primary" id="btn-export-shipping-noupdate" onclick="exportShippingNoUpdate()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate</button>
-                    <button class="btn-primary" id="btn-export-final-lost" onclick="exportFinalLost()" style="background-color: #b82525; color: #ffffff;" disabled>export final Lost</button>
+                    <button class="btn-primary" id="btn-export-shipping-today-nodispatch" onclick="exportShippingTodayNodispatch()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export Pending</button>
+                    <button class="btn-primary" id="btn-export-shipping-get-driver" onclick="exportShippingGetDriver()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export to get driver</button>
+                    <button class="btn-primary" id="btn-export-shipping-final-pending" onclick="exportShippingFinalPending()" style="background-color: #b82525; color: #ffffff;" disabled>export Final Pending</button>
                     <button class="btn-primary" id="btn-export-pudo" onclick="exportShippingPudo()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export PUDO</button>
-                    <button class="btn-primary" id="btn-export-return-parcel" onclick="exportReturnParcel()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export driver return data</button>
-                    <button class="btn-primary" id="btn-export-final-return" onclick="exportFinalReturn()" style="background-color: #b82525; color: #ffffff;" disabled>export driver return</button>
-                </div>
-
-                <!-- WillLost Deadline Date & NoUpdate Filter Group (for export final Lost) -->
-                <div style="background-color: #ffffff; border: 1px solid #f2e3e3; border-radius: 6px; padding: 14px 20px; display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 14px; font-weight: 600; color: #331818;">Deadline Date:</span>
-                            <span style="font-size: 12px; color: #8f6b6b;" id="willlost-deadline-hint">(Upload 48h Shipping records to load dates)</span>
-                        </div>
-                        <div style="display: flex; gap: 10px;" id="willlost-deadline-actions">
-                            <button type="button" onclick="selectAllWillLostDeadlines(true)" style="background: none; border: none; color: #b82525; font-size: 12px; cursor: pointer; text-decoration: underline;">Select All</button>
-                            <button type="button" onclick="selectAllWillLostDeadlines(false)" style="background: none; border: none; color: #8f6b6b; font-size: 12px; cursor: pointer; text-decoration: underline;">Clear</button>
-                        </div>
-                    </div>
-                    <div id="container-willlost-deadlines" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 24px;">
-                        <span style="font-size: 12px; color: #a38d8d;">No dates available</span>
-                    </div>
-                    <div style="border-top: 1px dashed #f2e3e3; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                            <span style="font-size: 14px; font-weight: 600; color: #331818;">NoUpdate:</span>
-                            <div id="container-willlost-noupdate" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-                                <label style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff8f8; border: 1px solid #ebdcdc; border-radius: 4px; padding: 4px 10px; font-size: 13px; color: #2b1111; cursor: pointer; user-select: none;">
-                                    <input type="checkbox" class="willlost-noupdate-chk" value="4" style="accent-color: #b82525; cursor: pointer;">
-                                    4
-                                </label>
-                                <label style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff8f8; border: 1px solid #ebdcdc; border-radius: 4px; padding: 4px 10px; font-size: 13px; color: #2b1111; cursor: pointer; user-select: none;">
-                                    <input type="checkbox" class="willlost-noupdate-chk" value="5" style="accent-color: #b82525; cursor: pointer;">
-                                    5
-                                </label>
-                            </div>
-                        </div>
-                        <div style="display: flex; gap: 10px;">
-                            <button type="button" onclick="selectAllWillLostNoUpdates(true)" style="background: none; border: none; color: #b82525; font-size: 12px; cursor: pointer; text-decoration: underline;">Select All</button>
-                            <button type="button" onclick="selectAllWillLostNoUpdates(false)" style="background: none; border: none; color: #8f6b6b; font-size: 12px; cursor: pointer; text-decoration: underline;">Clear</button>
-                        </div>
-                    </div>
-                    <span style="font-size: 12px; color: #8f6b6b;">When Deadline Date(s) are selected, only WillLost records matching the selected date(s) participate in the "export final Lost" calculation (if none selected, all WillLost dates are included). When NoUpdate (4 / 5) is selected, records with NoUpdate of 4 or 5 days also participate in "export final Lost". "export WillLost" always exports all WillLost records.</span>
                 </div>
 
                 <div class="rules-card">
                     <h3>Shipping-Signed Data Cleaning Logic</h3>
                     <ol>
-                        <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间直接过滤剔除 <strong>Delivery outlet</strong> 不包含 <code>"BAW"</code> 的数据，大幅提升大文件解析与合并速度。</li>
+                        <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间仅保留 <strong>Delivery outlet</strong> 包含 <code>"BAW"</code> 且 <strong>Latest scanning point</strong> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）的数据，大幅提升大文件解析与合并速度。</li>
                         <li><strong>48h Shipping records (中文) 兼容与映射</strong>:
                             <ul>
                                 <li><strong>单 Sheet 极速加载</strong>：中文表含 3 个 Sheet，解析时直接读取 Sheet 2 <code>"组件1"</code> 并删除其余 2 个 Sheet，大幅提高计算效率。</li>
-                                <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>，再执行 <code>派件网点名称</code> 包含 <code>"BAW"</code> 过滤。</li>
-                                <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>pick up</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间 &rarr; Latest scan time / last scan date</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
-                                <li><strong>参与计算范围</strong>：支持单独上传或与英文版合并计算，参与 <code>export today Nodispatch</code>、<code>export WillLost</code>、<code>export NoUpdate</code>、<code>export PUDO</code>、<code>export final Lost</code>、<code>export driver return data</code> 及 <code>export driver return</code> 的计算。</li>
+                                <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>，且 <code>派件网点名称</code> 包含 <code>"BAW"</code>，且 <code>最新扫描机构名称</code> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）。</li>
+                                <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>pick up</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间 &rarr; Latest scan time / last scan date</code>、<code>订单来源 &rarr; Order source name (client)</code>、<code>最新问题件原因 &rarr; Latest problem reason</code>、<code>派件业务员编号</code> &amp; <code>接收业务员编号</code> &rarr; 用于计算 Pending <code>DriverID</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
+                                <li><strong>参与计算范围</strong>：支持单独上传或与英文版合并计算，参与 <code>export Pending</code>、<code>export to get driver</code>、<code>export Final Pending</code> 及 <code>export PUDO</code> 的计算。</li>
                             </ul>
                         </li>
-                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>（含中文未签收表），该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派、<code>WillLost</code>、<code>NoUpdate</code>、<code>PUDO</code>、<code>final Lost</code>、<code>driver return data</code> 和 <code>driver return</code>）。</li>
+                        <li><strong>Undelivered &gt; 90% Exclusion</strong>: 如果上传的表里 <code>Sign for identification == "Undelivered"</code> 占比超过 <code>90%</code>（含中文未签收表），该表不参与计算 <code>export 48hAscanSign</code>、<code>export Month</code> 和 <code>export AscanSignedData</code>（仅用于计算待派及 <code>PUDO</code>）。</li>
                         <li><strong>AscanDate / Month</strong>: Parsed from <code>Entry time</code> or <code>Pickup time</code> (<code>AscanDate</code> formatted as MM/DD, <code>Month</code> formatted as YYYY-MM)。<strong>所有包含 AscanDate 列的导出均严格按 AscanDate 从小到大升序排序</strong>。</li>
                         <li><strong>Client Identification</strong>: 优先读取 <code>Order source name</code> 或 <code>Client's name</code> 列（若有 <code>"-"</code> 则截取 <code>"-"</code> 之前的字段，若无则取整个值）；若为空、无此列或值为加密串/乱码（如 <code>Y!$U#1#...===$=</code>），则按单号前缀规律自动兜底推导。</li>
                         <li><strong>Station Mapping</strong>:
@@ -857,48 +794,26 @@
                                 <li><code>Overall (STR)</code>: Aggregated metrics across all stations for each date, named <code>"STR"</code>.</li>
                             </ul>
                         </li>
-                        <li><strong>export today Nodispatch (From 48h Shipping records)</strong>:
+                        <li><strong>export Pending (From 48h Shipping records)</strong>:
                             <ul>
-                                <li>Filters rows where <code>AscanDate</code> (Entry time / Pickup time) is between <code>today() - 15</code> and <code>today()</code> (inclusive), <code>Delivery outlet</code> contains <code>"BAW"</code>, <code>Sign for identification</code> does not contain <code>"Signed"</code> and is not <code>"Normally Delivered"</code>, <code>Transfer and return identification</code> is <code>"未退件"</code> (if present), and <code>Latest problem reason</code> does not contain <code>"lost"</code> (if present).</li>
+                                <li>Filters all unfinished rows where <code>Delivery outlet</code> contains <code>"BAW"</code>, <code>Latest scanning point</code> (<code>最新扫描机构名称</code>) contains <code>"ST"</code>, <code>"BAW"</code>, or <code>"YOYI"</code> (case-insensitive), <code>Sign for identification</code> does not contain <code>"Signed"</code> and is not <code>"Normally Delivered"</code>, <code>Transfer and return identification</code> is <code>"未退件"</code> (if present), <code>Latest problem reason</code> does not contain <code>"lost"</code> (if present), and <strong><code>now - last scan date &le; 15</code> days (calendar days)</strong> (records with <code>now - last scan date &gt; 15</code> days are excluded).</li>
                                 <li>Excludes any <code>"Parcel Signed"</code> (all dates).</li>
+                                <li><strong>All downstream exports</strong> (<code>export to get driver</code>, <code>export Final Pending</code>, <code>export PUDO</code>) are derived strictly from the <code>Pending (detail)</code> pool.</li>
                                 <li>Maps <code>Station</code>: if latest scan type is <code>"Shipping HUB"</code> or <code>"Outgoing Scan"</code> &rarr; <code>Delivery outlet</code>; else &rarr; <code>Latest scanning point</code> (with STUTTGART/DE-HQ fallback to Delivery outlet). <strong>Only records whose mapped <code>station</code> contains <code>"BAW"</code> are kept across all sheets.</strong></li>
-                                <li>Exports as <code>TodayNodispatch.xlsx</code> with two sheets:
+                                <li>Exports as <code>Pending.xlsx</code> with two sheets:
                                     <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
-                                        <li><strong>Sheet 1 (<code>detail</code>)</strong>: Only includes <code>station</code> containing <code>"BAW"</code>; excludes <code>"Out of warehouse scan"</code> and <code>"Problem scan"</code> if latest scan time is in recently working two days (Deliver work days: Monday–Saturday). Columns: <code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code> (sorted by <code>AscanDate</code> ascending).</li>
-                                        <li><strong>Sheet 2 (<code>total</code>)</strong>: Only includes <code>station</code> containing <code>"BAW"</code>, plus a bottom <code>Total</code> summary row. Columns: <code>station</code>, <code>Need Dispatch</code> (15-day unfinished parcels per BAW station), <code>No dispatch</code> (remaining parcels per BAW station in sheet <code>detail</code>), <code>Dispatched%</code> (<code>(Need Dispatch - No dispatch) / Need Dispatch</code>; if <code>No dispatch &le; 0</code>, outputs <code>100.00%</code>).</li>
+                                        <li><strong>Sheet 1 (<code>detail</code>)</strong>: Only includes <code>station</code> containing <code>"BAW"</code>; excludes <code>"Out of warehouse scan"</code> and <code>"Problem scan"</code> if <code>last scan date == today()</code> (今日在司机手里). Columns: <code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>Remark</code>, <code>DriverID</code> (sorted by <code>AscanDate</code> ascending). <code>Remark</code> rules: <code>"WillLost"</code> (priority 1, when Deadline is yesterday, today, or tomorrow) &gt; <code>"DA Return"</code> (Problem/Out of warehouse/Receive Scan and <code>last scan date &ne; today()</code>). <code>DriverID</code>: 若<code>派件业务员编号 = ifempty(接收业务员编号, 派件业务员编号)</code> 且以 <code>"DE"</code> 开头则取<code>派件业务员编号</code>，否则留空。</li>
+                                        <li><strong>Sheet 2 (<code>total</code>)</strong>: Only includes <code>station</code> containing <code>"BAW"</code>, plus a bottom <code>Total</code> summary row. Columns: <code>station</code>, <code>Need Dispatch</code> (all unfinished parcels per BAW station), <code>No dispatch</code> (remaining parcels per BAW station in sheet <code>detail</code>), <code>Dispatched%</code> (<code>(Need Dispatch - No dispatch) / Need Dispatch</code>; if <code>No dispatch &le; 0</code>, outputs <code>100.00%</code>).</li>
                                     </ul>
                                 </li>
-                            </ul>
-                        </li>
-                        <li><strong>export WillLost / export NoUpdate / export final Lost</strong>:
-                            <ul>
-                                <li><strong>SLA（小时维度）</strong>：若 <code>Sign for identification = "Undelivered"</code>，<code>SLA = now - Pickup time (Entry time)</code>；若为其他值，<code>SLA = Latest scan time - Pickup time (Entry time)</code>。</li>
-                                <li><strong>NoUpdate（天维度，向下取整）</strong>：若 <code>Sign for identification = "Undelivered"</code>，<code>NoUpdate = Math.floor(now - Latest scan time)</code>。</li>
-                                <li><strong>Deadline Date</strong>：常规包裹为 <code>AscanDate + 客户的 LifeCycle 标准</code>（所有客户含 TT 均为 9 天，即 <code>Ascan + 10</code> 视作遗失）；当 <code>latest scan type = "Scan Inbound parcel"</code>（放入 PUDO 点后）时，按 <code>now - latest scan time &ge; 8 days (192h)</code> 视作遗失，其 <code>Deadline Date = latest scan date + 8</code>。</li>
-                                <li><strong>export WillLost</strong>：针对未签收且未退件包裹，仅保留满足 <code>today() - 1 &le; Deadline Date &le; today() + 3</code> 的记录；<strong>站点取值规则：当 <code>latest scan type</code> 为 <code>"Scan Inbound parcel"</code>（PUDO 包裹）时，<code>station</code> 取 <code>Delivery outlet</code>；其余包裹取 <code>Latest scanning point</code>（去除不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，且将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code>）</strong>。导出 <code>WillLost.xlsx</code>（Sheet: <code>WillLost</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>, <code>Deadline Date</code>。</li>
-                                <li><strong>export NoUpdate</strong>：针对未签收且未退件包裹，保留满足 <code>4 &le; NoUpdate &le; 5</code>（停滞未更新天数在 4 至 5 天之间）的记录。导出 <code>NoUpdate.xlsx</code>（Sheet: <code>NoUpdate</code>），包含 9 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
-                                <li><strong>export final Lost</strong>：支持通过上方 <strong>Deadline Date</strong> 多选框勾选参与计算的截止日期（未勾选时默认全部 WillLost 日期参与；<code>export WillLost</code> 按钮不受该多选影响，始终导出全量 WillLost），同时支持勾选 <strong>NoUpdate（4 / 5）</strong> 将断更超 4 天或 5 天的数据一并纳入参与 <code>final Lost</code> 计算（按运单去重合并）。结合上传的 <strong>Scan records</strong>，其中 <code>last scan date</code> 和 <code>last scan type</code> 均严格取自 <strong>Scan records</strong> 里的最新记录（同时提取更新最新 <code>station</code> 与 <code>Driver</code>；若最新扫描为 <code>Scan Inbound parcel</code> 则 <code>station</code> 取 <code>Delivery outlet</code> 且 <code>DeadLine = last scan date + 8</code>），<strong>自动去除最新扫描站点（latest scan station）不包含 <code>"BAW"</code> 和 <code>"ST"</code> 的记录，并将包含 <code>"ST"</code> 的站点统一命名为 <code>"Stuttgart HUB"</code></strong>；同时<strong>自动过滤剔除最新扫描状态（latest scan）包含 <code>signed</code>、<code>delivered</code>、<code>签收</code>、<code>妥投</code>、<code>return</code>、<code>returned</code>、<code>退件</code>、<code>退回</code> 等已完结/退回状态的记录</strong>，提取 <code>Last Problem</code>（优先取 Shipping 表 <code>Latest problem reason</code>，若无则从 Scan records 提取），导出 <code>FinalLost.xlsx</code>（Sheet: <code>FinalLost</code>），包含 10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Driver</code>, <code>Client</code>, <code>NoUpdate</code>, <code>Last Problem</code>, <code>DeadLine</code>。</li>
+                                <li><strong>export to get driver</strong>: 从 <code>Pending.xlsx</code>（<code>detail</code>）数据池中筛选满足 <code>Remark = "DA Return"</code> 或（<code>Remark = "WillLost"</code> 且 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>，不排除今日扫描）<strong>且 <code>DriverID</code> 为空</strong>的包裹，导出 <code>Get_Driver.xlsx</code>（5 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>）；若符合条件的数据 <code>DriverID</code> 均不为空，则不反应。</li>
+                                <li><strong>export Final Pending</strong>: 基于 <code>Pending.xlsx</code> 全部 <code>detail</code> 包裹，对符合 <code>export to get driver</code> 条件且 <code>DriverID</code> 为空的运单关联 <strong>Scan records</strong>（scan query）更新 <code>last scan date</code>、<code>last scan type</code>、重算 <code>Remark</code> 并将提取到的司机填充至 <code>DriverID</code>（已有 <code>DriverID</code> 或不符合条件则保留原值；若均已有 <code>DriverID</code> 则无需上传 Scan records 可直接导出），导出 <code>Final_Pending.xlsx</code>（10 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>Client</code>, <code>NoUpdate</code>, <code>3rdCode</code>, <code>Remark</code>, <code>DriverID</code>，其中 <code>NoUpdate = now - last scan time (days)</code> 向下取整）。</li>
                             </ul>
                         </li>
                         <li><strong>export PUDO</strong>:
                             <ul>
                                 <li>筛选上传的 <strong>48h Shipping records</strong> 中 <code>Delivery outlet</code> 包含 <code>"BAW"</code> 且 <code>Latest scan type = "Scan Inbound parcel"</code> 的包裹。</li>
                                 <li>导出 <code>PUDO.xlsx</code>（Sheet: <code>PUDO</code>），包含 7 列：<code>PUDO InBound Date</code>（取 <code>Latest scan time</code>，格式化为 <code>mm/dd</code>）、<code>station</code>（取 <code>Delivery outlet</code>）、<code>PUDO</code>（取 <code>Latest scanning point</code>）、<code>waybill</code>（取 <code>Waybill Number</code>）、<code>client</code>（优先取上传表中的客户列值，缺失或乱码时按运单号前缀推导）、<code>postcode</code>（取 <code>Receiving postal code</code>）、<code>PUDO stay days</code>（<code>now - PUDO InBound Date</code>，精确到天）。</li>
-                            </ul>
-                        </li>
-                        <li><strong>export driver return data</strong>:
-                            <ul>
-                                <li>筛选 <strong>48h Shipping records</strong> 中 <code>last scan type</code> 为 <code>"Problem scan"</code> / <code>"Out of warehouse scan"</code> / <code>"Receive Scan"</code>（忽略大小写），且 <code>NoUpdate = now() - Latest scan time &le; 144</code> 小时（向上取整）且 <code>last scan date &ne; today()</code>的未签收包裹。</li>
-                                <li>导出 <code>Driver_Return_Data.xlsx</code>（Sheet: <code>driver return data</code>），8 列：<code>waybill</code>, <code>AscanDate</code>, <code>station</code>, <code>last scan date</code>, <code>last scan type</code>, <code>client</code>, <code>postcode</code>, <code>NoUpdate</code>（按 <code>AscanDate</code> 升序）。</li>
-                            </ul>
-                        </li>
-                        <li><strong>export driver return</strong>（需上传 Scan records，司机手中未退返包裹）:
-                            <ul>
-                                <li>以 <code>waybill</code> 关联 <code>export driver return data</code> 运单与 <strong>Scan records</strong> 最新扫描记录；仅保留 Scan records 最新 <code>last scan type</code> 为 <code>"Out of warehouse scan"</code> / <code>"Receive scan"</code> / <code>"Problem scan"</code>（忽略大小写）的运单。</li>
-                                <li>若运单在 Scan records 中未找到：保留该行，仅填 <code>waybill</code>, <code>AscanDate</code>, <code>Client</code>，其余列留空（可重新上传 Scan records 后再导出）。</li>
-                                <li><code>waybill</code>, <code>AscanDate</code>, <code>Client</code> 取自 driver return data；<code>station</code>（Scan records last scan station）、<code>last scan date</code>（MM/DD）、<code>last scan type</code>、<code>Driver</code>、<code>Problem</code>（最新非空问题原因）取自 Scan records。</li>
-                                <li><code>NoUpdate = ceil(now() - Scan records latest scan time)</code>（小时，向上取整）。</li>
-                                <li>导出 <code>Driver_Return.xlsx</code>（Sheet: <code>driver return</code>），9 列，按 <code>AscanDate</code> 升序。</li>
                             </ul>
                         </li>
                     </ol>
@@ -921,102 +836,6 @@
                     </ol>
                 </div>
             </div>
-
-            <!-- 6. Pending Panel -->
-            <div class="tab-panel" id="panel-pending">
-                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-                    <button class="btn-primary" id="btn-export-today-nodispatch" onclick="exportTodayNodispatch()" disabled>export today Nodispatch</button>
-                    <button class="btn-primary" id="btn-export-get-latest-scan" onclick="exportGetLatestScan()" disabled>export get lastest scan</button>
-                    <button class="btn-primary" id="btn-export-historical-pending-last" onclick="exportHistoricalPendingLast()" disabled>export historical pending last</button>
-                    <button class="btn-primary" id="btn-export-historical-pending-hub" onclick="exportHistoricalPendingHub()" disabled>export historical pending hub</button>
-                    <button class="btn-primary" id="btn-export-noupdate-to-get-records" onclick="exportNoUpdateToGetRecords()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate to get records</button>
-                    <button class="btn-primary" id="btn-export-noupdate-pending" onclick="exportNoUpdatePending()" style="background-color: #ffffff; color: #b82525; border-color: #b82525;" disabled>export NoUpdate Pending</button>
-                </div>
-
-                <!-- NoUpdate Days Filter Group -->
-                <div style="background-color: #ffffff; border: 1px solid #f2e3e3; border-radius: 6px; padding: 14px 20px; display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 14px; font-weight: 600; color: #331818;">NoUpdate days:</span>
-                            <span style="font-size: 12px; color: #8f6b6b;" id="noupdate-days-hint">(Upload NoUpdate record to load days)</span>
-                        </div>
-                        <div style="display: flex; gap: 10px;" id="noupdate-days-actions">
-                            <button type="button" onclick="selectAllNoUpdateDays(true)" style="background: none; border: none; color: #b82525; font-size: 12px; cursor: pointer; text-decoration: underline;">Select All</button>
-                            <button type="button" onclick="selectAllNoUpdateDays(false)" style="background: none; border: none; color: #8f6b6b; font-size: 12px; cursor: pointer; text-decoration: underline;">Clear</button>
-                        </div>
-                    </div>
-                    <div id="container-noupdate-days" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 24px;">
-                        <span style="font-size: 12px; color: #a38d8d;">No days available</span>
-                    </div>
-                    <span style="font-size: 12px; color: #8f6b6b;">When days are selected, only records matching the selected NoUpdate day(s) will be included in "export NoUpdate to get records". If no day is selected, all records are generated by default.</span>
-                </div>
-
-                <!-- Msg Ascan Date Filter Group -->
-                <div style="background-color: #ffffff; border: 1px solid #f2e3e3; border-radius: 6px; padding: 14px 20px; display: flex; flex-direction: column; gap: 10px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 14px; font-weight: 600; color: #331818;">Msg Ascan Date:</span>
-                            <span style="font-size: 12px; color: #8f6b6b;" id="msg-ascan-date-hint">(Upload NoUpdate record and Scan records to load dates)</span>
-                        </div>
-                        <div style="display: flex; gap: 10px;" id="msg-ascan-date-actions">
-                            <button type="button" onclick="selectAllMsgAscanDates(true)" style="background: none; border: none; color: #b82525; font-size: 12px; cursor: pointer; text-decoration: underline;">Select All</button>
-                            <button type="button" onclick="selectAllMsgAscanDates(false)" style="background: none; border: none; color: #8f6b6b; font-size: 12px; cursor: pointer; text-decoration: underline;">Clear</button>
-                        </div>
-                    </div>
-                    <div id="container-msg-ascan-dates" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 24px;">
-                        <span style="font-size: 12px; color: #a38d8d;">No dates available</span>
-                    </div>
-                    <span style="font-size: 12px; color: #8f6b6b;">When dates are selected, only waybills matching the selected Ascan Date(s) will be included in the WhatsApp message text. If no date is selected, all dates are included by default.</span>
-                </div>
-
-                <div class="rules-card">
-                    <h3>Pending Data Cleaning & Matching Logic</h3>
-                    <ol>
-                        <li><strong>General Filters</strong>: Only keeps records where <code>Latest scan type</code> does not contain <code>"Signed"</code> (case-insensitive), <code>Transfer and return identification</code> is <code>"未退件"</code>, <code>Latest problem reason</code> does not contain <code>"lost"</code> (case-insensitive), and <code>Receiving province</code> is <code>"Baden-Württemberg"</code>.</li>
-                        <li><strong>Date Format</strong>: All exported dates are converted to <code>MM/DD</code> format.</li>
-                        <li><strong>Station Mapping</strong>:
-                            <ul>
-                                <li>If <code>Latest scan type</code> = <code>"Shipping HUB"</code> or <code>"Outgoing Scan"</code> &rarr; <code>Delivery outlet</code>.</li>
-                                <li>Otherwise &rarr; <code>Latest scanning point</code>.</li>
-                            </ul>
-                        </li>
-                        <li><strong>Today Nodispatch & Historical</strong>:
-                            <ul>
-                                <li><code>export today Nodispatch</code>: Filters <code>AscanDate</code> (Entry time) between <code>today() - 15</code> and <code>today()</code> (inclusive); excludes any <code>"Parcel Signed"</code>; <strong>only keeps records where <code>station</code> contains <code>"BAW"</code> across all sheets</strong>. Exports <code>TodayNodispatch.xlsx</code> with <strong>Sheet 1 (<code>detail</code>)</strong> (excludes <code>"Out of warehouse scan"</code> or <code>"Problem scan"</code> only if latest scan time is in recently working two days, Monday–Saturday; sorted by <code>AscanDate</code> ascending) and <strong>Sheet 2 (<code>total</code>)</strong> (<code>station</code>, <code>Need Dispatch</code>, <code>No dispatch</code>, <code>Dispatched%</code>, plus a bottom <code>Total</code> row; <code>Dispatched% = (Need Dispatch - No dispatch) / Need Dispatch</code>, or <code>100.00%</code> if <code>No dispatch &le; 0</code>).</li>
-                                <li><code>export get lastest scan</code>: AscanDate is not today（严格按 <code>AscanDate</code> 从小到大升序排序导出）。</li>
-                            </ul>
-                        </li>
-                        <li><strong>Driver Matching (for Historical Pending Last / Historical Pending Hub)</strong>:
-                            <ul>
-                                <li>If both <code>scan records</code> and <code>pending records</code> are uploaded, matches by Waybill。导出的表格均严格按 <code>AscanDate</code> 从小到大升序排序。</li>
-                                <li>Matches for all historical pending records (AscanDate is not today).</li>
-                                <li>Updates the fields from the latest scan record as follows:
-                                    <ul>
-                                        <li><code>station</code>: if the latest scan record's scan type is <code>"Loading scan"</code>, keep pending station; otherwise, update to scan record's last scan station.</li>
-                                        <li><code>last scan type</code>: latest scan record's scan type.</li>
-                                        <li><code>last scan date</code>: latest scan record's scan date.</li>
-                                        <li><code>driver</code>: latest scan record's Scanner (receiver/dispatcher/scanner value) if scan type is <code>"Out of warehouse scan"</code> or <code>"Problem scan"</code>; otherwise left empty.</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li><strong>NoUpdate Pending Export</strong>:
-                            <ul>
-                                <li>Filters NoUpdate record rows where <code>Last type of problem</code> (Column T) does not contain <code>"lost"</code>.</li>
-                                <li>Matches with Scan records for AscanDate, station, last scan date/type, and driver.</li>
-                                <li><strong>Delivery count</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column H value (Delivery count).</li>
-                                <li><strong>OverDays</strong>: Takes Column W value (hours) from <code>NoUpdate record</code>, converts to days and rounds down using <code>Math.floor(W / 24)</code>.</li>
-                                <li><strong>last problem reason</strong>: Matches Waybill with Column A of <code>Delivery times</code> file; if matched, outputs Column U value (Last problem reason).</li>
-                                <li><strong>DeadLine</strong>: 新增最后一列 <code>DeadLine</code>，计算公式为 <code>DeadLine = AscanDate + LifeCycle</code>。其中客户生命周期依据全局配置：所有客户（<code>TT / SF / TEMU / Shein / speed / others</code>）均为 <code>9</code> 天（<code>Ascan + 10</code> 视作遗失）。</li>
-                                <li><strong>whatsApp Sheet</strong>: Exports <code>whatsApp</code> sheet (columns: <code>station</code>, <code>msg</code>, <code>TT msg</code>). <code>msg</code> aggregates standard blocks (ask driver to return, warehousing stay &ge; 1 day return to warehouse, outgoing scan find and deliver); <code>TT msg</code> aggregates TT blocks (TT &ge; 4 days return, TT &lt; 4 days &amp; delivery count &lt; 2 redeliver). Empty blocks are hidden and stations with no messages are skipped. 消息内各段落运单明细严格按 <code>AscanDate</code> 从小到大升序排序。</li>
-                                <li><strong>Msg Ascan Date Filter</strong>: If dates are selected in <code>Msg Ascan Date</code>, message texts in the <code>whatsApp</code> sheet only include waybills matching the selected Ascan Dates. If no date is selected, all dates are included by default. Sheet 1 (<code>NoUpdatePending</code>) always retains all records as a complete ledger, 且数据严格按 <code>AscanDate</code> 从小到大升序排序。</li>
-                            </ul>
-                        </li>
-                    </ol>
-                </div>
-            </div>
-
-
 
             <!-- 8. Driver signed Panel -->
             <div class="tab-panel" id="panel-driversigned">
@@ -1200,10 +1019,8 @@
         let finalAscanSignedData = [];
         let finalShippingTodayNodispatchData = [];
         let finalShippingTodayUnfinished15DaysData = [];
-        let finalShippingWillLostData = [];
-        let finalShippingNoUpdateData = [];
+        let finalShippingAllUnfinishedBawData = [];
         let finalShippingPudoData = [];
-        let finalShippingReturnParcelData = [];
         let finalSignedShippingData = [];
         let rawPendingRows = [];
         let finalPendingRecords = [];
@@ -3262,6 +3079,11 @@
                         return false;
                     }
                 }
+                // Exclude all records where Scanner number contains "025"
+                const scannerNumberVal = String(row[scannerNumberIdx] !== undefined ? row[scannerNumberIdx] : '').trim();
+                if (scannerNumberVal.includes("025")) {
+                    return false;
+                }
                 return true;
             });
 
@@ -4136,7 +3958,6 @@
             if (typeof checkDriverSignedBtn === 'function') checkDriverSignedBtn();
             if (typeof checkNoUpdateRecordBtns === 'function') checkNoUpdateRecordBtns();
             if (typeof checkAddProblemBtns === 'function') checkAddProblemBtns();
-            if (typeof checkShippingFinalLostBtn === 'function') checkShippingFinalLostBtn();
         }
 
         function exportScanRecords() {
@@ -4220,7 +4041,6 @@
             if (typeof checkDriverSignedBtn === 'function') checkDriverSignedBtn();
             if (typeof checkNoUpdateRecordBtns === 'function') checkNoUpdateRecordBtns();
             if (typeof checkAddProblemBtns === 'function') checkAddProblemBtns();
-            if (typeof checkShippingFinalLostBtn === 'function') checkShippingFinalLostBtn();
         }
 
         // Return scan file handler
@@ -4668,6 +4488,7 @@
             const header = rawRows[headerRowIdx] || [];
             const hLower = header.map(h => String(h).trim().toLowerCase());
             const outletIdx = hLower.findIndex(h => h === "delivery outlet" || h.includes("delivery outlet") || h.includes("派送网点"));
+            const latestPointIdx = hLower.findIndex(h => h === "latest scanning point" || h.includes("latest scanning point") || h.includes("最新扫描点"));
             const signIdx = hLower.findIndex(h => h === "sign for identification" || h.includes("sign for identification") || h.includes("签收标识"));
 
             // If Delivery outlet column is missing, keep header so processShipping can report missing column
@@ -4687,6 +4508,12 @@
                 const outletCell = row[outletIdx];
                 if (outletCell === undefined || outletCell === null || outletCell === "") continue;
                 if (!String(outletCell).toLowerCase().includes("baw")) continue;
+
+                // Step 2: Keep only rows where Latest scanning point contains "BAW", "ST", or "Yoyi" (case-insensitive)
+                if (latestPointIdx !== -1) {
+                    const lspUpper = String(row[latestPointIdx] !== undefined && row[latestPointIdx] !== null ? row[latestPointIdx] : '').trim().toUpperCase();
+                    if (!lspUpper.includes("BAW") && !lspUpper.includes("ST") && !lspUpper.includes("YOYI")) continue;
+                }
 
                 const firstCell = String(row[0] !== undefined ? row[0] : '').trim().toLowerCase();
                 if (firstCell === "" || firstCell.includes("waybill") || firstCell.includes("运单")) continue;
@@ -4764,7 +4591,21 @@
         };
 
         // Standard English-layout header used for converted Chinese rows
-        const SHIPPING_ZH_STD_HEADER = ["Waybill Number", "Pickup time", "Delivery outlet", "Receiving postal code", "Latest scanning point", "Latest scan type", "Latest scan time", "Sign for identification", "Transfer and return identification"];
+        const SHIPPING_ZH_STD_HEADER = [
+            "Waybill Number",
+            "Pickup time",
+            "Delivery outlet",
+            "Receiving postal code",
+            "Latest scanning point",
+            "Latest scan type",
+            "Latest scan time",
+            "Sign for identification",
+            "Transfer and return identification",
+            "Order source name",
+            "Latest problem reason",
+            "Dispatch Driver ID",
+            "Receive Driver ID"
+        ];
 
         // Read Chinese 48h Shipping Excel file: only parse Sheet 2 ("组件1") and delete the other 2 sheets for speed
         function readZhShippingExcelFile(file) {
@@ -4841,6 +4682,10 @@
             const iPoint = idx("最新扫描机构名称");
             const iType = idx("最新扫描类型");
             const iLastTime = lastIdx("最新扫描时间");
+            const iOrderSource = idx("订单来源");
+            const iProblemReason = idx("最新问题件原因");
+            const iDispatchDriverId = idx("派件业务员编号");
+            const iReceiveDriverId = idx("接收业务员编号");
             const missing = [];
             [["运单号", iWaybill], ["揽收时间", iAscan], ["区域name", iRegion], ["派件网点名称", iOutlet], ["三段码", iZip],
              ["最新扫描机构名称", iPoint], ["最新扫描类型", iType], ["最新扫描时间", iLastTime]].forEach(p => { if (p[1] === -1) missing.push(p[0]); });
@@ -4859,22 +4704,34 @@
                 // Then BAW filter as usual
                 const outlet = String(row[iOutlet] !== undefined ? row[iOutlet] : '').trim();
                 if (!outlet.toLowerCase().includes("baw")) continue;
+                // Keep only rows where 最新扫描机构名称 contains "BAW", "ST", or "Yoyi" (case-insensitive)
+                const pointVal = String(row[iPoint] !== undefined ? row[iPoint] : '').trim();
+                const pointUpper = pointVal.toUpperCase();
+                if (!pointUpper.includes("BAW") && !pointUpper.includes("ST") && !pointUpper.includes("YOYI")) continue;
 
                 const zip = String(row[iZip] !== undefined ? row[iZip] : '').trim();
                 const rawType = String(row[iType] !== undefined ? row[iType] : '').trim();
                 const mappedType = Object.prototype.hasOwnProperty.call(SHIPPING_ZH_SCAN_TYPE_MAP, rawType) ? SHIPPING_ZH_SCAN_TYPE_MAP[rawType] : rawType;
                 const retRaw = iReturn !== -1 ? String(row[iReturn] !== undefined ? row[iReturn] : '').trim() : '';
+                const orderSource = iOrderSource !== -1 ? String(row[iOrderSource] !== undefined && row[iOrderSource] !== null ? row[iOrderSource] : '').trim() : '';
+                const problemReason = iProblemReason !== -1 ? String(row[iProblemReason] !== undefined && row[iProblemReason] !== null ? row[iProblemReason] : '').trim() : '';
+                const dispatchDriverId = iDispatchDriverId !== -1 ? String(row[iDispatchDriverId] !== undefined && row[iDispatchDriverId] !== null ? row[iDispatchDriverId] : '').trim() : '';
+                const receiveDriverId = iReceiveDriverId !== -1 ? String(row[iReceiveDriverId] !== undefined && row[iReceiveDriverId] !== null ? row[iReceiveDriverId] : '').trim() : '';
 
                 const nr = [
                     waybill,
                     row[iAscan],
                     outlet,
                     zip.slice(-3),
-                    String(row[iPoint] !== undefined ? row[iPoint] : '').trim(),
+                    pointVal,
                     mappedType,
                     row[iLastTime],
                     "Undelivered",
-                    retRaw === "" ? "未退件" : retRaw
+                    retRaw === "" ? "未退件" : retRaw,
+                    orderSource,
+                    problemReason,
+                    dispatchDriverId,
+                    receiveDriverId
                 ];
                 out.push(nr);
                 valid++;
@@ -4934,8 +4791,15 @@
                     zhRows.forEach(r => combinedData.push(r));
                 } else {
                     // Remap Chinese standard columns into the English file's header layout
+                    combinedHeader = combinedHeader.slice();
                     const hl = combinedHeader.map(x => String(x).trim().toLowerCase());
                     const find = (pred) => hl.findIndex(pred);
+                    const ensureCol = (idxVal, colName) => {
+                        if (idxVal !== -1) return idxVal;
+                        combinedHeader.push(colName);
+                        hl.push(colName.toLowerCase());
+                        return combinedHeader.length - 1;
+                    };
                     const target = [
                         find(h => h.includes("waybill") || h.includes("运单号") || h === "tracking number"),
                         findEntryTimeColIdx(hl),
@@ -4945,7 +4809,11 @@
                         find(h => h === "latest scan type" || h === "last scan type" || h.includes("扫描类型") || h.includes("scan type")),
                         find(h => h === "latest scan time" || h.includes("latest scan time") || h.includes("最新扫描时间")),
                         find(h => h === "sign for identification" || h.includes("sign for identification") || h.includes("签收标识")),
-                        find(h => h === "transfer and return identification" || h.includes("退件") || h.includes("return identification"))
+                        find(h => h === "transfer and return identification" || h.includes("退件") || h.includes("return identification")),
+                        ensureCol(findClientColIdx(hl), "Order source name"),
+                        ensureCol(find(h => h === "latest problem reason" || h === "last problem reason" || h.includes("最新问题原因") || h.includes("问题原因") || h === "problem reason"), "Latest problem reason"),
+                        ensureCol(find(h => h === "dispatch driver id" || h === "派件业务员编号"), "Dispatch Driver ID"),
+                        ensureCol(find(h => h === "receive driver id" || h === "接收业务员编号"), "Receive Driver ID")
                     ];
                     zhRows.forEach(r => {
                         const nr = new Array(combinedHeader.length).fill("");
@@ -4972,16 +4840,6 @@
             }
             const val = sortedArr[low] + (idx - low) * (sortedArr[high] - sortedArr[low]);
             return Math.round(val * 100) / 100;
-        }
-
-        function checkShippingFinalLostBtn() {
-            const hasWillLost = finalShippingWillLostData && finalShippingWillLostData.length > 0;
-            const hasNoUpdate = finalShippingNoUpdateData && finalShippingNoUpdateData.length > 0;
-            const hasScan = rawScanRecordsRows && rawScanRecordsRows.length > 1;
-            const btnFinalLost = document.getElementById('btn-export-final-lost');
-            if (btnFinalLost) {
-                btnFinalLost.disabled = !((hasWillLost || hasNoUpdate) && hasScan);
-            }
         }
 
         function processShipping(rawInput) {
@@ -5019,6 +4877,8 @@
             const latestScanTypeIdx = headers.findIndex(h => h === "latest scan type" || h === "last scan type" || h.includes("扫描类型") || h.includes("scan type"));
             const problemReasonIdx = headers.findIndex(h => h === "latest problem reason" || h === "last problem reason" || h.includes("最新问题原因") || h.includes("问题原因") || h === "problem reason");
             const postcodeIdx = headers.findIndex(h => h === "receiving postal code" || h.includes("收件邮编") || h === "postcode" || h === "postal code");
+            const dispatchDriverIdIdx = headers.findIndex(h => h === "dispatch driver id" || h === "派件业务员编号");
+            const receiveDriverIdIdx = headers.findIndex(h => h === "receive driver id" || h === "接收业务员编号");
             const clientIdx = findClientColIdx(headers);
 
             const waybillHeaders = ["waybill number", "waybill no", "waybill no.", "waybill", "tracking number", "tracking no", "tracking no.", "tracking", "运单号", "单号"];
@@ -5055,6 +4915,7 @@
             const signedMonthGroups = {};
             const shippingTodayNodispatchList = [];
             const shippingTodayUnfinished15DaysList = [];
+            const shippingAllUnfinishedBawList = [];
             const shippingWillLostList = [];
             const shippingNoUpdateList = [];
             const shippingPudoList = [];
@@ -5212,15 +5073,46 @@
                     lastScanDate = formatDateToMMDD(latestScanTime);
                 }
                 const isOutOrProblem = (lstLower === "out of warehouse scan" || lstLower === "problem scan");
-                const isRecentOutOrProblem = isOutOrProblem && !isReturn && !isLost && !isSignedIdent && !isParcelSigned &&
-                    isScanInRecentWorkingDays(latestScanTime, lastScanDate, 2, recentWorkingDaysInfo);
+                const isLastScanTodayForPending = (latestScanTime instanceof Date && !isNaN(latestScanTime.getTime()))
+                    ? (Date.UTC(latestScanTime.getUTCFullYear(), latestScanTime.getUTCMonth(), latestScanTime.getUTCDate()) === todayCalUTC)
+                    : (lastScanDate !== "" && lastScanDate === todayStr);
+                const isRecentOutOrProblem = isOutOrProblem && !isReturn && !isLost && !isSignedIdent && !isParcelSigned && isLastScanTodayForPending;
 
                 const postcodeVal = postcodeIdx !== -1 ? String(row[postcodeIdx] !== undefined ? row[postcodeIdx] : '').trim() : '';
+                const dispatchDriverId = dispatchDriverIdIdx !== -1 ? String(row[dispatchDriverIdIdx] !== undefined && row[dispatchDriverIdIdx] !== null ? row[dispatchDriverIdIdx] : '').trim() : '';
+                const receiveDriverId = receiveDriverIdIdx !== -1 ? String(row[receiveDriverIdIdx] !== undefined && row[receiveDriverIdIdx] !== null ? row[receiveDriverIdIdx] : '').trim() : '';
+                const compareDriverId = receiveDriverId !== "" ? receiveDriverId : dispatchDriverId;
+                const driverIdVal = (dispatchDriverId !== "" && dispatchDriverId === compareDriverId && dispatchDriverId.toUpperCase().startsWith("DE"))
+                    ? dispatchDriverId
+                    : "";
 
-                const diffAscanDays = Math.round((todayCalUTC - entryCalUTC) / 86400000);
-                const isAscanWithin15Days = (diffAscanDays >= 0 && diffAscanDays <= 15);
+                let isLastScanWithin15Days = false;
+                if (latestScanTime instanceof Date && !isNaN(latestScanTime.getTime())) {
+                    const lastScanCalUTC = Date.UTC(latestScanTime.getUTCFullYear(), latestScanTime.getUTCMonth(), latestScanTime.getUTCDate());
+                    const diffLastScanDays = Math.round((todayCalUTC - lastScanCalUTC) / 86400000);
+                    isLastScanWithin15Days = (diffLastScanDays <= 15);
+                }
 
-                if (!isReturn && !isLost && !isSignedIdent && !isParcelSigned && isAscanWithin15Days) {
+                const isScanInbound = isScanInboundType(latestScanType);
+                let willLostDeadlineDate = deadlineDate;
+                let isDeadlineInWindow = false;
+                if (isScanInbound) {
+                    if (latestScanTime) {
+                        // 8 days calculated by hours (8 * 24 = 192 hours)
+                        const inboundLostTime = new Date(latestScanTime.getTime() + 8 * 24 * 3600 * 1000);
+                        willLostDeadlineDate = calculateDeadLine(latestScanTime, lastScanDate, 8);
+                        const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
+                        const diffInboundDeadlineDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
+                        isDeadlineInWindow = (diffInboundDeadlineDays >= -1 && diffInboundDeadlineDays <= 3);
+                    }
+                } else {
+                    isDeadlineInWindow = (diffDeadlineDays >= -1 && diffDeadlineDays <= 3);
+                }
+
+                const lspUpper = latestScanPoint.toUpperCase();
+                const hasValidLatestScanPoint = lspUpper.includes("ST") || lspUpper.includes("BAW") || lspUpper.includes("YOYI");
+
+                if (!isReturn && !isLost && !isSignedIdent && !isParcelSigned && isLastScanWithin15Days && hasValidLatestScanPoint) {
                     let nodispatchStation = "";
                     if (latestScanType === "Shipping HUB" || latestScanType === "Outgoing Scan") {
                         nodispatchStation = deliveryOutlet;
@@ -5241,128 +5133,30 @@
                             ascanDate: ascanDate,
                             ascanRawDate: entryTime,
                             station: nodispatchStation,
+                            deliveryOutlet: deliveryOutlet,
+                            latestScanPoint: latestScanPoint,
                             lastScanDate: lastScanDate,
                             lastScanRawDate: latestScanTime,
                             lastScanType: latestScanType,
                             client: clientVal,
-                            postcode: postcodeVal
+                            postcode: postcodeVal,
+                            driverId: driverIdVal,
+                            noUpdate: noUpdateDays,
+                            sla: sla,
+                            lastProblem: rawProblemReason,
+                            willLostDeadlineDate: willLostDeadlineDate,
+                            isDeadlineInWindow: isDeadlineInWindow,
+                            deadlineDate: isScanInbound ? willLostDeadlineDate : deadlineDate,
+                            isScanInbound: isScanInbound,
+                            isUndelivered: isUndelivered
                         };
 
+                        shippingAllUnfinishedBawList.push(nodispatchItem);
                         shippingTodayUnfinished15DaysList.push(nodispatchItem);
 
                         if (!isRecentOutOrProblem) {
                             shippingTodayNodispatchList.push(nodispatchItem);
                         }
-                    }
-                }
-
-                // WillLost Filter:
-                // - Standard parcels: Deadline Date = AscanDate + LifeCycle (9 days, i.e., Ascan + 10 regarded as lost); station = Latest scanning point (filtered by BAW/ST)
-                // - PUDO parcels (latest scan type = "Scan inbound" / "Scan Inbound parcel"):
-                //   now - latest scan time >= 8 days (8 * 24 = 192 hours) regarded as lost;
-                //   Deadline Date = latest scan date + 8 (latestScanTime + 192h); station = Delivery outlet
-                //   Window (Method B): today() - 1 <= Deadline Date <= today() + 3
-                const isScanInbound = isScanInboundType(latestScanType);
-                let willLostDeadlineDate = deadlineDate;
-                let isDeadlineInWindow = false;
-                if (isScanInbound) {
-                    if (latestScanTime) {
-                        // 8 days calculated by hours (8 * 24 = 192 hours)
-                        const inboundLostTime = new Date(latestScanTime.getTime() + 8 * 24 * 3600 * 1000);
-                        willLostDeadlineDate = calculateDeadLine(latestScanTime, lastScanDate, 8);
-                        const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
-                        const diffInboundDeadlineDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
-                        isDeadlineInWindow = (diffInboundDeadlineDays >= -1 && diffInboundDeadlineDays <= 3);
-                    }
-                } else {
-                    isDeadlineInWindow = (diffDeadlineDays >= -1 && diffDeadlineDays <= 3);
-                }
-
-                if (isUndelivered && !isReturn && isDeadlineInWindow) {
-                    const willLostStation = isScanInbound
-                        ? normalizeAndFilterWillLostStation(deliveryOutlet)
-                        : normalizeAndFilterWillLostStation(latestScanPoint);
-                    if (willLostStation !== null) {
-                        shippingWillLostList.push({
-                            waybill: waybillNum,
-                            ascanDate: ascanDate,
-                            ascanRawDate: entryTime,
-                            station: willLostStation,
-                            deliveryOutlet: deliveryOutlet,
-                            lastScanDate: lastScanDate,
-                            lastScanRawDate: latestScanTime,
-                            lastScanType: latestScanType,
-                            client: clientVal,
-                            postcode: postcodeVal,
-                            noUpdate: noUpdateDays,
-                            deadlineDate: willLostDeadlineDate,
-                            sla: sla,
-                            lastProblem: rawProblemReason
-                        });
-                    }
-                }
-
-                // NoUpdate Filter: Undelivered & not returned & (4 <= NoUpdate <= 5)
-                const isNoUpdate4To5 = (typeof noUpdateDays === 'number' && !isNaN(noUpdateDays) && noUpdateDays >= 4 && noUpdateDays <= 5);
-                if (isUndelivered && !isReturn && isNoUpdate4To5) {
-                    shippingNoUpdateList.push({
-                        waybill: waybillNum,
-                        ascanDate: ascanDate,
-                        ascanRawDate: entryTime,
-                        station: station,
-                        deliveryOutlet: deliveryOutlet,
-                        lastScanDate: lastScanDate,
-                        lastScanRawDate: latestScanTime,
-                        lastScanType: latestScanType,
-                        client: clientVal,
-                        postcode: postcodeVal,
-                        noUpdate: noUpdateDays,
-                        deadlineDate: isScanInbound ? willLostDeadlineDate : deadlineDate,
-                        sla: sla,
-                        lastProblem: rawProblemReason
-                    });
-                }
-
-                // PUDO Filter: Delivery outlet contains "BAW" (already pre-filtered) and Latest scan type = "Scan inbound" / "Scan Inbound parcel"
-                if (isScanInbound) {
-                    let pudoStayDays = "";
-                    if (latestScanTime) {
-                        const diffPudoMs = nowBerlin.getTime() - latestScanTime.getTime();
-                        pudoStayDays = Math.floor(diffPudoMs / (1000 * 60 * 60 * 24));
-                    }
-                    shippingPudoList.push({
-                        pudoInboundDate: lastScanDate,
-                        pudoInboundRawDate: latestScanTime,
-                        station: deliveryOutlet,
-                        pudo: latestScanPoint,
-                        waybill: waybillNum,
-                        client: clientVal,
-                        postcode: postcodeVal,
-                        pudoStayDays: pudoStayDays
-                    });
-                }
-
-                // Return Parcel Filter: last scan type = Problem scan / Out of warehouse scan / Receive Scan (or pick up from code 10)
-                // and last scan date <> today, NoUpdate = now() - Latest scan time <= 144 hours (signed parcels excluded)
-                if (latestScanTime && !isSignedIdent && !isParcelSigned &&
-                    (lstLower === "problem scan" || lstLower === "out of warehouse scan" || lstLower === "receive scan" || lstLower === "pick up")) {
-                    const stayHours = Math.ceil((nowBerlin.getTime() - latestScanTime.getTime()) / (3600 * 1000));
-                    const lastScanCalUTC = Date.UTC(latestScanTime.getUTCFullYear(), latestScanTime.getUTCMonth(), latestScanTime.getUTCDate());
-                    const isLastScanToday = (lastScanCalUTC === todayCalUTC || lastScanDate === todayStr);
-                    if (stayHours <= 144 && !isLastScanToday) {
-                        shippingReturnParcelList.push({
-                            waybill: waybillNum,
-                            ascanDate: ascanDate,
-                            ascanRawDate: entryTime,
-                            station: station,
-                            lastScanDate: lastScanDate,
-                            lastScanRawDate: latestScanTime,
-                            lastScanType: latestScanType,
-                            client: clientVal,
-                            postcode: postcodeVal,
-                            noUpdateHours: stayHours,
-                            lastProblem: rawProblemReason
-                        });
                     }
                 }
 
@@ -5619,57 +5413,45 @@
             });
             finalShippingTodayUnfinished15DaysData = Array.from(uniqueTodayUnfinished15DaysMap.values());
 
-            // Build de-duplicated WillLost records from Shipping
-            const uniqueWillLostMap = new Map();
-            shippingWillLostList.forEach(r => {
+            // Build de-duplicated all Unfinished BAW records from Shipping (no 15-day limit, for export to get driver)
+            const uniqueAllUnfinishedBawMap = new Map();
+            shippingAllUnfinishedBawList.forEach(r => {
                 if (r.waybill) {
-                    uniqueWillLostMap.set(r.waybill, r);
+                    uniqueAllUnfinishedBawMap.set(r.waybill, r);
                 }
             });
-            finalShippingWillLostData = Array.from(uniqueWillLostMap.values());
-            // Sort by AscanDate from smallest to largest (ascending)
-            finalShippingWillLostData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            finalShippingAllUnfinishedBawData = Array.from(uniqueAllUnfinishedBawMap.values());
 
-            // Build de-duplicated NoUpdate (4-5 days) records from Shipping
-            const uniqueNoUpdateMap = new Map();
-            shippingNoUpdateList.forEach(r => {
-                if (r.waybill) {
-                    uniqueNoUpdateMap.set(r.waybill, r);
-                }
-            });
-            finalShippingNoUpdateData = Array.from(uniqueNoUpdateMap.values());
-            // Sort by AscanDate from smallest to largest (ascending)
-            finalShippingNoUpdateData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            // Derive all downstream tables strictly from Pending (detail) pool (finalShippingTodayNodispatchData)
+            finalShippingPudoData = [];
 
-            // Build de-duplicated PUDO records from Shipping
-            const uniquePudoMap = new Map();
-            shippingPudoList.forEach(r => {
-                if (r.waybill) {
-                    uniquePudoMap.set(r.waybill, r);
+            finalShippingTodayNodispatchData.forEach(r => {
+                // PUDO (from Pending detail)
+                if (r.isScanInbound) {
+                    let pudoStayDays = "";
+                    if (r.lastScanRawDate) {
+                        const diffPudoMs = nowBerlin.getTime() - r.lastScanRawDate.getTime();
+                        pudoStayDays = Math.floor(diffPudoMs / (1000 * 60 * 60 * 24));
+                    }
+                    finalShippingPudoData.push({
+                        pudoInboundDate: r.lastScanDate,
+                        pudoInboundRawDate: r.lastScanRawDate,
+                        station: r.deliveryOutlet || r.station,
+                        pudo: r.latestScanPoint || r.station,
+                        waybill: r.waybill,
+                        client: r.client,
+                        postcode: r.postcode,
+                        pudoStayDays: pudoStayDays
+                    });
                 }
             });
-            finalShippingPudoData = Array.from(uniquePudoMap.values());
-            // Sort by PUDO InBound Date from smallest to largest (ascending)
+
             finalShippingPudoData.sort((a, b) => compareAscanDateAsc(a.pudoInboundDate, b.pudoInboundDate, a.pudoInboundRawDate, b.pudoInboundRawDate));
 
-            // Build de-duplicated Return Parcel records from Shipping
-            const uniqueReturnParcelMap = new Map();
-            shippingReturnParcelList.forEach(r => {
-                if (r.waybill) {
-                    uniqueReturnParcelMap.set(r.waybill, r);
-                }
-            });
-            finalShippingReturnParcelData = Array.from(uniqueReturnParcelMap.values());
-            finalShippingReturnParcelData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
-            const btnReturnParcel = document.getElementById('btn-export-return-parcel');
-            if (btnReturnParcel) btnReturnParcel.disabled = (finalShippingReturnParcelData.length === 0);
-            const btnFinalReturn = document.getElementById('btn-export-final-return');
-            if (btnFinalReturn) btnFinalReturn.disabled = (finalShippingReturnParcelData.length === 0);
-
             if (detailedRecords.length > 0) {
-                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length}, DriverReturn: ${finalShippingReturnParcelData.length})`;
+                document.getElementById('status-shipping').textContent = `${detailedRecords.length} records processed (PUDO: ${finalShippingPudoData.length})`;
             } else {
-                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | WillLost: ${finalShippingWillLostData.length}, NoUpdate: ${finalShippingNoUpdateData.length}, PUDO: ${finalShippingPudoData.length}, DriverReturn: ${finalShippingReturnParcelData.length})`;
+                document.getElementById('status-shipping').textContent = `${totalBawProcessedCount} Undelivered records (>90% Undelivered: Signed metrics skipped | PUDO: ${finalShippingPudoData.length})`;
             }
             document.getElementById('btn-export-shipping').disabled = (finalShippingData.length === 0);
             document.getElementById('btn-export-shipping-month').disabled = (finalShippingMonthData.length === 0);
@@ -5678,134 +5460,19 @@
             if (btnShippingToday) {
                 btnShippingToday.disabled = (finalShippingTodayNodispatchData.length === 0 && finalShippingTodayUnfinished15DaysData.length === 0);
             }
-            const btnWillLost = document.getElementById('btn-export-will-lost');
-            if (btnWillLost) {
-                btnWillLost.disabled = (finalShippingWillLostData.length === 0);
+            const btnShippingGetDriver = document.getElementById('btn-export-shipping-get-driver');
+            if (btnShippingGetDriver) {
+                btnShippingGetDriver.disabled = (finalShippingTodayNodispatchData.length === 0);
             }
-            const btnShippingNoUpdate = document.getElementById('btn-export-shipping-noupdate');
-            if (btnShippingNoUpdate) {
-                btnShippingNoUpdate.disabled = (finalShippingNoUpdateData.length === 0);
+            const btnShippingFinalPending = document.getElementById('btn-export-shipping-final-pending');
+            if (btnShippingFinalPending) {
+                btnShippingFinalPending.disabled = (finalShippingTodayNodispatchData.length === 0);
             }
             const btnPudo = document.getElementById('btn-export-pudo');
             if (btnPudo) {
                 btnPudo.disabled = (finalShippingPudoData.length === 0);
             }
-            updateWillLostDeadlineOptions();
-            checkShippingFinalLostBtn();
-            const btnPendingToday = document.getElementById('btn-export-today-nodispatch') || document.getElementById('btn-export-today-pending');
-            if (btnPendingToday && finalPendingRecords.length === 0 && (finalShippingTodayNodispatchData.length > 0 || finalShippingTodayUnfinished15DaysData.length > 0)) {
-                btnPendingToday.disabled = false;
-            }
             switchTab('shipping');
-        }
-
-        function selectAllWillLostDeadlines(selectAll) {
-            const checkboxes = document.querySelectorAll('.willlost-deadline-chk');
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll;
-            });
-        }
-
-        function getSelectedWillLostDeadlines() {
-            const checkboxes = document.querySelectorAll('.willlost-deadline-chk:checked');
-            const selected = [];
-            checkboxes.forEach(cb => {
-                const val = String(cb.value).trim();
-                if (val !== '') selected.push(val);
-            });
-            return selected;
-        }
-
-        function selectAllWillLostNoUpdates(selectAll) {
-            const checkboxes = document.querySelectorAll('.willlost-noupdate-chk');
-            checkboxes.forEach(cb => {
-                cb.checked = selectAll;
-            });
-        }
-
-        function getSelectedWillLostNoUpdates() {
-            const checkboxes = document.querySelectorAll('.willlost-noupdate-chk:checked');
-            const selected = [];
-            checkboxes.forEach(cb => {
-                const val = parseInt(String(cb.value).trim(), 10);
-                if (!isNaN(val)) selected.push(val);
-            });
-            return selected;
-        }
-
-        function updateWillLostDeadlineOptions() {
-            const container = document.getElementById('container-willlost-deadlines');
-            const hint = document.getElementById('willlost-deadline-hint');
-            if (!container) return;
-
-            if (!finalShippingWillLostData || finalShippingWillLostData.length === 0) {
-                container.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
-                if (hint) hint.textContent = '(No WillLost records found)';
-                return;
-            }
-
-            const dateSet = new Set();
-            for (let i = 0; i < finalShippingWillLostData.length; i++) {
-                const d = String(finalShippingWillLostData[i].deadlineDate || '').trim();
-                if (d) dateSet.add(d);
-            }
-
-            const sortedDates = Array.from(dateSet).sort((a, b) => compareAscanDateAsc(a, b));
-            if (sortedDates.length === 0) {
-                container.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
-                if (hint) hint.textContent = '(0 dates found)';
-                return;
-            }
-
-            const previouslyChecked = new Set(
-                Array.from(document.querySelectorAll('.willlost-deadline-chk:checked')).map(cb => cb.value.trim())
-            );
-
-            let html = '';
-            for (const d of sortedDates) {
-                const isChecked = previouslyChecked.has(d) ? 'checked' : '';
-                html += `
-                    <label style="display: inline-flex; align-items: center; gap: 6px; background-color: #fff8f8; border: 1px solid #ebdcdc; border-radius: 4px; padding: 4px 10px; font-size: 13px; color: #2b1111; cursor: pointer; user-select: none;">
-                        <input type="checkbox" class="willlost-deadline-chk" value="${d}" ${isChecked} style="accent-color: #b82525; cursor: pointer;">
-                        ${d}
-                    </label>
-                `;
-            }
-
-            container.innerHTML = html;
-            if (hint) hint.textContent = `(${sortedDates.length} dates available)`;
-        }
-
-        function normalizeAndFilterWillLostStation(rawStation) {
-            if (rawStation === undefined || rawStation === null) return null;
-            const trimmed = String(rawStation).trim();
-            if (!trimmed) return null;
-            const lower = trimmed.toLowerCase();
-            const hasBaw = lower.includes("baw");
-            const hasSt = lower.includes("st");
-            if (!hasBaw && !hasSt) {
-                return null;
-            }
-            if (hasBaw) {
-                return trimmed;
-            }
-            return "Stuttgart HUB";
-        }
-
-        function isFinalLostExcludedScanType(scanType) {
-            if (!scanType) return false;
-            const lower = String(scanType).trim().toLowerCase();
-            if (!lower) return false;
-            // Filter out signed / delivered / 签收 / 妥投 (excluding "not signed" / "unsigned" / "undelivered")
-            const isSigned = (lower.includes("signed") && !lower.includes("not signed") && !lower.includes("unsigned")) ||
-                             (lower.includes("delivered") && !lower.includes("undelivered") && !lower.includes("not delivered")) ||
-                             lower.includes("签收") ||
-                             lower.includes("妥投");
-            // Filter out return / returned / 退件 / 退回
-            const isReturned = lower.includes("return") ||
-                               lower.includes("退件") ||
-                               lower.includes("退回");
-            return isSigned || isReturned;
         }
 
         function exportShipping() {
@@ -5894,7 +5561,79 @@
             return false;
         }
 
+        function isDriverHandScanType(scanType) {
+            const lstLower = String(scanType || '').trim().toLowerCase();
+            return lstLower === "problem scan" || lstLower === "out of warehouse scan" || lstLower === "receive scan";
+        }
+
+        function isDriverNotReturnedCondition(record, nowBerlin) {
+            if (!record) return false;
+            if (!isDriverHandScanType(record.lastScanType)) {
+                return false;
+            }
+            const refNow = nowBerlin || getBerlinNowDate();
+            const todayCalUTC = Date.UTC(refNow.getUTCFullYear(), refNow.getUTCMonth(), refNow.getUTCDate());
+            const todayStr = formatDateToMMDD(refNow);
+            const raw = record.lastScanRawDate;
+            if (raw instanceof Date && !isNaN(raw.getTime())) {
+                const lastCalUTC = Date.UTC(raw.getUTCFullYear(), raw.getUTCMonth(), raw.getUTCDate());
+                if (lastCalUTC === todayCalUTC) return false;
+            }
+            if (String(record.lastScanDate || '').trim() === todayStr) {
+                return false;
+            }
+            return true;
+        }
+
+        function shouldGoToGetDriver(record, nowBerlin) {
+            if (!record) return false;
+            const remark = computeNodispatchRemark(record, nowBerlin);
+            if (remark === "DA Return") return true;
+            if (remark === "WillLost" && isDriverHandScanType(record.lastScanType)) return true;
+            return false;
+        }
+
+        function computeNodispatchRemark(record, nowBerlin) {
+            if (!record) return "";
+            const refNow = nowBerlin || getBerlinNowDate();
+            const todayCalUTC = Date.UTC(refNow.getUTCFullYear(), refNow.getUTCMonth(), refNow.getUTCDate());
+            const lastScanType = String(record.lastScanType || '').trim();
+
+            // Priority 1: WillLost (Deadline is yesterday, today, or tomorrow: today()-1 <= Deadline <= today()+1)
+            if (isScanInboundType(lastScanType)) {
+                const raw = record.lastScanRawDate;
+                if (raw instanceof Date && !isNaN(raw.getTime())) {
+                    const inboundLostTime = new Date(raw.getTime() + 8 * 24 * 3600 * 1000);
+                    const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
+                    const diffDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
+                    if (diffDays >= -1 && diffDays <= 1) {
+                        return "WillLost";
+                    }
+                }
+            } else {
+                const ascanRaw = record.ascanRawDate;
+                if (ascanRaw instanceof Date && !isNaN(ascanRaw.getTime())) {
+                    const clientVal = record.client || getWaybillClient(record.waybill);
+                    const lifeCycle = getClientLifeCycle(clientVal);
+                    const entryCalUTC = Date.UTC(ascanRaw.getUTCFullYear(), ascanRaw.getUTCMonth(), ascanRaw.getUTCDate());
+                    const deadlineCalUTC = entryCalUTC + lifeCycle * 86400000;
+                    const diffDays = Math.round((deadlineCalUTC - todayCalUTC) / 86400000);
+                    if (diffDays >= -1 && diffDays <= 1) {
+                        return "WillLost";
+                    }
+                }
+            }
+
+            // Priority 2: DA Return (Problem/Out of warehouse/Receive Scan, last scan date <> today, not signed)
+            if (!isReturnSignedScanType(lastScanType) && isDriverNotReturnedCondition(record, refNow)) {
+                return "DA Return";
+            }
+
+            return "";
+        }
+
         function writeTodayNodispatchWorkbook(detailRecords, totalUnfinishedRecords) {
+            const nowBerlin = getBerlinNowDate();
             // Only keep records where station contains "BAW" (case-insensitive) across all sheets
             const bawDetailRecords = (detailRecords || []).filter(r => {
                 const st = String(r.station !== undefined && r.station !== null ? r.station : '').trim();
@@ -5909,7 +5648,7 @@
             bawDetailRecords.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
             const detailAoa = [
-                ["waybill", "AscanDate", "station", "last scan date", "last scan type", "client", "postcode"]
+                ["waybill", "AscanDate", "station", "last scan date", "last scan type", "client", "postcode", "Remark", "DriverID"]
             ];
 
             const detailStationCountsMap = new Map();
@@ -5923,7 +5662,9 @@
                     r.lastScanDate,
                     r.lastScanType,
                     r.client || getWaybillClient(r.waybill),
-                    r.postcode
+                    r.postcode,
+                    computeNodispatchRemark(r, nowBerlin),
+                    r.driverId || ""
                 ]);
             });
 
@@ -5980,85 +5721,160 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, wsDetail, "detail");
             XLSX.utils.book_append_sheet(wb, wsTotal, "total");
-            XLSX.writeFile(wb, "TodayNodispatch.xlsx");
+            XLSX.writeFile(wb, "Pending.xlsx");
         }
 
         function exportShippingTodayNodispatch() {
             if ((!finalShippingTodayNodispatchData || finalShippingTodayNodispatchData.length === 0) &&
                 (!finalShippingTodayUnfinished15DaysData || finalShippingTodayUnfinished15DaysData.length === 0)) {
-                alert('No Today Nodispatch records (AscanDate between today()-15 and today()) found in the uploaded Shipping records.');
+                alert('No Pending records found in the uploaded Shipping records.');
                 return;
             }
 
             writeTodayNodispatchWorkbook(finalShippingTodayNodispatchData, finalShippingTodayUnfinished15DaysData);
         }
 
-        function exportWillLost() {
-            if (!finalShippingWillLostData || finalShippingWillLostData.length === 0) {
-                alert('No WillLost records found in the uploaded Shipping records.');
+        function exportGetDriverWorkbook(allUnfinishedBawRecords) {
+            const nowBerlin = getBerlinNowDate();
+            const remarkMatched = (allUnfinishedBawRecords || []).filter(r => {
+                const st = String(r.station !== undefined && r.station !== null ? r.station : '').trim();
+                if (!st.toUpperCase().includes("BAW")) return false;
+                return shouldGoToGetDriver(r, nowBerlin);
+            });
+
+            if (remarkMatched.length === 0) {
+                alert('No records matching Get Driver criteria (Remark = "DA Return" or (Remark = "WillLost" and last scan type in Problem scan / Out of warehouse scan / Receive Scan)) found.');
                 return;
             }
 
-            // Sort by AscanDate from smallest to largest (ascending)
-            finalShippingWillLostData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            const matched = remarkMatched.filter(r => String(r.driverId || '').trim() === '');
+            if (matched.length === 0) {
+                return;
+            }
 
-            const exportRows = finalShippingWillLostData.map(r => ({
-                "waybill": r.waybill,
-                "AscanDate": r.ascanDate,
-                "station": r.station,
-                "last scan date": r.lastScanDate,
-                "last scan type": r.lastScanType,
-                "client": r.client,
-                "postcode": r.postcode,
-                "NoUpdate": r.noUpdate,
-                "Deadline Date": r.deadlineDate
-            }));
+            matched.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
-            const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "client", "postcode", "NoUpdate", "Deadline Date"]
+            const aoa = [
+                ["waybill", "AscanDate", "station", "last scan date", "last scan type"]
+            ];
+            matched.forEach(r => {
+                const st = String(r.station !== undefined && r.station !== null ? r.station : '').trim();
+                aoa.push([
+                    r.waybill,
+                    r.ascanDate,
+                    st,
+                    r.lastScanDate,
+                    r.lastScanType
+                ]);
             });
+
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "WillLost");
-            XLSX.writeFile(wb, "WillLost.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "get driver");
+            XLSX.writeFile(wb, "Get_Driver.xlsx");
         }
 
-        function exportShippingNoUpdate() {
-            if (!finalShippingNoUpdateData || finalShippingNoUpdateData.length === 0) {
-                alert('No NoUpdate (4-5 days) records found in the uploaded Shipping records.');
+        function exportFinalPendingWorkbook(detailRecords) {
+            const bawDetailRecords = (detailRecords || []).filter(r => {
+                const st = String(r.station !== undefined && r.station !== null ? r.station : '').trim();
+                return st.toUpperCase().includes("BAW");
+            });
+
+            if (bawDetailRecords.length === 0) {
+                alert('No Today Nodispatch detail records found.');
                 return;
             }
 
-            // Sort by AscanDate from smallest to largest (ascending)
-            finalShippingNoUpdateData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
+            const nowBerlin = getBerlinNowDate();
+            const needsScanQuery = bawDetailRecords.some(r =>
+                shouldGoToGetDriver(r, nowBerlin) && String(r.driverId || '').trim() === ''
+            );
 
-            const hasScan = rawScanRecordsRows && rawScanRecordsRows.length > 1;
-            const scanInfoMap = hasScan ? getScanRecordsInfoMap() : {};
+            if (needsScanQuery && (!rawScanRecordsRows || rawScanRecordsRows.length <= 1)) {
+                alert('Please upload Scan records file first to export Final Pending.');
+                return;
+            }
 
-            const exportRows = finalShippingNoUpdateData.map(r => {
-                const scanInfo = hasScan ? (scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null) : null;
-                const lastProblem = (r.lastProblem && String(r.lastProblem).trim() !== '')
-                    ? String(r.lastProblem).trim()
-                    : ((scanInfo && scanInfo.lastProblem) ? scanInfo.lastProblem : "");
+            bawDetailRecords.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
 
-                return {
-                    "waybill": r.waybill,
-                    "AscanDate": r.ascanDate,
-                    "station": r.station,
-                    "last scan date": r.lastScanDate,
-                    "last scan type": r.lastScanType,
-                    "Client": r.client,
-                    "NoUpdate": r.noUpdate,
-                    "Last Problem": lastProblem,
-                    "DeadLine": r.deadlineDate
-                };
+            const scanInfoMap = (rawScanRecordsRows && rawScanRecordsRows.length > 1)
+                ? getScanRecordsInfoMap()
+                : {};
+
+            const aoa = [
+                ["waybill", "AscanDate", "station", "last scan date", "last scan type", "Client", "NoUpdate", "3rdCode", "Remark", "DriverID"]
+            ];
+
+            bawDetailRecords.forEach(r => {
+                const st = String(r.station !== undefined && r.station !== null ? r.station : '').trim();
+                const clientVal = r.client || getWaybillClient(r.waybill);
+                const existingDriverId = String(r.driverId || '').trim();
+                const needScanQuery = shouldGoToGetDriver(r, nowBerlin) && existingDriverId === '';
+                const scanInfo = needScanQuery
+                    ? (scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null)
+                    : null;
+
+                let finalLastScanDate = r.lastScanDate || "";
+                let finalLastScanType = r.lastScanType || "";
+                let finalLastScanRawDate = r.lastScanRawDate || null;
+                let driverIdVal = existingDriverId;
+
+                if (scanInfo) {
+                    finalLastScanDate = scanInfo.lastScanDate || finalLastScanDate;
+                    finalLastScanType = scanInfo.lastScanType || finalLastScanType;
+                    finalLastScanRawDate = scanInfo.lastScanRawDate || finalLastScanRawDate;
+                    driverIdVal = scanInfo.driver || "";
+                }
+
+                let noUpdateDays = "";
+                if (finalLastScanRawDate instanceof Date && !isNaN(finalLastScanRawDate.getTime())) {
+                    const diffNoUpdateMs = nowBerlin.getTime() - finalLastScanRawDate.getTime();
+                    noUpdateDays = Math.floor(diffNoUpdateMs / (1000 * 60 * 60 * 24));
+                }
+
+                const remarkVal = computeNodispatchRemark({
+                    waybill: r.waybill,
+                    ascanRawDate: r.ascanRawDate,
+                    client: clientVal,
+                    lastScanDate: finalLastScanDate,
+                    lastScanType: finalLastScanType,
+                    lastScanRawDate: finalLastScanRawDate
+                }, nowBerlin);
+
+                aoa.push([
+                    r.waybill,
+                    r.ascanDate,
+                    st,
+                    finalLastScanDate,
+                    finalLastScanType,
+                    clientVal,
+                    noUpdateDays,
+                    r.postcode || "",
+                    remarkVal,
+                    driverIdVal
+                ]);
             });
 
-            const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "Client", "NoUpdate", "Last Problem", "DeadLine"]
-            });
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "NoUpdate");
-            XLSX.writeFile(wb, "NoUpdate.xlsx");
+            XLSX.utils.book_append_sheet(wb, ws, "Final Pending");
+            XLSX.writeFile(wb, "Final_Pending.xlsx");
+        }
+
+        function exportShippingGetDriver() {
+            if (!finalShippingTodayNodispatchData || finalShippingTodayNodispatchData.length === 0) {
+                alert('No Pending detail records found in the uploaded Shipping records.');
+                return;
+            }
+            exportGetDriverWorkbook(finalShippingTodayNodispatchData);
+        }
+
+        function exportShippingFinalPending() {
+            if (!finalShippingTodayNodispatchData || finalShippingTodayNodispatchData.length === 0) {
+                alert('No Today Nodispatch detail records found in the uploaded Shipping records.');
+                return;
+            }
+            exportFinalPendingWorkbook(finalShippingTodayNodispatchData);
         }
 
         function exportShippingPudo() {
@@ -6088,172 +5904,6 @@
             XLSX.writeFile(wb, "PUDO.xlsx");
         }
 
-        function exportFinalLost() {
-            const hasWillLost = finalShippingWillLostData && finalShippingWillLostData.length > 0;
-            const hasNoUpdate = finalShippingNoUpdateData && finalShippingNoUpdateData.length > 0;
-            if (!hasWillLost && !hasNoUpdate) {
-                alert('No WillLost or NoUpdate records available. Please upload 48h Shipping records first.');
-                return;
-            }
-            if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) {
-                alert('Please upload Scan records file first to export final Lost.');
-                return;
-            }
-
-            const selectedDeadlines = getSelectedWillLostDeadlines();
-            const filterByDeadline = selectedDeadlines.length > 0;
-            const selectedDeadlineSet = new Set(selectedDeadlines);
-
-            const selectedNoUpdates = getSelectedWillLostNoUpdates();
-            const filterByNoUpdate = selectedNoUpdates.length > 0;
-            const selectedNoUpdateSet = new Set(selectedNoUpdates);
-
-            const candidateMap = new Map();
-
-            // 1. Collect matching WillLost records
-            if (hasWillLost) {
-                for (let i = 0; i < finalShippingWillLostData.length; i++) {
-                    const r = finalShippingWillLostData[i];
-                    if (filterByDeadline) {
-                        const dl = String(r.deadlineDate || '').trim();
-                        if (!selectedDeadlineSet.has(dl)) {
-                            continue;
-                        }
-                    }
-                    if (r.waybill) {
-                        candidateMap.set(r.waybill, r);
-                    }
-                }
-            }
-
-            // 2. Collect matching NoUpdate (4 / 5) records if user checked 4 or 5
-            if (filterByNoUpdate && hasNoUpdate) {
-                for (let i = 0; i < finalShippingNoUpdateData.length; i++) {
-                    const r = finalShippingNoUpdateData[i];
-                    const nuVal = typeof r.noUpdate === 'number' ? r.noUpdate : parseInt(String(r.noUpdate).trim(), 10);
-                    if (selectedNoUpdateSet.has(nuVal) && r.waybill && !candidateMap.has(r.waybill)) {
-                        candidateMap.set(r.waybill, r);
-                    }
-                }
-            }
-
-            const candidateList = Array.from(candidateMap.values());
-            // Sort by AscanDate from smallest to largest (ascending)
-            candidateList.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
-
-            const scanInfoMap = getScanRecordsInfoMap();
-            const nowBerlin = getBerlinNowDate();
-            const todayCalUTC = Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate());
-
-            const exportRows = [];
-            for (let i = 0; i < candidateList.length; i++) {
-                const r = candidateList[i];
-
-                const scanInfo = scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null;
-                const lastScanDate = (scanInfo && scanInfo.lastScanDate) ? scanInfo.lastScanDate : "";
-                const lastScanType = (scanInfo && scanInfo.lastScanType) ? scanInfo.lastScanType : "";
-                const effectiveScanType = lastScanType || r.lastScanType || "";
-                const isInbound = isScanInboundType(effectiveScanType);
-
-                // For PUDO parcels (Scan inbound), station takes Delivery outlet; otherwise takes latest scan station
-                const rawCandidateStation = isInbound
-                    ? (r.deliveryOutlet || r.station || "")
-                    : (scanInfo ? (scanInfo.rawLatestScanStation || scanInfo.station || "") : r.station);
-                const station = normalizeAndFilterWillLostStation(rawCandidateStation);
-
-                // Filter out records where latest scan station does NOT contain BAW or ST (and unify ST -> "Stuttgart HUB")
-                if (station === null) {
-                    continue;
-                }
-
-                // Filter out records where latest scan contains signed, returned, etc.
-                if (isFinalLostExcludedScanType(lastScanType) || (!lastScanType && isFinalLostExcludedScanType(r.lastScanType))) {
-                    continue;
-                }
-
-                let finalDeadline = r.deadlineDate;
-                if (isInbound) {
-                    const inboundRawDate = (scanInfo && scanInfo.lastScanRawDate) ? scanInfo.lastScanRawDate : r.lastScanRawDate;
-                    const inboundDateStr = lastScanDate || r.lastScanDate;
-                    if (inboundRawDate || inboundDateStr) {
-                        finalDeadline = calculateDeadLine(inboundRawDate, inboundDateStr, 8);
-                    }
-                    // If this parcel was NOT originally Scan inbound in Shipping (e.g. newly put into PUDO in Scan records)
-                    // and was not added via NoUpdate (4/5), verify its new PUDO deadline is within the WillLost window
-                    if (!isScanInboundType(r.lastScanType) && inboundRawDate instanceof Date && !isNaN(inboundRawDate.getTime())) {
-                        const nuVal = typeof r.noUpdate === 'number' ? r.noUpdate : parseInt(String(r.noUpdate).trim(), 10);
-                        const addedViaNoUpdate = filterByNoUpdate && selectedNoUpdateSet.has(nuVal);
-                        if (!addedViaNoUpdate) {
-                            const inboundLostTime = new Date(inboundRawDate.getTime() + 8 * 24 * 3600 * 1000);
-                            const inboundDeadlineCalUTC = Date.UTC(inboundLostTime.getUTCFullYear(), inboundLostTime.getUTCMonth(), inboundLostTime.getUTCDate());
-                            const diffInboundDays = Math.round((inboundDeadlineCalUTC - todayCalUTC) / 86400000);
-                            if (diffInboundDays < -1 || diffInboundDays > 3) {
-                                continue;
-                            }
-                            if (filterByDeadline && !selectedDeadlineSet.has(String(finalDeadline || '').trim())) {
-                                continue;
-                            }
-                        }
-                    }
-                }
-
-                const driver = (scanInfo && scanInfo.driver) ? scanInfo.driver : "";
-                const client = r.client || (scanInfo && scanInfo.client) || getWaybillClient(r.waybill);
-                const lastProblem = (r.lastProblem && String(r.lastProblem).trim() !== '')
-                    ? String(r.lastProblem).trim()
-                    : ((scanInfo && scanInfo.lastProblem) ? scanInfo.lastProblem : "");
-
-                exportRows.push({
-                    "waybill": r.waybill,
-                    "AscanDate": r.ascanDate,
-                    "station": station,
-                    "last scan date": lastScanDate,
-                    "last scan type": lastScanType,
-                    "Driver": driver,
-                    "Client": client,
-                    "NoUpdate": r.noUpdate,
-                    "Last Problem": lastProblem,
-                    "DeadLine": finalDeadline
-                });
-            }
-
-            if (exportRows.length === 0) {
-                alert('No final Lost records remaining after filtering by selected Deadline Date(s) / NoUpdate value(s) and excluding signed/returned statuses.');
-                return;
-            }
-
-            const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "Driver", "Client", "NoUpdate", "Last Problem", "DeadLine"]
-            });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "FinalLost");
-            XLSX.writeFile(wb, "FinalLost.xlsx");
-        }
-
-        function exportReturnParcel() {
-            if (!finalShippingReturnParcelData || finalShippingReturnParcelData.length === 0) {
-                alert('No driver return data records (last scan type = Problem scan / Out of warehouse scan / Receive Scan and NoUpdate <= 144h and last scan date <> today) found in the uploaded Shipping records.');
-                return;
-            }
-            finalShippingReturnParcelData.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
-            const exportRows = finalShippingReturnParcelData.map(r => ({
-                "waybill": r.waybill,
-                "AscanDate": r.ascanDate,
-                "station": r.station,
-                "last scan date": r.lastScanDate,
-                "last scan type": r.lastScanType,
-                "client": r.client || getWaybillClient(r.waybill),
-                "postcode": r.postcode,
-                "NoUpdate": r.noUpdateHours
-            }));
-            const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "AscanDate", "station", "last scan date", "last scan type", "client", "postcode", "NoUpdate"]
-            });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "driver return data");
-            XLSX.writeFile(wb, "Driver_Return_Data.xlsx");
-        }
-
         function isReturnSignedScanType(scanType) {
             const lower = String(scanType || '').trim().toLowerCase();
             if (!lower) return false;
@@ -6262,94 +5912,13 @@
                    lower.includes("签收") || lower.includes("妥投");
         }
 
-        function exportFinalReturn() {
-            if (!finalShippingReturnParcelData || finalShippingReturnParcelData.length === 0) {
-                alert('No driver return data records available. Please upload 48h Shipping records first.');
-                return;
-            }
-            if (!rawScanRecordsRows || rawScanRecordsRows.length <= 1) {
-                alert('Please upload Scan records file first to export driver return.');
-                return;
-            }
-
-            const scanInfoMap = getScanRecordsInfoMap();
-            const nowBerlin = getBerlinNowDate();
-            const candidates = finalShippingReturnParcelData.slice();
-            candidates.sort((a, b) => compareAscanDateAsc(a.ascanDate, b.ascanDate, a.ascanRawDate, b.ascanRawDate));
-
-            const exportRows = [];
-            for (let i = 0; i < candidates.length; i++) {
-                const r = candidates[i];
-                const scanInfo = scanInfoMap[r.waybill] || scanInfoMap[String(r.waybill || '').toUpperCase()] || null;
-                const clientVal = r.client || getWaybillClient(r.waybill);
-
-                // Waybill not found in Scan records: keep row, leave Scan-derived fields empty (re-upload Scan records later)
-                if (!scanInfo) {
-                    exportRows.push({
-                        "waybill": r.waybill,
-                        "AscanDate": r.ascanDate,
-                        "Client": clientVal,
-                        "station": "",
-                        "last scan date": "",
-                        "last scan type": "",
-                        "Driver": "",
-                        "NoUpdate": "",
-                        "Problem": ""
-                    });
-                    continue;
-                }
-
-                const lastScanType = scanInfo.lastScanType || "";
-                // Keep only parcels still in driver's hands (not returned)
-                const lstLowerDR = lastScanType.trim().toLowerCase();
-                if (lstLowerDR !== "out of warehouse scan" && lstLowerDR !== "receive scan" && lstLowerDR !== "problem scan") continue;
-
-                const lastScanRaw = scanInfo.lastScanRawDate;
-                const lastScanDate = scanInfo.lastScanDate || "";
-
-                let noUpdateHours = "";
-                if (lastScanRaw instanceof Date && !isNaN(lastScanRaw.getTime())) {
-                    noUpdateHours = Math.ceil((nowBerlin.getTime() - lastScanRaw.getTime()) / (3600 * 1000));
-                }
-
-                const station = scanInfo.rawLatestScanStation || scanInfo.station || "";
-                const driver = scanInfo.driver || "";
-                const problem = scanInfo.lastProblem || "";
-
-                exportRows.push({
-                    "waybill": r.waybill,
-                    "AscanDate": r.ascanDate,
-                    "Client": clientVal,
-                    "station": station,
-                    "last scan date": lastScanDate,
-                    "last scan type": lastScanType,
-                    "Driver": driver,
-                    "NoUpdate": noUpdateHours,
-                    "Problem": problem
-                });
-            }
-
-            if (exportRows.length === 0) {
-                alert('No driver return records remaining (latest scan type in Scan records must be Out of warehouse scan / Receive scan / Problem scan).');
-                return;
-            }
-
-            const ws = XLSX.utils.json_to_sheet(exportRows, {
-                header: ["waybill", "AscanDate", "Client", "station", "last scan date", "last scan type", "Driver", "NoUpdate", "Problem"]
-            });
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "driver return");
-            XLSX.writeFile(wb, "Driver_Return.xlsx");
-        }
-
         function resetShipping() {
             finalShippingData = [];
             finalShippingMonthData = [];
             finalAscanSignedData = [];
             finalShippingTodayNodispatchData = [];
             finalShippingTodayUnfinished15DaysData = [];
-            finalShippingWillLostData = [];
-            finalShippingNoUpdateData = [];
+            finalShippingAllUnfinishedBawData = [];
             finalShippingPudoData = [];
             shippingEnCleanedFiles = [];
             shippingZhCleanedFiles = [];
@@ -6367,23 +5936,12 @@
             document.getElementById('btn-export-ascan-detail').disabled = true;
             const btnToday = document.getElementById('btn-export-shipping-today-nodispatch');
             if (btnToday) btnToday.disabled = true;
-            const btnWillLost = document.getElementById('btn-export-will-lost');
-            if (btnWillLost) btnWillLost.disabled = true;
-            const btnShippingNoUpdate = document.getElementById('btn-export-shipping-noupdate');
-            if (btnShippingNoUpdate) btnShippingNoUpdate.disabled = true;
+            const btnShippingGetDriverR = document.getElementById('btn-export-shipping-get-driver');
+            if (btnShippingGetDriverR) btnShippingGetDriverR.disabled = true;
+            const btnShippingFinalPendingR = document.getElementById('btn-export-shipping-final-pending');
+            if (btnShippingFinalPendingR) btnShippingFinalPendingR.disabled = true;
             const btnPudo = document.getElementById('btn-export-pudo');
             if (btnPudo) btnPudo.disabled = true;
-            finalShippingReturnParcelData = [];
-            const btnReturnParcelR = document.getElementById('btn-export-return-parcel');
-            if (btnReturnParcelR) btnReturnParcelR.disabled = true;
-            const btnFinalReturnR = document.getElementById('btn-export-final-return');
-            if (btnFinalReturnR) btnFinalReturnR.disabled = true;
-            const dlContainer = document.getElementById('container-willlost-deadlines');
-            if (dlContainer) dlContainer.innerHTML = '<span style="font-size: 12px; color: #a38d8d;">No dates available</span>';
-            const dlHint = document.getElementById('willlost-deadline-hint');
-            if (dlHint) dlHint.textContent = '(Upload 48h Shipping records to load dates)';
-            selectAllWillLostNoUpdates(false);
-            checkShippingFinalLostBtn();
         }
 
         function readExcelFile(file) {
@@ -6808,6 +6366,10 @@
             document.getElementById('status-pending').textContent = `${finalPendingRecords.length} records processed`;
             const btnTodayNoDispatch = document.getElementById('btn-export-today-nodispatch') || document.getElementById('btn-export-today-pending');
             if (btnTodayNoDispatch) btnTodayNoDispatch.disabled = (finalPendingRecords.length === 0);
+            const btnPendingGetDriver = document.getElementById('btn-export-pending-get-driver');
+            if (btnPendingGetDriver) btnPendingGetDriver.disabled = (finalPendingRecords.length === 0);
+            const btnPendingFinalPending = document.getElementById('btn-export-pending-final-pending');
+            if (btnPendingFinalPending) btnPendingFinalPending.disabled = (finalPendingRecords.length === 0);
             document.getElementById('btn-export-get-latest-scan').disabled = (finalPendingRecords.length === 0);
             
             checkHistoricalPendingLastBtn();
@@ -6913,11 +6475,10 @@
                     continue;
                 }
 
-                // Filter: if problem scan done by 02500088 or 02500029, skip/delete
+                // Filter: exclude all records where Scanner number contains "025"
                 const scanType = String(row[scanTypeIdx] !== undefined ? row[scanTypeIdx] : '').trim();
                 const scannerNumber = String(row[scannerNumberIdx] !== undefined ? row[scannerNumberIdx] : '').trim();
-                const isProblemScan = scanType.toLowerCase().includes("problem scan") || scanType.includes("问题");
-                if (isProblemScan && (scannerNumber === "02500088" || scannerNumber === "02500029")) {
+                if (scannerNumber.includes("025")) {
                     continue;
                 }
 
@@ -7016,20 +6577,12 @@
                 });
         }
 
-        function exportTodayNodispatch() {
-            if (finalPendingRecords.length === 0) {
-                if ((typeof finalShippingTodayNodispatchData !== 'undefined' && finalShippingTodayNodispatchData.length > 0) ||
-                    (typeof finalShippingTodayUnfinished15DaysData !== 'undefined' && finalShippingTodayUnfinished15DaysData.length > 0)) {
-                    exportShippingTodayNodispatch();
-                    return;
-                }
-                alert('No data available to export.');
-                return;
-            }
-
+        function getPendingTodayNodispatchPools() {
             const nowBerlin = getBerlinNowDate();
             const recentWorkingDaysInfo = getRecentWorkingDaysInfo(2, nowBerlin);
 
+            // All unfinished BAW parcels (no 15-day limit), excluding any "Parcel Signed"
+            const allUnfinishedBawMap = new Map();
             // All unfinished parcels within 15 days (today() - 15 <= AscanDate <= today()), excluding any "Parcel Signed", only BAW stations
             const unfinished15DaysMap = new Map();
             finalPendingRecords.forEach(r => {
@@ -7041,24 +6594,47 @@
                 if (lst === "parcel signed") {
                     return;
                 }
+                const key = r.waybill || `${r.ascanDate}_${r.station}_${allUnfinishedBawMap.size}`;
+                allUnfinishedBawMap.set(key, r);
                 if (!isAscanWithinLast15Days(r.ascanRawDate, r.ascanDate, nowBerlin)) {
                     return;
                 }
-                const key = r.waybill || `${r.ascanDate}_${r.station}_${unfinished15DaysMap.size}`;
                 unfinished15DaysMap.set(key, r);
             });
 
+            const allUnfinishedBawRecords = Array.from(allUnfinishedBawMap.values());
             const unfinished15DaysRecords = Array.from(unfinished15DaysMap.values());
 
-            // Sheet 1 (detail): further excludes "Out of warehouse scan" and "Problem scan" in recent two working days (Monday–Saturday)
+            const todayCalUTC = Date.UTC(nowBerlin.getUTCFullYear(), nowBerlin.getUTCMonth(), nowBerlin.getUTCDate());
+            const todayStr = formatDateToMMDD(nowBerlin);
+
+            // Sheet 1 (detail): further excludes "Out of warehouse scan" and "Problem scan" when last scan date == today()
             const noDispatchRecords = unfinished15DaysRecords.filter(r => {
                 const lst = (r.lastScanType || '').trim().toLowerCase();
-                const isRecentScan = isScanInRecentWorkingDays(r.lastScanRawDate, r.lastScanDate, 2, recentWorkingDaysInfo);
-                if ((lst === "out of warehouse scan" || lst === "problem scan") && isRecentScan) {
+                const isTodayScan = (r.lastScanRawDate instanceof Date && !isNaN(r.lastScanRawDate.getTime()))
+                    ? (Date.UTC(r.lastScanRawDate.getUTCFullYear(), r.lastScanRawDate.getUTCMonth(), r.lastScanRawDate.getUTCDate()) === todayCalUTC)
+                    : (String(r.lastScanDate || '').trim() === todayStr);
+                if ((lst === "out of warehouse scan" || lst === "problem scan") && isTodayScan) {
                     return false;
                 }
                 return true;
             });
+
+            return { allUnfinishedBawRecords, unfinished15DaysRecords, noDispatchRecords };
+        }
+
+        function exportTodayNodispatch() {
+            if (finalPendingRecords.length === 0) {
+                if ((typeof finalShippingTodayNodispatchData !== 'undefined' && finalShippingTodayNodispatchData.length > 0) ||
+                    (typeof finalShippingTodayUnfinished15DaysData !== 'undefined' && finalShippingTodayUnfinished15DaysData.length > 0)) {
+                    exportShippingTodayNodispatch();
+                    return;
+                }
+                alert('No data available to export.');
+                return;
+            }
+
+            const { unfinished15DaysRecords, noDispatchRecords } = getPendingTodayNodispatchPools();
 
             if (noDispatchRecords.length === 0 && unfinished15DaysRecords.length === 0) {
                 alert('No records found matching the criteria (AscanDate between today()-15 and today(), excluding "Parcel Signed").');
@@ -7066,6 +6642,34 @@
             }
 
             writeTodayNodispatchWorkbook(noDispatchRecords, unfinished15DaysRecords);
+        }
+
+        function exportPendingGetDriver() {
+            if (finalPendingRecords.length === 0) {
+                if (typeof finalShippingAllUnfinishedBawData !== 'undefined' && finalShippingAllUnfinishedBawData.length > 0) {
+                    exportShippingGetDriver();
+                    return;
+                }
+                alert('No data available to export.');
+                return;
+            }
+
+            const { allUnfinishedBawRecords } = getPendingTodayNodispatchPools();
+            exportGetDriverWorkbook(allUnfinishedBawRecords);
+        }
+
+        function exportPendingFinalPending() {
+            if (finalPendingRecords.length === 0) {
+                if (typeof finalShippingTodayNodispatchData !== 'undefined' && finalShippingTodayNodispatchData.length > 0) {
+                    exportShippingFinalPending();
+                    return;
+                }
+                alert('No data available to export.');
+                return;
+            }
+
+            const { noDispatchRecords } = getPendingTodayNodispatchPools();
+            exportFinalPendingWorkbook(noDispatchRecords);
         }
 
         // Backward compatibility alias
@@ -7267,6 +6871,10 @@
             document.getElementById('status-pending').textContent = '';
             const btnTodayNoDispatch = document.getElementById('btn-export-today-nodispatch') || document.getElementById('btn-export-today-pending');
             if (btnTodayNoDispatch) btnTodayNoDispatch.disabled = true;
+            const btnPendingGetDriverR = document.getElementById('btn-export-pending-get-driver');
+            if (btnPendingGetDriverR) btnPendingGetDriverR.disabled = true;
+            const btnPendingFinalPendingR = document.getElementById('btn-export-pending-final-pending');
+            if (btnPendingFinalPendingR) btnPendingFinalPendingR.disabled = true;
             document.getElementById('btn-export-get-latest-scan').disabled = true;
             document.getElementById('btn-export-historical-pending-last').disabled = true;
             document.getElementById('btn-export-historical-pending-hub').disabled = true;
@@ -7846,7 +7454,7 @@
             rawDeliveryTimesRows = rawRows;
             document.getElementById('status-deliverytimes').textContent = `${rawDeliveryTimesRows.length - 1} records loaded`;
             checkAddProblemBtns();
-            switchTab('pending');
+            switchTab('addproblem');
         }
 
         function resetDeliveryTimes() {
@@ -8317,11 +7925,10 @@
                     continue;
                 }
 
-                // Filter: if problem scan done by 02500088 or 02500029, skip/delete
+                // Filter: exclude all records where Scanner number contains "025"
                 const scanType = String(row[scanTypeIdx] !== undefined ? row[scanTypeIdx] : '').trim();
                 const scannerNumber = String(row[scannerNumberIdx] !== undefined ? row[scannerNumberIdx] : '').trim();
-                const isProblemScan = scanType.toLowerCase().includes("problem scan") || scanType.includes("问题");
-                if (isProblemScan && (scannerNumber === "02500088" || scannerNumber === "02500029")) {
+                if (scannerNumber.includes("025")) {
                     continue;
                 }
 
