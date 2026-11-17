@@ -500,6 +500,26 @@
       background: #d8571c !important;
     }
 
+    .btn-slogan-pdf,
+    #saveSloganPdfBtnTop {
+      background: #0d9488 !important;
+      color: #fff !important;
+      font-weight: 700 !important;
+      border-radius: 6px !important;
+      padding: 9px 18px !important;
+      margin: 0 !important;
+      width: auto !important;
+      border: none !important;
+      cursor: pointer !important;
+      transition: background 0.15s ease !important;
+      white-space: nowrap !important;
+    }
+
+    .btn-slogan-pdf:hover:not(:disabled),
+    #saveSloganPdfBtnTop:hover:not(:disabled) {
+      background: #0f766e !important;
+    }
+
     .slogan-preview-section {
       margin-top: 4px;
     }
@@ -544,21 +564,24 @@
       border: 1px solid #c9d2de;
       box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
       box-sizing: border-box;
-      padding: 8mm 10mm;
-      display: flex;
-      flex-direction: column;
+      padding: 7mm 8mm;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(3, minmax(0, 1fr));
       gap: 4mm;
       page-break-after: always;
       break-after: page;
       overflow: hidden;
       position: relative;
+      content-visibility: auto;
+      contain-intrinsic-size: 210mm 297mm;
     }
 
     .slogan-group-block {
-      flex: 1 1 0;
+      min-width: 0;
       min-height: 0;
-      border: 1px solid #cbd5e1;
-      border-radius: 5px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 6px;
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -566,13 +589,14 @@
     }
 
     .slogan-group-title {
-      background: #f1f5f9;
-      color: #1e293b;
-      border-bottom: 1px solid #cbd5e1;
-      font-weight: 400;
-      font-size: 11px;
+      background: #1e293b;
+      color: #ffffff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-weight: 700;
+      font-size: 13px;
       line-height: 1.3;
-      padding: 1.8mm 3mm;
+      padding: 2.5mm 3mm;
       text-align: left;
       word-break: break-word;
       flex: 0 0 auto;
@@ -580,12 +604,13 @@
 
     .slogan-group-pods {
       flex: 1 1 0;
+      min-width: 0;
       min-height: 0;
       padding: 2mm;
       display: grid;
-      gap: 2mm;
-      align-items: center;
-      justify-items: center;
+      gap: 1.5mm;
+      align-items: stretch;
+      justify-items: stretch;
       overflow: hidden;
       background: #ffffff;
     }
@@ -600,17 +625,13 @@
       justify-content: center;
       overflow: hidden;
       background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      padding: 1mm;
+      border-radius: 3px;
       box-sizing: border-box;
     }
 
     .slogan-pod-item img {
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
       display: block;
     }
@@ -637,6 +658,8 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      content-visibility: auto;
+      contain-intrinsic-size: auto 600px;
     }
     .dnr-station-toolbar {
       display: flex;
@@ -902,6 +925,7 @@
         page-break-after: always !important;
         break-after: page !important;
         overflow: hidden !important;
+        content-visibility: visible !important;
       }
       body.printing-slogan .slogan-paper:last-child {
         page-break-after: auto !important;
@@ -937,6 +961,7 @@
           <button type="button" id="exportDnrPngBtnTop" class="btn-dnr-export" disabled>Export All DNR PNGs (ZIP)</button>
         </div>
         <div class="result-actions" id="sloganTopActions" style="display: none;">
+          <button type="button" id="saveSloganPdfBtnTop" class="btn-slogan-pdf" disabled>Save PDF</button>
           <button type="button" id="printSloganBtnTop" disabled>Print Slogan</button>
         </div>
       </div>
@@ -955,7 +980,7 @@
       <div id="sloganView" class="tab-view" style="display: none;">
         <div class="slogan-preview-section">
           <div class="slogan-preview-title">
-            <span>A4 Page Preview (210mm × 297mm · Max 5 Slogan Groups per Page)</span>
+            <span>A4 Page Preview (210mm × 297mm · 2×3 Grid, Max 6 Slogan Groups per Page)</span>
             <span id="sloganStatusTag" class="slogan-badge">Waiting for Excel file</span>
           </div>
           <div id="sloganPapersContainer" class="slogan-papers-container">
@@ -1049,12 +1074,10 @@
           totalStations = paginated.totalStations;
 
           renderPapers(driverPages);
-          renderDnrReports(printable);
-          renderSlogan(printable);
+          scheduleDnrAndSloganRender(printable);
         } catch (paperBuildError) {
           renderPapers([]);
-          renderDnrReports([]);
-          renderSlogan([]);
+          scheduleDnrAndSloganRender([]);
           paperError = paperBuildError.message || "CS paper could not be generated.";
           papers.className = "empty";
           papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>生成失败:</strong> ${escapeHtml(paperError)}</div>`;
@@ -1064,8 +1087,7 @@
         updateStatus(file.name, dataRows.length, printable.length, totalDrivers, driverPages.length, missingCustomerInfoRows, paperError, totalStations);
       } catch (error) {
         renderPapers([]);
-        renderDnrReports([]);
-        renderSlogan([]);
+        scheduleDnrAndSloganRender([]);
         statusBox.textContent = `Excel file could not be read: ${error.message || error}`;
         papers.className = "empty";
         papers.innerHTML = `<div style="padding: 20px; color: #b91c1c; text-align: center;"><strong>Excel 读取错误:</strong> ${escapeHtml(error.message || String(error))}</div>`;
@@ -1500,9 +1522,71 @@
       return { mmdd: str, sortVal: Infinity };
     }
 
+    function blobToDataUrl(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error("Failed to read image blob"));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    async function optimizeImageBlobToDataUrl(blob, mimeType, maxDim = 1000, quality = 0.82) {
+      if (!blob) return null;
+      if (mimeType === "image/svg+xml" || mimeType === "image/gif" || typeof createImageBitmap !== "function") {
+        return blobToDataUrl(blob);
+      }
+
+      let bitmap = null;
+      try {
+        bitmap = await createImageBitmap(blob);
+        const { width, height } = bitmap;
+        if (!width || !height) {
+          return await blobToDataUrl(blob);
+        }
+        // Keep already small images as-is without re-encoding
+        if (width <= maxDim && height <= maxDim && blob.size <= 150 * 1024) {
+          return await blobToDataUrl(blob);
+        }
+
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        const targetW = Math.max(1, Math.round(width * scale));
+        const targetH = Math.max(1, Math.round(height * scale));
+
+        if (typeof OffscreenCanvas !== "undefined") {
+          const canvas = new OffscreenCanvas(targetW, targetH);
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, targetW, targetH);
+            ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+            const outBlob = await canvas.convertToBlob({ type: "image/jpeg", quality });
+            return await blobToDataUrl(outBlob);
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return await blobToDataUrl(blob);
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.drawImage(bitmap, 0, 0, targetW, targetH);
+        return canvas.toDataURL("image/jpeg", quality);
+      } catch (err) {
+        return await blobToDataUrl(blob);
+      } finally {
+        if (bitmap && typeof bitmap.close === "function") {
+          try { bitmap.close(); } catch (_) {}
+        }
+      }
+    }
+
     async function extractExcelImages(file) {
       const result = {
         byRowCol: new Map(), // key: `${row}_${col}` -> array of dataUrls
+        byRow: new Map(),    // key: row -> sorted array of { col, urls }
         byDispId: new Map()  // key: dispId -> dataUrl
       };
       if (typeof JSZip === "undefined") return result;
@@ -1536,21 +1620,42 @@
           return baseParts.join("/");
         };
 
+        // Pre-index zip file keys case-insensitively once
+        const lowerZipKeyMap = new Map();
+        Object.keys(zip.files).forEach(k => lowerZipKeyMap.set(k.toLowerCase(), k));
+
         const mediaCache = new Map();
-        const loadMediaDataUrl = async (mediaPath) => {
-          if (!mediaPath) return null;
-          if (mediaCache.has(mediaPath)) return mediaCache.get(mediaPath);
-          let zipEntry = zip.file(mediaPath);
-          if (!zipEntry) {
-            const lower = mediaPath.toLowerCase();
-            const matchedKey = Object.keys(zip.files).find(k => k.toLowerCase() === lower);
-            if (matchedKey) zipEntry = zip.file(matchedKey);
-          }
-          if (!zipEntry) return null;
-          const base64 = await zipEntry.async("base64");
-          const dataUrl = `data:${getMimeType(mediaPath)};base64,${base64}`;
-          mediaCache.set(mediaPath, dataUrl);
-          return dataUrl;
+        const mediaPromiseCache = new Map();
+        const loadMediaDataUrl = (mediaPath) => {
+          if (!mediaPath) return Promise.resolve(null);
+          if (mediaCache.has(mediaPath)) return Promise.resolve(mediaCache.get(mediaPath));
+          if (mediaPromiseCache.has(mediaPath)) return mediaPromiseCache.get(mediaPath);
+
+          const p = (async () => {
+            let zipEntry = zip.file(mediaPath);
+            if (!zipEntry) {
+              const matchedKey = lowerZipKeyMap.get(mediaPath.toLowerCase());
+              if (matchedKey) zipEntry = zip.file(matchedKey);
+            }
+            if (!zipEntry) return null;
+            const mimeType = getMimeType(mediaPath);
+            const bytes = await zipEntry.async("uint8array");
+            const blob = new Blob([bytes], { type: mimeType });
+            const dataUrl = await optimizeImageBlobToDataUrl(blob, mimeType, 1000, 0.82);
+            mediaCache.set(mediaPath, dataUrl);
+            return dataUrl;
+          })();
+
+          mediaPromiseCache.set(mediaPath, p);
+          return p;
+        };
+
+        const pendingMediaTasks = [];
+        const uniqueMediaPaths = new Set();
+        const queueMedia = (mediaPath, onLoaded) => {
+          if (!mediaPath) return;
+          uniqueMediaPaths.add(mediaPath);
+          pendingMediaTasks.push({ mediaPath, onLoaded });
         };
 
         const parseXml = (xmlStr) => new DOMParser().parseFromString(xmlStr, "application/xml");
@@ -1573,6 +1678,20 @@
           return map;
         };
 
+        // Helper to find first descendant by localName without allocating full arrays
+        const findFirstByLocalName = (root, localName) => {
+          const stack = [root];
+          while (stack.length) {
+            const cur = stack.shift();
+            for (let i = 0; i < cur.children.length; i++) {
+              const child = cur.children[i];
+              if (child.localName === localName) return child;
+              if (child.children.length) stack.push(child);
+            }
+          }
+          return null;
+        };
+
         // 1. Parse WPS / Excel DISPIMG cellimages.xml if present
         const cellImagesPaths = Object.keys(zip.files).filter(p => /xl\/cellimages\d*\.xml$/i.test(p));
         for (const ciPath of cellImagesPaths) {
@@ -1583,21 +1702,19 @@
           const xmlText = await zip.file(ciPath).async("text");
           const doc = parseXml(xmlText);
 
-          const allElements = Array.from(doc.getElementsByTagName("*"));
-          const cellImgNodes = allElements.filter(el => el.localName === "cellImage");
-          for (const node of cellImgNodes) {
-            const subEls = Array.from(node.getElementsByTagName("*"));
-            const cNvPr = subEls.find(el => el.localName === "cNvPr");
-            const blip = subEls.find(el => el.localName === "blip");
+          const cellImgNodes = doc.getElementsByTagNameNS("*", "cellImage");
+          for (let i = 0; i < cellImgNodes.length; i++) {
+            const node = cellImgNodes[i];
+            const cNvPr = findFirstByLocalName(node, "cNvPr");
+            const blip = findFirstByLocalName(node, "blip");
             if (!cNvPr || !blip) continue;
             const name = cNvPr.getAttribute("name") || cNvPr.getAttribute("descr") || "";
             const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed") ||
               Array.from(blip.attributes).find(a => a.localName === "embed")?.value;
             if (name && embedId && relsMap.has(embedId)) {
-              const dataUrl = await loadMediaDataUrl(relsMap.get(embedId));
-              if (dataUrl) {
-                result.byDispId.set(name, dataUrl);
-              }
+              queueMedia(relsMap.get(embedId), (dataUrl) => {
+                if (dataUrl) result.byDispId.set(name, dataUrl);
+              });
             }
           }
         }
@@ -1612,17 +1729,17 @@
           const xmlText = await zip.file(dPath).async("text");
           const doc = parseXml(xmlText);
 
-          const allElements = Array.from(doc.getElementsByTagName("*"));
-          const anchors = allElements.filter(el => el.localName === "twoCellAnchor" || el.localName === "oneCellAnchor");
+          const anchors = [
+            ...Array.from(doc.getElementsByTagNameNS("*", "twoCellAnchor")),
+            ...Array.from(doc.getElementsByTagNameNS("*", "oneCellAnchor"))
+          ];
           for (const anchor of anchors) {
-            const subEls = Array.from(anchor.getElementsByTagName("*"));
-            const fromNode = subEls.find(el => el.localName === "from");
-            const blip = subEls.find(el => el.localName === "blip");
+            const fromNode = findFirstByLocalName(anchor, "from");
+            const blip = findFirstByLocalName(anchor, "blip");
             if (!fromNode || !blip) continue;
 
-            const fromChildren = Array.from(fromNode.getElementsByTagName("*"));
-            const colNode = fromChildren.find(el => el.localName === "col");
-            const rowNode = fromChildren.find(el => el.localName === "row");
+            const colNode = findFirstByLocalName(fromNode, "col");
+            const rowNode = findFirstByLocalName(fromNode, "row");
             if (!colNode || !rowNode) continue;
 
             const col = parseInt(colNode.textContent.trim(), 10);
@@ -1631,12 +1748,13 @@
               Array.from(blip.attributes).find(a => a.localName === "embed")?.value;
 
             if (Number.isFinite(row) && Number.isFinite(col) && embedId && relsMap.has(embedId)) {
-              const dataUrl = await loadMediaDataUrl(relsMap.get(embedId));
-              if (dataUrl) {
-                const key = `${row}_${col}`;
-                if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
-                result.byRowCol.get(key).push(dataUrl);
-              }
+              queueMedia(relsMap.get(embedId), (dataUrl) => {
+                if (dataUrl) {
+                  const key = `${row}_${col}`;
+                  if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
+                  result.byRowCol.get(key).push(dataUrl);
+                }
+              });
             }
           }
         }
@@ -1644,41 +1762,86 @@
         // 3. Parse RichData / Modern Excel Place-in-Cell images if present
         const richRelPath = "xl/richData/_rels/richValueRel.xml.rels";
         const richRelXmlPath = "xl/richData/richValueRel.xml";
+        let richDataCellAssignments = [];
+        let orderedMediaUrls = [];
         if (zip.file(richRelPath) && zip.file(richRelXmlPath)) {
           const relsMap = await parseRelsFile(richRelPath);
           const relXmlText = await zip.file(richRelXmlPath).async("text");
           const relDoc = parseXml(relXmlText);
-          const relNodes = Array.from(relDoc.getElementsByTagName("*")).filter(el => el.localName === "rel");
-          const orderedMediaUrls = [];
-          for (const rNode of relNodes) {
+          const relNodes = relDoc.getElementsByTagNameNS("*", "rel");
+          orderedMediaUrls = new Array(relNodes.length).fill(null);
+          for (let i = 0; i < relNodes.length; i++) {
+            const rNode = relNodes[i];
             const rId = rNode.getAttribute("r:id") || Array.from(rNode.attributes).find(a => a.localName === "id")?.value;
             const mediaPath = rId ? relsMap.get(rId) : null;
-            const dataUrl = mediaPath ? await loadMediaDataUrl(mediaPath) : null;
-            orderedMediaUrls.push(dataUrl);
+            if (mediaPath) {
+              const idx = i;
+              queueMedia(mediaPath, (dataUrl) => {
+                orderedMediaUrls[idx] = dataUrl;
+              });
+            }
           }
-          // Map sheet1 cells with vm attribute if needed
           const sheetPath = "xl/worksheets/sheet1.xml";
-          if (zip.file(sheetPath) && orderedMediaUrls.some(Boolean)) {
+          if (zip.file(sheetPath) && relNodes.length > 0) {
             const sheetXml = await zip.file(sheetPath).async("text");
             const sheetDoc = parseXml(sheetXml);
-            const cellNodes = Array.from(sheetDoc.getElementsByTagName("c"));
-            cellNodes.forEach(cNode => {
+            const cellNodes = sheetDoc.getElementsByTagName("c");
+            for (let i = 0; i < cellNodes.length; i++) {
+              const cNode = cellNodes[i];
               const vm = cNode.getAttribute("vm");
               const ref = cNode.getAttribute("r");
               if (vm && ref) {
                 const decoded = XLSX.utils.decode_cell(ref);
                 const vmIdx = parseInt(vm, 10) - 1;
-                const dataUrl = orderedMediaUrls[vmIdx];
-                if (dataUrl && decoded) {
-                  const key = `${decoded.r}_${decoded.c}`;
-                  if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
-                  if (!result.byRowCol.get(key).includes(dataUrl)) {
-                    result.byRowCol.get(key).push(dataUrl);
-                  }
+                if (decoded && vmIdx >= 0) {
+                  richDataCellAssignments.push({ row: decoded.r, col: decoded.c, vmIdx });
                 }
               }
-            });
+            }
           }
+        }
+
+        // 4. Process all unique media files in parallel (concurrency = 6)
+        const pathsList = Array.from(uniqueMediaPaths);
+        const concurrency = 6;
+        let cursor = 0;
+        const workers = Array.from({ length: Math.min(concurrency, pathsList.length) }, async () => {
+          while (cursor < pathsList.length) {
+            const path = pathsList[cursor++];
+            await loadMediaDataUrl(path);
+          }
+        });
+        await Promise.all(workers);
+
+        // Apply queued callbacks now that mediaCache is populated
+        for (const task of pendingMediaTasks) {
+          task.onLoaded(mediaCache.get(task.mediaPath) || null);
+        }
+
+        // Apply RichData cell assignments
+        for (const item of richDataCellAssignments) {
+          const dataUrl = orderedMediaUrls[item.vmIdx];
+          if (dataUrl) {
+            const key = `${item.row}_${item.col}`;
+            if (!result.byRowCol.has(key)) result.byRowCol.set(key, []);
+            if (!result.byRowCol.get(key).includes(dataUrl)) {
+              result.byRowCol.get(key).push(dataUrl);
+            }
+          }
+        }
+
+        // Build O(1) row index for extractPodImagesForRow
+        for (const [key, urls] of result.byRowCol.entries()) {
+          const sep = key.indexOf("_");
+          if (sep === -1) continue;
+          const r = parseInt(key.slice(0, sep), 10);
+          const c = parseInt(key.slice(sep + 1), 10);
+          if (!Number.isFinite(r) || !Number.isFinite(c)) continue;
+          if (!result.byRow.has(r)) result.byRow.set(r, []);
+          result.byRow.get(r).push({ col: c, urls });
+        }
+        for (const entries of result.byRow.values()) {
+          entries.sort((a, b) => a.col - b.col);
         }
       } catch (err) {
         console.warn("Could not extract embedded images from xlsx:", err);
@@ -1713,7 +1876,9 @@
         // Match all DISPIMG("ID_...", 1) occurrences in the cell
         const dispRegex = /DISPIMG\(\s*["']([^"']+)["']/gi;
         let match;
+        let dispMatched = false;
         while ((match = dispRegex.exec(combined)) !== null) {
+          dispMatched = true;
           const id = match[1];
           if (excelImageData && excelImageData.byDispId) {
             const url = excelImageData.byDispId.get(id);
@@ -1721,8 +1886,9 @@
           }
         }
 
-        // Also check if any known dispId appears directly in the cell text/formula
-        if (excelImageData && excelImageData.byDispId) {
+        // Fallback: check if any known dispId appears directly in the cell text/formula
+        if (!dispMatched && excelImageData && excelImageData.byDispId && excelImageData.byDispId.size > 0 &&
+            (combined.includes("ID_") || combined.includes("DISPIMG"))) {
           for (const [id, url] of excelImageData.byDispId.entries()) {
             if (id && combined.includes(id)) addImg(url, label);
           }
@@ -1747,18 +1913,14 @@
         checkCell(row[c], c, `POD${images.length + 1}`);
       }
 
-      // 3. Also check any DrawingML / RichData image anchored anywhere on this sheetRowIdx (even beyond row.length)
-      if (excelImageData && excelImageData.byRowCol) {
-        const rowEntries = [];
-        for (const [key, urls] of excelImageData.byRowCol.entries()) {
-          const [rStr, cStr] = key.split("_");
-          if (parseInt(rStr, 10) === sheetRowIdx) {
-            rowEntries.push({ col: parseInt(cStr, 10), urls });
-          }
+      // 3. Also check any DrawingML / RichData image anchored anywhere on this sheetRowIdx (O(1) lookup via pre-indexed byRow)
+      if (excelImageData && excelImageData.byRow) {
+        const rowEntries = excelImageData.byRow.get(sheetRowIdx);
+        if (rowEntries) {
+          rowEntries.forEach(entry => {
+            entry.urls.forEach(url => addImg(url, `POD${images.length + 1}`));
+          });
         }
-        rowEntries.sort((a, b) => a.col - b.col).forEach(entry => {
-          entry.urls.forEach(url => addImg(url, `POD${images.length + 1}`));
-        });
       }
 
       return images;
@@ -2619,7 +2781,7 @@
             ? `<div class="dnr-pod-images-grid ${countClass}">
                 ${imgs.map((img, i) => `
                   <div class="dnr-pod-img-box">
-                    <img src="${escapeHtml(img.src)}" alt="POD ${i + 1}" crossorigin="anonymous">
+                    <img src="${escapeHtml(img.src)}" alt="POD ${i + 1}" loading="lazy" decoding="async" crossorigin="anonymous">
                   </div>
                 `).join("")}
                </div>`
@@ -2710,6 +2872,9 @@
 
     async function waitForImagesInElement(rootEl) {
       const imgs = Array.from(rootEl.querySelectorAll("img"));
+      imgs.forEach(img => {
+        if (img.hasAttribute("loading")) img.removeAttribute("loading");
+      });
       const pending = imgs
         .filter(img => img.src && !img.complete)
         .map(img => new Promise(resolve => {
@@ -2720,26 +2885,37 @@
       await Promise.all(pending);
     }
 
-    async function renderCardToPngBlob(cardEl) {
+    async function renderCardToPngBlob(cardEl, sharedTempHolder = null) {
       await ensurePdfLibrariesLoaded();
-      const tempHolder = document.createElement("div");
-      tempHolder.style.position = "fixed";
-      tempHolder.style.left = "-99999px";
-      tempHolder.style.top = "0";
-      tempHolder.style.width = "940px";
-      tempHolder.style.background = "#ffffff";
-      tempHolder.style.zIndex = "-9999";
-      document.body.appendChild(tempHolder);
+      const ownsHolder = !sharedTempHolder;
+      const tempHolder = sharedTempHolder || document.createElement("div");
+      if (ownsHolder) {
+        tempHolder.style.position = "fixed";
+        tempHolder.style.left = "-99999px";
+        tempHolder.style.top = "0";
+        tempHolder.style.width = "940px";
+        tempHolder.style.background = "#ffffff";
+        tempHolder.style.zIndex = "-9999";
+        document.body.appendChild(tempHolder);
+      }
 
       try {
+        tempHolder.innerHTML = "";
         const clone = cardEl.cloneNode(true);
         clone.style.margin = "0";
         clone.style.boxShadow = "none";
+        clone.querySelectorAll("img").forEach(img => {
+          img.removeAttribute("loading");
+          img.decoding = "sync";
+        });
         tempHolder.appendChild(clone);
         await waitForImagesInElement(clone);
 
+        const cardHeight = clone.scrollHeight || clone.offsetHeight || 1000;
+        const renderScale = Math.min(2, Math.max(1, 14000 / cardHeight));
+
         const canvas = await html2canvas(clone, {
-          scale: 2,
+          scale: renderScale,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
@@ -2748,7 +2924,9 @@
 
         return await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
       } finally {
-        if (tempHolder.parentNode) tempHolder.parentNode.removeChild(tempHolder);
+        if (ownsHolder && tempHolder.parentNode) {
+          tempHolder.parentNode.removeChild(tempHolder);
+        }
       }
     }
 
@@ -2761,12 +2939,14 @@
         }
         const blob = await renderCardToPngBlob(cardEl);
         const fileName = `${todayMmDdSafeFile()}_${sanitizeFilename(station)}_DNR.png`;
+        const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.href = URL.createObjectURL(blob);
+        link.href = url;
         link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       } catch (err) {
         console.error(err);
         alert("Failed to export PNG: " + err.message);
@@ -2782,7 +2962,12 @@
       const setButtonsDisabled = (disabled) => {
         exportDnrPngButtons.forEach(b => { if (b) b.disabled = disabled; });
       };
+      const origBtnTexts = exportDnrPngButtons.map(b => (b ? b.textContent : ""));
+      const setButtonsText = (text) => {
+        exportDnrPngButtons.forEach(b => { if (b) b.textContent = text; });
+      };
 
+      ensureDnrRendered();
       const cards = Array.from(document.querySelectorAll(".dnr-report-card"));
       if (cards.length === 0) {
         alert("No DNR reports found to export.");
@@ -2790,17 +2975,26 @@
       }
 
       const originalStatus = statusBox.innerHTML;
+      const sharedTempHolder = document.createElement("div");
+      sharedTempHolder.style.position = "fixed";
+      sharedTempHolder.style.left = "-99999px";
+      sharedTempHolder.style.top = "0";
+      sharedTempHolder.style.width = "940px";
+      sharedTempHolder.style.background = "#ffffff";
+      sharedTempHolder.style.zIndex = "-9999";
+
       try {
         setButtonsDisabled(true);
         await ensurePdfLibrariesLoaded();
+        document.body.appendChild(sharedTempHolder);
 
         const datePrefix = todayMmDdSafeFile();
         if (cards.length === 1) {
           const station = cards[0].dataset.station || "Unknown";
           statusBox.innerHTML = `<strong>Status:</strong> Exporting PNG for station "${escapeHtml(station)}"...`;
+          setButtonsText("Exporting (1/1)...");
           await exportSingleDnrCardPng(cards[0], station, null);
           statusBox.innerHTML = originalStatus;
-          setButtonsDisabled(false);
           return;
         }
 
@@ -2810,21 +3004,25 @@
           const station = card.dataset.station || `Station_${i + 1}`;
           const safeStation = sanitizeFilename(station);
           statusBox.innerHTML = `<strong>Status:</strong> Rendering DNR PNG for "${escapeHtml(station)}" (${i + 1}/${cards.length})...`;
-          await new Promise(r => setTimeout(r, 40));
+          setButtonsText(`Exporting (${i + 1}/${cards.length})...`);
+          await new Promise(r => requestAnimationFrame(r));
 
-          const pngBlob = await renderCardToPngBlob(card);
+          const pngBlob = await renderCardToPngBlob(card, sharedTempHolder);
           const pngFileName = `${datePrefix}_${safeStation}_DNR.png`;
           zip.file(pngFileName, pngBlob);
         }
 
         statusBox.innerHTML = `<strong>Status:</strong> Packaging DNR PNGs into ZIP...`;
-        const zipBlob = await zip.generateAsync({ type: "blob" });
+        setButtonsText("Packaging ZIP...");
+        const zipBlob = await zip.generateAsync({ type: "blob", compression: "STORE" });
+        const url = URL.createObjectURL(zipBlob);
         const link = document.createElement("a");
-        link.href = URL.createObjectURL(zipBlob);
+        link.href = url;
         link.download = `${datePrefix}_DNR_Reports.zip`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
 
         statusBox.innerHTML = originalStatus;
       } catch (err) {
@@ -2832,7 +3030,13 @@
         alert("Failed to batch export DNR PNGs: " + err.message);
         statusBox.innerHTML = originalStatus;
       } finally {
-        setButtonsDisabled(false);
+        if (sharedTempHolder.parentNode) sharedTempHolder.parentNode.removeChild(sharedTempHolder);
+        exportDnrPngButtons.forEach((b, idx) => {
+          if (b) {
+            b.textContent = origBtnTexts[idx];
+            b.disabled = false;
+          }
+        });
       }
     }
 
@@ -2856,8 +3060,85 @@
     const sloganStatusTag = document.getElementById("sloganStatusTag");
     const sloganPapersContainer = document.getElementById("sloganPapersContainer");
     const printSloganBtnTop = document.getElementById("printSloganBtnTop");
+    const saveSloganPdfBtnTop = document.getElementById("saveSloganPdfBtnTop");
 
     let currentAllRecords = [];
+    let currentActiveTab = "csPaper";
+    let dnrNeedsRender = false;
+    let sloganNeedsRender = false;
+    let sloganRenderToken = 0;
+    let pendingSloganFlush = null;
+
+    function getSloganGroups(records) {
+      const groups = [];
+      (records || []).forEach(r => {
+        const imgs = (r.podImages || []).filter(img => img && img.src);
+        if (imgs.length === 0) return;
+
+        const todoRaw = (r.podToDo || "").trim();
+        if (!todoRaw || todoRaw === "-") return;
+
+        groups.push({
+          sloganText: todoRaw,
+          images: imgs
+        });
+      });
+      return groups;
+    }
+
+    function scheduleDnrAndSloganRender(records) {
+      currentAllRecords = Array.isArray(records) ? records : [];
+      sloganRenderToken++;
+      pendingSloganFlush = null;
+
+      exportDnrPngButtons.forEach(btn => {
+        if (btn) btn.disabled = currentAllRecords.length === 0;
+      });
+
+      const sloganGroups = getSloganGroups(currentAllRecords);
+      if (printSloganBtnTop) printSloganBtnTop.disabled = sloganGroups.length === 0;
+      if (saveSloganPdfBtnTop) saveSloganPdfBtnTop.disabled = sloganGroups.length === 0;
+      if (sloganStatusTag) {
+        if (sloganGroups.length === 0) {
+          sloganStatusTag.textContent = currentAllRecords.length
+            ? "0 Slogan groups with POD images found"
+            : "Waiting for Excel file";
+        } else {
+          const totalPages = Math.ceil(sloganGroups.length / SLOGAN_GROUPS_PER_PAGE);
+          sloganStatusTag.textContent = `${totalPages} A4 Page${totalPages > 1 ? "s" : ""} · ${sloganGroups.length} Group${sloganGroups.length > 1 ? "s" : ""} (Max ${SLOGAN_GROUPS_PER_PAGE}/Page)`;
+        }
+      }
+
+      if (currentActiveTab === "dnrSummarize") {
+        dnrNeedsRender = false;
+        renderDnrReports(currentAllRecords);
+      } else {
+        dnrNeedsRender = true;
+      }
+
+      if (currentActiveTab === "slogan") {
+        sloganNeedsRender = false;
+        renderSlogan(currentAllRecords);
+      } else {
+        sloganNeedsRender = true;
+      }
+    }
+
+    function ensureDnrRendered() {
+      if (dnrNeedsRender) {
+        dnrNeedsRender = false;
+        renderDnrReports(currentAllRecords);
+      }
+    }
+
+    function ensureSloganRendered(syncAll = false) {
+      if (sloganNeedsRender) {
+        sloganNeedsRender = false;
+        renderSlogan(currentAllRecords, syncAll);
+      } else if (syncAll && typeof pendingSloganFlush === "function") {
+        pendingSloganFlush();
+      }
+    }
 
     function ensurePrintPageStyle(size) {
       let styleEl = document.getElementById("dynamic-print-page-style");
@@ -2870,6 +3151,7 @@
     }
 
     function switchTab(tab) {
+      currentActiveTab = tab;
       if (tabCsPaper) tabCsPaper.classList.toggle("active", tab === "csPaper");
       if (tabDnrSummarize) tabDnrSummarize.classList.toggle("active", tab === "dnrSummarize");
       if (tabSlogan) tabSlogan.classList.toggle("active", tab === "slogan");
@@ -2881,6 +3163,12 @@
       if (csPaperActions) csPaperActions.style.display = tab === "csPaper" ? "flex" : "none";
       if (dnrTopActions) dnrTopActions.style.display = tab === "dnrSummarize" ? "flex" : "none";
       if (sloganTopActions) sloganTopActions.style.display = tab === "slogan" ? "flex" : "none";
+
+      if (tab === "dnrSummarize") {
+        ensureDnrRendered();
+      } else if (tab === "slogan") {
+        ensureSloganRendered(false);
+      }
     }
 
     if (tabCsPaper) tabCsPaper.addEventListener("click", () => switchTab("csPaper"));
@@ -2901,32 +3189,47 @@
       return { cols, rows };
     }
 
-    const SLOGAN_GROUPS_PER_PAGE = 5;
+    const SLOGAN_GROUPS_PER_PAGE = 6;
 
-    function renderSlogan(records) {
+    function buildSloganPageHtml(pageGroups) {
+      const blocksHtml = pageGroups.map(g => {
+        const { cols, rows } = getPodGridDimensions(g.images.length);
+        const imgsHtml = g.images.map((img, idx) => `
+          <div class="slogan-pod-item">
+            <img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.label || `POD${idx + 1}`)}" loading="lazy" decoding="async" crossorigin="anonymous">
+          </div>
+        `).join("");
+
+        return `
+          <div class="slogan-group-block">
+            <div class="slogan-group-title">${escapeHtml(g.sloganText)}</div>
+            <div class="slogan-group-pods" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
+              ${imgsHtml}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      return `<div class="slogan-paper">${blocksHtml}</div>`;
+    }
+
+    function renderSlogan(records, syncAll = false) {
       if (Array.isArray(records)) {
         currentAllRecords = records;
       }
       if (!sloganPapersContainer) return;
 
-      // Each row with a non-empty Slogan (POD To-Do) + all its POD images counts as 1 group (max 5 groups per A4 page)
-      const groups = [];
+      const myToken = ++sloganRenderToken;
+      pendingSloganFlush = null;
 
-      currentAllRecords.forEach(r => {
-        const imgs = (r.podImages || []).filter(img => img && img.src);
-        if (imgs.length === 0) return;
-
-        const todoRaw = (r.podToDo || "").trim();
-        if (!todoRaw || todoRaw === "-") return;
-
-        groups.push({
-          sloganText: todoRaw,
-          images: imgs
-        });
-      });
+      // Each row with a non-empty Slogan (POD To-Do) + all its POD images counts as 1 group (max 6 groups per A4 page: 2 cols x 3 rows)
+      const groups = getSloganGroups(currentAllRecords);
 
       if (printSloganBtnTop) {
         printSloganBtnTop.disabled = groups.length === 0;
+      }
+      if (saveSloganPdfBtnTop) {
+        saveSloganPdfBtnTop.disabled = groups.length === 0;
       }
 
       if (groups.length === 0) {
@@ -2950,46 +3253,150 @@
         sloganStatusTag.textContent = `${totalPages} A4 Page${totalPages > 1 ? "s" : ""} · ${groups.length} Group${groups.length > 1 ? "s" : ""} (Max ${SLOGAN_GROUPS_PER_PAGE}/Page)`;
       }
 
-      let pagesHtml = "";
-      for (let p = 0; p < totalPages; p++) {
+      const CHUNK_PAGES = 4;
+      const firstBatchEnd = syncAll ? totalPages : Math.min(totalPages, CHUNK_PAGES);
+      let firstHtml = "";
+      for (let p = 0; p < firstBatchEnd; p++) {
         const pageGroups = groups.slice(p * SLOGAN_GROUPS_PER_PAGE, (p + 1) * SLOGAN_GROUPS_PER_PAGE);
-
-        const blocksHtml = pageGroups.map(g => {
-          const { cols, rows } = getPodGridDimensions(g.images.length);
-          const imgsHtml = g.images.map((img, idx) => `
-            <div class="slogan-pod-item">
-              <img src="${escapeHtml(img.src)}" alt="${escapeHtml(img.label || `POD${idx + 1}`)}" crossorigin="anonymous">
-            </div>
-          `).join("");
-
-          return `
-            <div class="slogan-group-block">
-              <div class="slogan-group-title">${escapeHtml(g.sloganText)}</div>
-              <div class="slogan-group-pods" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">
-                ${imgsHtml}
-              </div>
-            </div>
-          `;
-        }).join("");
-
-        pagesHtml += `
-          <div class="slogan-paper">
-            ${blocksHtml}
-          </div>
-        `;
+        firstHtml += buildSloganPageHtml(pageGroups);
       }
+      sloganPapersContainer.innerHTML = firstHtml;
 
-      sloganPapersContainer.innerHTML = pagesHtml;
+      if (firstBatchEnd >= totalPages) return;
+
+      let nextPage = firstBatchEnd;
+      const appendPagesRange = (fromPage, toPage) => {
+        let chunkHtml = "";
+        for (let p = fromPage; p < toPage; p++) {
+          const pageGroups = groups.slice(p * SLOGAN_GROUPS_PER_PAGE, (p + 1) * SLOGAN_GROUPS_PER_PAGE);
+          chunkHtml += buildSloganPageHtml(pageGroups);
+        }
+        if (chunkHtml) {
+          sloganPapersContainer.insertAdjacentHTML("beforeend", chunkHtml);
+        }
+      };
+
+      pendingSloganFlush = () => {
+        if (myToken !== sloganRenderToken) return;
+        if (nextPage < totalPages) {
+          appendPagesRange(nextPage, totalPages);
+          nextPage = totalPages;
+        }
+        pendingSloganFlush = null;
+      };
+
+      const scheduleNextChunk = () => {
+        requestAnimationFrame(() => {
+          if (myToken !== sloganRenderToken || nextPage >= totalPages) return;
+          const endPage = Math.min(totalPages, nextPage + CHUNK_PAGES);
+          appendPagesRange(nextPage, endPage);
+          nextPage = endPage;
+          if (nextPage < totalPages) {
+            scheduleNextChunk();
+          } else {
+            pendingSloganFlush = null;
+          }
+        });
+      };
+
+      scheduleNextChunk();
     }
 
     async function printSlogan() {
+      ensureSloganRendered(true);
       ensurePrintPageStyle("A4");
       document.body.classList.add("printing-slogan");
       await waitForImagesInElement(sloganPapersContainer);
       window.print();
     }
 
+    async function saveSloganPdf() {
+      ensureSloganRendered(true);
+      const paperElements = Array.from(sloganPapersContainer.querySelectorAll(".slogan-paper"));
+      if (paperElements.length === 0) {
+        alert("No Slogan pages to save.");
+        return;
+      }
+
+      const origText = saveSloganPdfBtnTop ? saveSloganPdfBtnTop.textContent : "";
+      if (saveSloganPdfBtnTop) {
+        saveSloganPdfBtnTop.disabled = true;
+        saveSloganPdfBtnTop.textContent = "Generating PDF...";
+      }
+      if (printSloganBtnTop) {
+        printSloganBtnTop.disabled = true;
+      }
+
+      const tempHolder = document.createElement("div");
+      tempHolder.style.position = "fixed";
+      tempHolder.style.left = "-99999px";
+      tempHolder.style.top = "0";
+      tempHolder.style.width = "210mm";
+      tempHolder.style.background = "#ffffff";
+      tempHolder.style.zIndex = "-9999";
+      document.body.appendChild(tempHolder);
+
+      try {
+        await ensurePdfLibrariesLoaded();
+        if (typeof html2canvas !== "function") {
+          throw new Error("HTML to canvas library (html2canvas) is not loaded. Please check your internet connection.");
+        }
+
+        const pdf = createJsPdf();
+
+        for (let i = 0; i < paperElements.length; i++) {
+          if (saveSloganPdfBtnTop) {
+            saveSloganPdfBtnTop.textContent = `Generating PDF (${i + 1}/${paperElements.length})...`;
+          }
+          await new Promise(resolve => requestAnimationFrame(resolve));
+
+          tempHolder.innerHTML = "";
+          const clone = paperElements[i].cloneNode(true);
+          clone.style.margin = "0";
+          clone.style.border = "none";
+          clone.style.boxShadow = "none";
+          clone.style.pageBreakAfter = "auto";
+          clone.querySelectorAll("img").forEach(img => {
+            img.removeAttribute("loading");
+            img.decoding = "sync";
+          });
+          tempHolder.appendChild(clone);
+          await waitForImagesInElement(clone);
+
+          const canvas = await html2canvas(clone, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: "#ffffff",
+            logging: false
+          });
+
+          const imgData = canvas.toDataURL("image/jpeg", 0.96);
+          if (i > 0) {
+            pdf.addPage("a4", "portrait");
+          }
+          pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        }
+
+        const fileName = `${todayMmDdSafeFile()}_Slogan.pdf`;
+        pdf.save(fileName);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to generate Slogan PDF: " + err.message);
+      } finally {
+        if (tempHolder.parentNode) tempHolder.parentNode.removeChild(tempHolder);
+        if (saveSloganPdfBtnTop) {
+          saveSloganPdfBtnTop.disabled = false;
+          saveSloganPdfBtnTop.textContent = origText;
+        }
+        if (printSloganBtnTop) {
+          printSloganBtnTop.disabled = false;
+        }
+      }
+    }
+
     if (printSloganBtnTop) printSloganBtnTop.addEventListener("click", printSlogan);
+    if (saveSloganPdfBtnTop) saveSloganPdfBtnTop.addEventListener("click", saveSloganPdf);
 
     window.addEventListener("afterprint", () => {
       document.body.classList.remove("printing-slogan");
