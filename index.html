@@ -555,19 +555,19 @@
                 <div class="rules-card">
                     <h3>CS Data Cleaning Logic</h3>
                     <ol>
-                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Date</code>、<code>status</code>、<code>station</code>、<code>Asignee</code>、<code>Deadline</code>、<code>NeedClose</code>、<code>Total hours</code>、<code>Problem</code>。
+                        <li><strong>export CS SLA</strong>: 仅需上传 <strong>CS Record</strong> 即可即时导出，包含 <code>waybill</code>、<code>channel</code>、<code>Complaint Date</code>、<code>status</code>、<code>station</code>、<code>Type</code>、<code>Deadline</code>、<code>NeedClose</code>、<code>Total hours</code>、<code>Problem</code>。
                             <ul style="margin-left: 20px; margin-top: 4px; list-style-type: circle;">
                                 <li><strong>channel 规则</strong>：直接保留原始 <code>channel</code> 列原值（不执行格式清洗）。</li>
                                 <li><strong>Complaint Date 规则</strong>：取 <code>Check-in time</code> 并格式化为 <code>mm/dd</code> 格式。</li>
-                                <li><strong>station 规则</strong>：位于 <code>Asignee</code> 列之前，取自上传文件的 <code>Responsible node with forwarding orderorders</code> 列。</li>
-                                <li><strong>Asignee 规则</strong>：
+                                <li><strong>station 规则</strong>：位于 <code>Type</code> 列之前，取自上传文件的 <code>Responsible node with forwarding orderorders</code> 列。</li>
+                                <li><strong>Type 规则</strong>：
                                     读取工单中的 <code>Types of secondary questions</code> 列：
-                                    若为 <code>"Als zugestellt markiert, aber nicht erhalten/签收未收到"</code>，则 Asignee 为 <code>"Rania Al Sukhni"</code>；
-                                    若为 <code>others</code>（其他值），则 Asignee 为 <code>"Yan Liu"</code>。
+                                    若为 <code>"Als zugestellt markiert, aber nicht erhalten/签收未收到"</code>，则 Type 为 <code>"DNR"</code>；
+                                    若为 <code>others</code>（其他值），则 Type 为 <code>"others"</code>。
                                 </li>
                                 <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
                                 <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Date（登记时间）升序排序</strong>。</li>
-                                <li><strong>Problem 规则</strong>：位于 <code>Total hours</code> 列之后，取自上传文件的 <code>Problem Description</code> 列。</li>
+                                <li><strong>Problem 规则</strong>：位于 <code>Total hours</code> 列之后，取自上传文件的 <code>Problem Description</code> 列；若为加密串或乱码（如 <code>Y!$O#1#...=$=</code>、含 <code></code> 乱码符或长串无空格密文），则显示为空。</li>
                                 <li><strong>total Sheet（每小时各网点工单量）</strong>：导出文件中额外增加 <code>total</code> Sheet，统计<strong>离今天（柏林时间）最近的上一个有工单的日期</strong>（一律不统计今天，自动跳过周末/无工单日）。<strong>首行</strong>注明统计日期（如 <code>2026/11/05</code>）；表头为 <code>station</code>（取自 <code>Responsible node with forwarding orderorders</code>，空值归入 <code>Unknown</code>）+ <code>Check-in time</code> 的小时（<code>hh</code>，直接取文件原始时间）+ <code>Total</code>；单元格为<strong>工单行数</strong>；只展示有工单的小时，值为 0 时留空；末列 <code>Total</code> 为各网点合计，底部 <code>Total</code> 行为各小时合计。</li>
                                 <li><strong>专用公共假期</strong>：<code>2026-12-25, 2027-01-01, 2027-01-06, 2027-03-26, 2027-03-29, 2027-05-06, 2027-05-17, 2027-05-27, 2027-11-01</code>。</li>
                             </ul>
@@ -1128,6 +1128,26 @@
                 return '';
             }
             return cleaned;
+        }
+
+        // Global Helper: Return '' if Problem Description is encrypted/ciphered or garbled text
+        function cleanProblemValue(val) {
+            if (val === undefined || val === null) return '';
+            const str = String(val).trim();
+            if (!str) return '';
+            // 1. J&T encrypted field pattern (e.g. Y!$O#1#...=$= or Y!$U#1#...===$=)
+            if (/^Y!\$[A-Za-z0-9]+#\d+#/i.test(str) || /=\$=+\s*$/.test(str)) {
+                return '';
+            }
+            // 2. Replacement character () or control characters
+            if (/[\uFFFD\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F]/.test(str)) {
+                return '';
+            }
+            // 3. Long unbroken cipher/base64-like token with no whitespace
+            if (str.length >= 32 && !/\s/.test(str) && /^[A-Za-z0-9+/=!$#_-]+$/.test(str) && /[+/=!$#]/.test(str)) {
+                return '';
+            }
+            return str;
         }
 
         // Global Helper: Locate client column index (Order source name & Client's name prioritized)
@@ -1940,22 +1960,22 @@
                     ? String(row[stationIdx]).trim()
                     : '';
 
-                // 2. Asignee calculation based on Types of secondary questions:
-                // Types of secondary questions = "Als zugestellt markiert, aber nicht erhalten/签收未收到" -> "Rania Al Sukhni"
-                // Types of secondary questions = others -> "Yan Liu"
+                // 2. Type calculation based on Types of secondary questions:
+                // Types of secondary questions = "Als zugestellt markiert, aber nicht erhalten/签收未收到" -> "DNR"
+                // Types of secondary questions = others -> "others"
                 const rawSecondaryQ = (secondaryQuestionIdx !== -1 && row[secondaryQuestionIdx] !== undefined && row[secondaryQuestionIdx] !== null)
                     ? String(row[secondaryQuestionIdx]).trim()
                     : '';
                 const sqLower = rawSecondaryQ.toLowerCase();
-                let asignee = "Yan Liu";
+                let csType = "others";
                 if (
                     sqLower === "als zugestellt markiert, aber nicht erhalten/签收未收到" ||
                     sqLower.includes("als zugestellt markiert") ||
                     rawSecondaryQ.includes("签收未收到")
                 ) {
-                    asignee = "Rania Al Sukhni";
+                    csType = "DNR";
                 } else {
-                    asignee = "Yan Liu";
+                    csType = "others";
                 }
 
                 // Deadline & NeedClose calculation
@@ -1974,9 +1994,9 @@
                 const totalHours = calculateTotalHours(checkInVal, statusVal, lastUpdateVal, CS_SLA_HOLIDAYS_SET);
                 const checkInTs = checkInDate ? checkInDate.getTime() : 0;
 
-                // Problem from "Problem Description"
+                // Problem from "Problem Description" (empty if encrypted/garbled)
                 const problemVal = (problemDescIdx !== -1 && row[problemDescIdx] !== undefined && row[problemDescIdx] !== null)
-                    ? String(row[problemDescIdx]).trim()
+                    ? cleanProblemValue(row[problemDescIdx])
                     : '';
 
                 exportData.push({
@@ -1985,7 +2005,7 @@
                     "Complaint Date": complaintDate,
                     "status": statusVal,
                     "station": stationVal,
-                    "Asignee": asignee,
+                    "Type": csType,
                     "Deadline": deadlineStr,
                     "NeedClose": needCloseLabel,
                     "Total hours": totalHours,
@@ -2014,7 +2034,7 @@
             });
 
             const ws = XLSX.utils.json_to_sheet(exportData, {
-                header: ["waybill", "channel", "Complaint Date", "status", "station", "Asignee", "Deadline", "NeedClose", "Total hours", "Problem"]
+                header: ["waybill", "channel", "Complaint Date", "status", "station", "Type", "Deadline", "NeedClose", "Total hours", "Problem"]
             });
 
             const wb = XLSX.utils.book_new();
