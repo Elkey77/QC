@@ -697,58 +697,62 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
-      border-bottom: 2.5px solid var(--blue);
-      padding-bottom: 12px;
-      margin-bottom: 18px;
+      border-bottom: 2px solid var(--blue);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
     }
     .dnr-report-title {
-      font-size: 22px;
+      font-size: 19px;
       font-weight: 900;
       color: var(--blue);
       margin: 0;
       letter-spacing: 0.3px;
     }
     .dnr-report-subtitle {
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 700;
       color: #334155;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .dnr-report-meta {
       text-align: right;
-      font-size: 12.5px;
+      font-size: 11.5px;
       color: #475569;
       font-weight: 700;
-      line-height: 1.4;
+      line-height: 1.35;
     }
     .dnr-section-title {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 800;
       color: #fff;
       background: var(--blue);
-      padding: 7px 12px;
-      border-radius: 5px;
-      margin: 0 0 10px 0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin: 0 0 6px 0;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     .dnr-section-title.bad-pod-title {
       background: #b91c1c;
-      margin-top: 22px;
+      font-size: 14.5px;
+      padding: 6px 12px;
+      margin-top: 14px;
+      margin-bottom: 10px;
     }
     .dnr-summary-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
-      margin-bottom: 8px;
+      font-size: 11.5px;
+      margin-bottom: 6px;
     }
     .dnr-summary-table th,
     .dnr-summary-table td {
       border: 1px solid #cbd5e1;
-      padding: 8px 10px;
+      padding: 4px 7px;
       text-align: left;
       vertical-align: middle;
+      line-height: 1.3;
     }
     .dnr-summary-table th {
       background: #f1f5f9;
@@ -768,13 +772,13 @@
     .dnr-summary-table td.num-col,
     .dnr-summary-table th.num-col {
       text-align: center;
-      width: 75px;
+      width: 52px;
       font-weight: 800;
     }
     .dnr-summary-table td.driver-col {
       font-weight: 800;
       white-space: nowrap;
-      width: 140px;
+      width: 110px;
     }
     .dnr-bad-pod-grid {
       display: grid;
@@ -818,9 +822,9 @@
       word-break: break-word;
     }
     .dnr-pod-images-grid {
-      padding: 10px;
+      padding: 6px;
       display: grid;
-      gap: 8px;
+      gap: 6px;
       background: #ffffff;
       flex: 1;
       align-items: center;
@@ -841,15 +845,15 @@
     }
     .dnr-pod-img-box {
       width: 100%;
-      border: 1px solid #e2e8f0;
-      border-radius: 4px;
-      overflow: hidden;
-      background: #f8fafc;
+      border: none;
+      border-radius: 0;
+      overflow: visible;
+      background: transparent;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 4px;
+      padding: 0;
       box-sizing: border-box;
     }
     .dnr-pod-img-box img {
@@ -859,7 +863,8 @@
       height: auto;
       object-fit: contain;
       display: block;
-      border-radius: 2px;
+      border: none;
+      border-radius: 0;
     }
     .dnr-pod-images-grid.count-2 .dnr-pod-img-box img,
     .dnr-pod-images-grid.count-3 .dnr-pod-img-box img,
@@ -2676,6 +2681,13 @@
       });
     }
 
+    function formatCallResult(firstCall, lastCall) {
+      const parts = [firstCall, lastCall]
+        .map(v => clean(v))
+        .filter(v => v && v !== "-");
+      return parts.join(",");
+    }
+
     function buildStationDnrReportHtml(station, stRecords) {
       // 1. Min & Max Complaint Date (mm/dd)
       let minSort = Infinity;
@@ -2711,7 +2723,8 @@
             dnrCount: 0,
             foundCount: 0,
             podLocations: new Set(),
-            dnrDatesMap: new Map() // mmdd -> sortVal
+            signedDates: new Set(),
+            results: new Set()
           });
         }
         const entry = driverMap.get(drv);
@@ -2723,10 +2736,13 @@
         if (loc && loc !== "-") {
           entry.podLocations.add(loc);
         }
-        const dt = (r.complaintDateMmDd || "").trim();
-        if (dt && dt !== "-") {
-          const prevSort = entry.dnrDatesMap.get(dt) ?? Infinity;
-          entry.dnrDatesMap.set(dt, Math.min(prevSort, r.complaintDateSort ?? Infinity));
+        const sdt = (r.deliveryDate || "").trim();
+        if (sdt && sdt !== "-") {
+          entry.signedDates.add(sdt);
+        }
+        const res = formatCallResult(r.firstCall, r.lastCall);
+        if (res) {
+          entry.results.add(res);
         }
       });
 
@@ -2743,10 +2759,8 @@
         totalFound += d.foundCount;
 
         const locJoined = Array.from(d.podLocations).join(", ") || "-";
-        const datesJoined = Array.from(d.dnrDatesMap.entries())
-          .sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))
-          .map(e => e[0])
-          .join(", ") || "-";
+        const signedDatesJoined = Array.from(d.signedDates).join(", ") || "-";
+        const resultsJoined = Array.from(d.results).join("; ") || "-";
 
         return `
           <tr>
@@ -2754,7 +2768,8 @@
             <td class="num-col">${d.dnrCount}</td>
             <td class="num-col">${d.foundCount}</td>
             <td>${escapeHtml(locJoined)}</td>
-            <td>${escapeHtml(datesJoined)}</td>
+            <td>${escapeHtml(signedDatesJoined)}</td>
+            <td>${escapeHtml(resultsJoined)}</td>
           </tr>
         `;
       }).join("");
@@ -2788,18 +2803,24 @@
             : `<div class="dnr-no-pod-placeholder">No POD image embedded</div>`;
 
           const todoText = (r.podToDo || "").trim();
+          const resultText = formatCallResult(r.firstCall, r.lastCall);
+          const phoneText = formatDisplayPhone(r.phone);
 
           return `
             <div class="dnr-bad-pod-card">
               <div class="dnr-bad-pod-info">
                 <div class="dnr-bad-pod-info-row">
-                  <span><span class="field-label">Driver:</span> <span class="field-value">${escapeHtml(r.driver || "-")}</span></span>
-                  <span><span class="field-label">Waybill:</span> <span class="field-value">${escapeHtml(r.waybill || "-")}</span></span>
+                  <span class="field-value" style="font-weight: 800;">${escapeHtml(r.driver || "-")}</span>
+                  <span class="field-value">${escapeHtml(r.waybill || "-")}</span>
                 </div>
                 <div class="dnr-bad-pod-info-row">
-                  <span><span class="field-label">POD Location:</span> <span class="field-value">${escapeHtml(r.podLocation || "-")}</span></span>
+                  <span><span class="field-label">POD:</span> <span class="field-value">${escapeHtml(r.podLocation || "-")}</span></span>
+                  ${resultText ? `<span><span class="field-label">Result:</span> <span class="field-value">${escapeHtml(resultText)}</span></span>` : ""}
                 </div>
-                ${todoText && todoText !== "-" ? `<div class="dnr-bad-pod-todo">POD To-Do: ${escapeHtml(todoText)}</div>` : `<div class="dnr-bad-pod-info-row"><span class="field-label">POD To-Do:</span> <span class="field-value">-</span></div>`}
+                <div class="dnr-bad-pod-info-row">
+                  <span><span class="field-label">Phone:</span> <span class="field-value">${escapeHtml(phoneText)}</span></span>
+                </div>
+                ${todoText && todoText !== "-" ? `<div class="dnr-bad-pod-todo">${escapeHtml(todoText)}</div>` : ""}
               </div>
               ${imgsHtml}
             </div>
@@ -2856,7 +2877,8 @@
                   <th class="num-col">DNR</th>
                   <th class="num-col">FOUND</th>
                   <th>POD Location</th>
-                  <th>DNR DATE</th>
+                  <th>Signed Date</th>
+                  <th>Result</th>
                 </tr>
               </thead>
               <tbody>
