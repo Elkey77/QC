@@ -1210,16 +1210,60 @@
     .dr-toolbar .btn { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
     #dr-report-frame {
       background: #ffffff; color: #0f172a; padding: 6px; border-radius: 8px;
-      font-size: 11px; max-width: 500px; margin: 0 auto;
+      font-size: 11px; max-width: 740px; margin: 0 auto;
       box-shadow: 0 2px 10px rgba(0,0,0,0.06);
     }
+    #dr-report-frame.is-station {
+      max-width: 560px;
+    }
+    #dr-report-frame.is-station .dr-col-dnr { min-width: 90px; max-width: 140px; }
+    #dr-report-frame.is-station .dr-col-2cm { max-width: 64px; min-width: 42px; }
     #dr-report-frame.is-region {
-      max-width: 100%;
-      width: fit-content;
+      max-width: 60%;
+      width: 60%;
       padding: 4px;
       margin: 0 auto;
       overflow-x: auto;
     }
+    .dr-region-layout {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      max-width: 100%;
+      margin-top: 0.5rem;
+      box-sizing: border-box;
+    }
+    .dr-region-layout #dr-report-frame {
+      margin-top: 0 !important;
+    }
+    .dr-region-layout.has-todo #dr-report-frame.is-region {
+      margin: 0;
+      flex: 0 1 60%;
+      width: 60%;
+      max-width: calc(100% - 220px);
+    }
+    #dr-region-todo-panel {
+      flex: 0 0 210px;
+      width: 210px;
+      max-width: 210px;
+      background: #ffffff;
+      color: #0f172a;
+      padding: 4px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    [data-theme="dark"] #dr-region-todo-panel { background: #0b1220; color: #f8fafc; }
+    #dr-region-todo-panel .dr-banner { padding: 4px 8px; font-size: 13px; }
+    #dr-region-todo-panel .dr-sec { margin: 2px 0 0; max-height: 75vh; overflow-y: auto; overflow-x: hidden; }
+    #dr-region-todo-panel .dr-table { font-size: 9px; table-layout: fixed; width: 100%; }
+    #dr-region-todo-panel .dr-table th,
+    #dr-region-todo-panel .dr-table td { padding: 1.5px 3px; line-height: 1.18; vertical-align: top; }
+    #dr-region-todo-panel .dr-todo-col-st { width: 44%; white-space: normal; word-break: break-word; font-weight: 600; }
+    #dr-region-todo-panel .dr-todo-col-issue { width: 56%; white-space: normal; word-break: break-word; }
     [data-theme="dark"] #dr-report-frame { background: #0b1220; color: #f8fafc; }
     .dr-banner {
       background: linear-gradient(135deg, #c0392b, #922b21); color: #fff;
@@ -1244,19 +1288,66 @@
     .dr-table td.l, .dr-table th.l { text-align: left; }
     .dr-table td.wrap { white-space: normal; word-break: break-word; text-align: left; }
     .dr-col-2cm { max-width: 76px; min-width: 50px; white-space: normal; word-break: break-word; }
+    .dr-col-dnr { min-width: 140px; max-width: 240px; white-space: normal; word-break: break-word; }
     .dr-col-st { width: 44px; max-width: 50px; min-width: 34px; padding: 2px 2px !important; font-size: 9.5px; white-space: normal; word-break: break-all; }
     .dr-col-num { min-width: 24px; max-width: 36px; padding: 2px 1px; }
+    .dr-backlog-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 4px; align-items: start; }
+    .dr-backlog-grid.is-row2 { grid-template-columns: 0.72fr 1.28fr; }
+    .dr-backlog-col { min-width: 0; overflow: hidden; }
+    .dr-backlog-mini .dr-table { font-size: 7.5px; width: 100%; table-layout: fixed; }
+    .dr-backlog-mini .dr-table td { padding: 1px 1px; line-height: 1.1; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+    .dr-backlog-mini .dr-table th { font-size: 6.5px; padding: 1px 1px; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dr-backlog-mini .dr-table th.dr-col-num, .dr-backlog-mini .dr-table td.dr-col-num,
+    .dr-backlog-mini .dr-table th:nth-child(2), .dr-backlog-mini .dr-table td:nth-child(2) { width: 20px; min-width: 18px; max-width: 22px; }
+    .dr-backlog-mini .dr-table td .dr-diff-down,
+    .dr-backlog-mini .dr-table td .dr-diff-up,
+    .dr-backlog-mini .dr-table td .dr-diff-flat { display: block; margin-left: 0; font-size: 0.85em; line-height: 1.05; }
+    .dr-backlog-mini .dr-table th:first-child, .dr-backlog-mini .dr-table td:first-child { width: 34px; }
+    .dr-backlog-drv .dr-table { table-layout: fixed; }
+    .dr-backlog-drv .dr-table th:first-child, .dr-backlog-drv .dr-table td:first-child { width: 1.6cm; min-width: 1.6cm; max-width: 1.6cm; font-size: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dr-backlog-mini .dr-sec-title { font-size: 8.5px; padding: 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .dr-ascan-dd { position: relative; display: inline-block; }
+    .dr-ascan-btn {
+      padding: 0.25rem 0.55rem; border: 1px solid var(--card-border); border-radius: 6px;
+      background: var(--card-bg); color: var(--text-main); font-size: 0.78rem; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 4px; font-weight: 600;
+    }
+    .dr-ascan-menu {
+      position: absolute; top: calc(100% + 4px); left: 0; z-index: 100;
+      min-width: 150px; max-height: 240px; overflow-y: auto;
+      background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.14); padding: 4px; display: none;
+    }
+    .dr-ascan-menu.open { display: block; }
+    .dr-ascan-opt {
+      display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 4px;
+      font-size: 0.78rem; cursor: pointer; user-select: none; color: var(--text-main);
+    }
+    .dr-ascan-opt:hover { background: rgba(37, 99, 235, 0.08); }
+    .dr-diff-down { color: #16a34a; font-weight: 700; font-size: 0.9em; margin-left: 2px; white-space: nowrap; }
+    .dr-diff-up, .dr-diff-flat { color: inherit; font-weight: 700; font-size: 0.9em; margin-left: 2px; white-space: nowrap; }
 
     /* Region-specific ultra-compact layout */
     #dr-report-frame.is-region .dr-banner { padding: 4px 8px; font-size: 13px; }
     #dr-report-frame.is-region .dr-dates { padding: 2px 6px; margin-bottom: 4px; font-size: 10px; }
-    #dr-report-frame.is-region .dr-sec { margin: 2px 0 0; }
-    #dr-report-frame.is-region .dr-table { font-size: 10px; table-layout: fixed; width: auto; }
+    #dr-report-frame.is-region .dr-sec { margin: 2px 0 0; max-height: 75vh; overflow: auto; }
+    #dr-report-frame.is-region .dr-table { font-size: 9px; table-layout: fixed; width: 100%; }
     #dr-report-frame.is-region .dr-table th,
-    #dr-report-frame.is-region .dr-table td { padding: 1.5px 3px; line-height: 1.22; vertical-align: top; }
-    #dr-report-frame.is-region .dr-col-st { width: 46px; min-width: 38px; max-width: 52px; font-size: 9.5px; vertical-align: middle; }
-    #dr-report-frame.is-region .dr-col-num { width: 34px; min-width: 26px; max-width: 38px; padding: 1px 1px !important; font-size: 9.5px; vertical-align: middle; }
-    #dr-report-frame.is-region .dr-col-da { width: 3.6cm; min-width: 3cm; max-width: 4cm; white-space: normal; word-break: break-word; text-align: left; padding: 2px 4px !important; }
+    #dr-report-frame.is-region .dr-table td { padding: 1.5px 2px; line-height: 1.18; vertical-align: top; }
+    #dr-report-frame.is-region .dr-table thead th { position: sticky; top: 0; z-index: 3; }
+    #dr-report-frame.is-region .dr-table th:first-child,
+    #dr-report-frame.is-region .dr-table td:first-child { position: sticky; left: 0; z-index: 2; background: #ffffff; }
+    [data-theme="dark"] #dr-report-frame.is-region .dr-table th:first-child,
+    [data-theme="dark"] #dr-report-frame.is-region .dr-table td:first-child { background: #0b1220; }
+    #dr-report-frame.is-region .dr-table thead th:first-child { z-index: 4; background: #e2e8f0; }
+    [data-theme="dark"] #dr-report-frame.is-region .dr-table thead th:first-child { background: #334155; }
+    #dr-report-frame.is-region .dr-table tr.dr-total td:first-child { background: #f1f5f9; }
+    [data-theme="dark"] #dr-report-frame.is-region .dr-table tr.dr-total td:first-child { background: #1e293b; }
+    #dr-report-frame.is-region .dr-col-st { width: 28px; min-width: 26px; max-width: 30px; font-size: 8.5px; vertical-align: middle; }
+    #dr-report-frame.is-region .dr-col-num { width: 18px; min-width: 16px; max-width: 20px; padding: 1px 1px !important; font-size: 8.5px; vertical-align: middle; }
+    #dr-report-frame.is-region .dr-table thead th.dr-col-num { font-size: 7.5px; line-height: 1.08; }
+    #dr-report-frame.is-region .dr-col-result { width: 1.7cm; min-width: 1.7cm; white-space: normal; word-break: break-word; text-align: left; padding: 1.5px 2px !important; }
+    #dr-report-frame.is-region .dr-col-da { width: 1.7cm; min-width: 1.7cm; white-space: normal; word-break: break-word; text-align: left; padding: 1.5px 2px !important; }
     #dr-report-frame.is-region .dr-col-remark { width: 3.6cm; min-width: 3cm; max-width: 4.5cm; white-space: normal; word-break: break-word; text-align: left; padding: 0 !important; }
     .dr-remark-edit {
       width: 100%; min-height: 20px; height: 100%; padding: 2px 4px;
@@ -1352,7 +1443,7 @@
             <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
           </svg>
           <p id="ui-upload-todo-prompt" style="font-weight:700;font-size:0.95rem;margin-top:0.35rem;">Import To-Do List</p>
-          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Drop To-Do List (DA, Lost, Return1, Return2, DNR, Pending, group) or <strong>click to browse</strong></p>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.2rem;">Drop To-Do List (DA, DNR, Pending / pendprev+pendingnow, group) or <strong>click to browse</strong></p>
         </div>
       </div>
     </section>
@@ -1612,7 +1703,7 @@
     <section class="card" id="dr-setup">
       <h2 style="font-size:1.05rem;font-weight:700;">馃搨 Daily Report Data</h2>
       <p style="font-size:0.8rem;color:var(--text-muted);margin-top:0.25rem;">
-        Upload the workbook(s) containing sheets <b>DA</b>, <b>Lost</b>, <b>Return1</b>, <b>Return2</b>, <b>DNR</b>, <b>Pending</b> and <b>Group</b> (station &rarr; responsibility mapping).
+        Upload the workbook(s) containing sheets <b>DA</b>, <b>DNR</b>, <b>Pending</b> (or <b>pendprev</b> &amp; <b>pendingnow</b>) and <b>Group</b> (station &rarr; responsibility mapping).
         You can select several files at once; sheets are matched by name.
       </p>
       <div class="upload-zone" id="dr-drop-zone" style="margin-top:0.75rem;padding:1.2rem;" onclick="document.getElementById('dr-file-input').click()">
@@ -1620,7 +1711,7 @@
         <input type="file" id="dr-file-input" class="hidden-file-input" accept=".xlsx, .xls" multiple onchange="drHandleFiles(this.files)">
       </div>
       <div class="dr-setup-row">
-        <label for="dr-today-select"><b>Report Date:</b></label>
+        <label for="dr-today-select"><b>signedDate:</b></label>
         <select id="dr-today-select" style="padding:0.3rem 0.5rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.8rem;" onchange="drOnDateChange(this.value)"></select>
         <span class="dr-date-pills" id="dr-da-dates"></span>
         <span id="dr-dates-info" style="color:var(--text-muted);"></span>
@@ -1632,7 +1723,10 @@
     <!-- Group / Station / Region report view -->
     <section id="dr-group-view" style="display:none;">
       <div id="dr-sub-nav" class="dr-sub-nav"></div>
-      <div id="dr-report-frame" style="margin-top:0.5rem;"></div>
+      <div class="dr-region-layout" id="dr-region-layout">
+        <div id="dr-region-todo-panel" style="display:none;"></div>
+        <div id="dr-report-frame" style="margin-top:0.5rem;"></div>
+      </div>
     </section>
   </div>
 
@@ -4931,6 +5025,9 @@
       today: '',
       updateTime: '',
       daDates: [],
+      ascanDates: [],
+      selectedAscanDates: null, // null = All selected
+      ascanMenuOpen: false,
       groups: [],
       active: 'rank',
       activeStation: '',
@@ -4945,10 +5042,12 @@
       return1: { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], ascandate: ['ascandate','scandate','arrivalscandate'], client: ['client','customer','\u5ba2\u6237'], station: ['station','\u7f51\u70b9','site'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], driver: ['driver','drivername','\u53f8\u673a'], noupdate: ['noupdate'], problem: ['problem'] }, req: ['station','driver'] },
       return2: { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], ascandate: ['ascandate','scandate','arrivalscandate'], client: ['client','customer','\u5ba2\u6237'], station: ['station','\u7f51\u70b9','site'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], driver: ['driver','drivername','\u53f8\u673a'], noupdate: ['noupdate'], problem: ['problem'] }, req: ['station','driver'] },
       dnr:     { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], station: ['station','\u7f51\u70b9','site'], times: ['times','\u6b21\u6570'], cdate: ['complaintdate','\u6295\u8bc9\u65e5\u671f'], pod: ['podlocation','pod','pod\u4f4d\u7f6e','\u51ed\u8bc1\u4f4d\u7f6e'], driver: ['driver','drivername','\u53f8\u673a'], finalblame: ['finalblame','finalresponsibility','finalresp','responsibility','blame','\u8d23\u4efb\u5f52\u5c5e','\u6700\u7ec8\u8d23\u4efb','\u8d23\u4efb\u5224\u5b9a'] }, req: ['station','times','cdate'] },
-      pending: { spec: { station: ['station','\u7f51\u70b9','site'], scandate: ['ascandate','scandate','arrivalscandate'], type: ['lastscantype','lastscantypename','scantype'], client: ['client','customer','\u5ba2\u6237'], postcode: ['postcode','plz','zipcode','zip','postalcode','\u90ae\u7f16'], third: ['3rdcode','thirdcode','3rd'] }, req: ['station','scandate','type','client','postcode','third'] },
+      pending: { spec: { waybill: ['waybill','waybillno','wbno','\u8fd0\u5355','\u5355\u53f7','tracking'], station: ['station','\u7f51\u70b9','site'], scandate: ['ascandate','scandate','arrivalscandate'], lastscan: ['lastscandate','lastscan','\u6700\u540e\u626b\u63cf\u65e5\u671f','\u6700\u65b0\u626b\u63cf\u65f6\u95f4'], type: ['lastscantype','lastscantypename','scantype'], client: ['client','customer','\u5ba2\u6237'], noupdate: ['noupdate'], postcode: ['postcode','plz','zipcode','zip','postalcode','\u90ae\u7f16'], third: ['3rdcode','thirdcode','3rd'], remark: ['remark','remarks','\u5907\u6ce8'], deadline: ['deadline','deadlinedate','duedate'], driverid: ['driverid','userid','courierid','\u5de5\u53f7'], driver: ['driver','drivername','\u53f8\u673a'] }, req: ['station','type'] },
       ofd:     { spec: { station: ['station','\u7f51\u70b9','site'], third: ['3rdcode','thirdcode','3rd'] }, req: ['station','third'] },
     };
-    const DR_KIND_LABEL = { da: 'DA', lost: 'Lost', return1: 'Return1', return2: 'Return2', dnr: 'DNR', pending: 'Pending', group: 'Group' };
+    DR_SPEC.pending1 = DR_SPEC.pending;
+    DR_SPEC.pending2 = DR_SPEC.pending;
+    const DR_KIND_LABEL = { da: 'DA', lost: 'Lost', return1: 'Return1', return2: 'Return2', dnr: 'DNR', pending: 'Pending', pending1: 'pendprev', pending2: 'pendingnow', group: 'Group' };
     const DR_REMARK_STORAGE_KEY = 'str_dr_remarks_v1';
     function drLoadRemarks() {
       try { return JSON.parse(localStorage.getItem(DR_REMARK_STORAGE_KEY) || '{}') || {}; } catch (e) { return {}; }
@@ -5052,6 +5151,8 @@
       if (/^return1|^return\b|needreturn|\u9000\u56de|\u8fd4\u8fd8/i.test(n)) return 'return1';
       if (/^dnr\b|\u672a\u6536\u5230/i.test(n)) return 'dnr';
       if (/^pendingofd\b|^ofd\b/i.test(n)) return 'ofd';
+      if (/^(pendprev|pendingprev|pending1|backlog1)\b/i.test(n)) return 'pending1';
+      if (/^(pendingnow|pendnow|pending2|backlog2)\b/i.test(n)) return 'pending2';
       if (/^pending\b|backlog|\u79ef\u538b/i.test(n)) return 'pending';
       if (/^group\b|\u5206\u7ec4|\u7f51\u70b9/i.test(n)) return 'group';
       return null;
@@ -5169,11 +5270,28 @@
       return Array.from(set).sort();
     }
 
+    function drGetAscanDates() {
+      const set = new Set();
+      for (const kind of ['pending', 'pending1', 'pending2']) {
+        const t = drReadTable(kind);
+        if (!t) continue;
+        for (const rec of t.records) {
+          const dt = drDate(rec.scandate);
+          if (dt) set.add(dt);
+        }
+      }
+      return Array.from(set).sort((a, b) => b.localeCompare(a));
+    }
+
     // ---- computation ----
     function drCompute() {
       const today = DR.today;
-      const yest = drPrevDeliveryDay(today);      // Lost / DA rule
+      const yest = drPrevDeliveryDay(today);      // DA rule
       const yDnr = drPrevWeekday(today);          // DNR rule
+      const sysToday = drLocalToday();            // System calendar today for Pending Deadline
+      const sysYest = drAddDays(sysToday, -1);
+      const sysWillStart = drAddDays(sysToday, 1);
+      const sysWillEnd = drAddDays(sysToday, 2);
       const st = new Map();
       const warnings = [];
 
@@ -5184,9 +5302,13 @@
           const disp = k === 'BACKUP' ? 'BackUp' : drTxt(raw);
           s = {
             key: k, name: disp || k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
-            lostTotal: 0, lostByDriver: 0, lostByHub: 0, return1Total: 0, return2Total: 0,
-            pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
-            lostAllDrivers: new Map(), return1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
+            lostTotal: 0, lostByDriver: 0, lostByHub: 0,
+            willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0,
+            return1Total: 0, prevReturn1Total: 0, return2Total: 0,
+            pend3: [], noAttend: [], drivers: new Map(), pending: [], pendingPrev: [],
+            typeCountsMain: new Map(), typeCountsPrev: new Map(), clientNames: new Map(),
+            lostAllDrivers: new Map(), willLostAllDrivers: new Map(),
+            return1AllDrivers: new Map(), prevReturn1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
           };
           st.set(k, s);
         } else if (preferDisplayName && k !== 'BACKUP') {
@@ -5201,10 +5323,12 @@
         if (!d) {
           d = {
             key: k, name: drTxt(raw), signed: 0, hasY: false, hasT: false, dnr: 0,
-            lost: 0, scanDates: new Map(),
-            needReturn: 0, returnScanDates: new Map(),
+            lost: 0, prevLost: 0, scanDates: new Map(),
+            willLost: 0, prevWillLost: 0, willLostScanDates: new Map(),
+            needReturn: 0, prevNeedReturn: 0, returnScanDates: new Map(),
             returnResult: 0, returnResultScanDates: new Map(),
-            pods: []
+            pending: 0, prevPending: 0,
+            pods: [], dnrItems: []
           };
           s.drivers.set(k, d);
         }
@@ -5212,24 +5336,28 @@
       };
       const read = kind => {
         const t = drReadTable(kind);
-        if (t && t.missing.length) warnings.push(`${DR_KIND_LABEL[kind]} sheet: column(s) not found: ${t.missing.join(', ')}`);
+        if (t && t.missing.length && DR.sheets[kind] && DR.sheets[kind].rows && DR.sheets[kind].rows.length > 0) {
+          warnings.push(`${DR_KIND_LABEL[kind]} sheet: column(s) not found: ${t.missing.join(', ')}`);
+        }
         return t;
       };
 
-      // Pre-register stations from all sheets to guarantee complete station universe
+      // Pre-register stations from active sheets (Lost, Return, WillLost are sourced exclusively from Pending)
       const da = read('da');
-      const lost = read('lost');
-      const ret1 = read('return1');
-      const ret2 = read('return2');
       const dnr = read('dnr');
-      const pend = read('pending');
+      const pMain = read('pending');
+      const p1 = read('pending1');
+      const p2 = read('pending2');
+      const hasP1 = Boolean(p1 && p1.records.length > 0);
+      const hasP2 = Boolean(p2 && p2.records.length > 0);
+      const hasPendingCompare = hasP1 && hasP2;
+      const pend = hasPendingCompare ? p2 : ((pMain && pMain.records.length > 0) ? pMain : (hasP2 ? p2 : p1));
+      const pendPrev = hasPendingCompare ? p1 : null;
 
       if (da) da.records.forEach(r => getSt(r.station, true));
-      if (lost) lost.records.forEach(r => getSt(r.station));
-      if (ret1) ret1.records.forEach(r => getSt(r.station));
-      if (ret2) ret2.records.forEach(r => getSt(r.station));
       if (dnr) dnr.records.forEach(r => getSt(r.station));
       if (pend) pend.records.forEach(r => getSt(r.station));
+      if (pendPrev) pendPrev.records.forEach(r => getSt(r.station));
       if (DR.sheets.group) {
         DR.sheets.group.rows.forEach(r => {
           if (!r) return;
@@ -5276,72 +5404,6 @@
         });
       }
 
-      // Lost: station total + lostByDriver/lostByHub + yest/today deadline counts + WillLost details per valid driver
-      if (lost) for (const rec of lost.records) {
-        const s = getSt(rec.station); if (!s) continue;
-        if ('waybill' in lost.map && !drTxt(rec.waybill)) continue;
-        s.lostTotal++;
-        const scanType = drTxt(rec.type).toLowerCase().replace(/\s+/g, ' ');
-        if (scanType === 'problem scan' || scanType === 'out of warehouse scan') {
-          s.lostByDriver++;
-        } else {
-          s.lostByHub++;
-        }
-        const dl = drDate(rec.deadline);
-        if (dl === yest) s.lostY++;
-        if (dl === today) s.lostT++;
-        const raw = drTxt(rec.driver);
-        if (drValidDrv(raw)) {
-          const dk = drKey(raw);
-          s.lostAllDrivers.set(dk, (s.lostAllDrivers.get(dk) || 0) + 1);
-          if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
-          const d = getDrv(s, raw);
-          if (d) {
-            d.lost++;
-            const lsd = drDate(rec.lastscan);
-            if (lsd) d.scanDates.set(lsd, (d.scanDates.get(lsd) || 0) + 1);
-          }
-        }
-      }
-
-      // Return1: station total + Need Return details per valid driver
-      if (ret1) for (const rec of ret1.records) {
-        const s = getSt(rec.station); if (!s) continue;
-        if ('waybill' in ret1.map && !drTxt(rec.waybill)) continue;
-        s.return1Total++;
-        const raw = drTxt(rec.driver);
-        if (drValidDrv(raw)) {
-          const dk = drKey(raw);
-          s.return1AllDrivers.set(dk, (s.return1AllDrivers.get(dk) || 0) + 1);
-          if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
-          const d = getDrv(s, raw);
-          if (d) {
-            d.needReturn++;
-            const lsd = drDate(rec.lastscan);
-            if (lsd) d.returnScanDates.set(lsd, (d.returnScanDates.get(lsd) || 0) + 1);
-          }
-        }
-      }
-
-      // Return2: station total + Return Result details per valid driver
-      if (ret2) for (const rec of ret2.records) {
-        const s = getSt(rec.station); if (!s) continue;
-        if ('waybill' in ret2.map && !drTxt(rec.waybill)) continue;
-        s.return2Total++;
-        const raw = drTxt(rec.driver);
-        if (drValidDrv(raw)) {
-          const dk = drKey(raw);
-          s.return2AllDrivers.set(dk, (s.return2AllDrivers.get(dk) || 0) + 1);
-          if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
-          const d = getDrv(s, raw);
-          if (d) {
-            d.returnResult++;
-            const lsd = drDate(rec.lastscan);
-            if (lsd) d.returnResultScanDates.set(lsd, (d.returnResultScanDates.get(lsd) || 0) + 1);
-          }
-        }
-      }
-
       // DNR:
       // 1) Region DNR DA: all dates where finalBlame="Driver" and Times = 1
       // 2) Station/Driver Yest DNR: Times = 1 and Complaint Date = yesterday (weekday rule)
@@ -5371,30 +5433,150 @@
             if (d) {
               d.dnr++;
               const p = drTxt(rec.pod);
-              if (p && p !== '0') d.pods.push(p);
+              const podClean = (p && p !== '0') ? p : '';
+              const wb = ('waybill' in dnr.map) ? drTxt(rec.waybill) : '';
+              if (podClean) d.pods.push(podClean);
+              if (wb || podClean) d.dnrItems.push({ waybill: wb, pod: podClean });
             }
           }
         }
       }
 
-      // Pending (backlog + Pending 3rd)
+      // Pending (backlog + Pending 3rd + Deadline-based Lost/WillLost + Remark-based DA Return)
+      const isAscanSel = dt => !DR.selectedAscanDates || DR.selectedAscanDates.has(dt);
+      const applyPendingRisk = (s, type, lastscan, rawDrv, isWillLost) => {
+        const scanType = type.toLowerCase().replace(/\s+/g, ' ');
+        const isDrvScan = (scanType === 'problem scan' || scanType === 'out of warehouse scan');
+        if (isWillLost) {
+          s.willLostTotal++;
+          if (isDrvScan) s.willLostByDriver++; else s.willLostByHub++;
+        } else {
+          s.lostTotal++;
+          if (isDrvScan) s.lostByDriver++; else s.lostByHub++;
+        }
+        if (drValidDrv(rawDrv)) {
+          const dk = drKey(rawDrv);
+          const drvMap = isWillLost ? s.willLostAllDrivers : s.lostAllDrivers;
+          drvMap.set(dk, (drvMap.get(dk) || 0) + 1);
+          if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, rawDrv);
+          const d = getDrv(s, rawDrv);
+          if (d) {
+            if (isWillLost) {
+              d.willLost++;
+              if (lastscan) d.willLostScanDates.set(lastscan, (d.willLostScanDates.get(lastscan) || 0) + 1);
+            } else {
+              d.lost++;
+              if (lastscan) d.scanDates.set(lastscan, (d.scanDates.get(lastscan) || 0) + 1);
+            }
+          }
+        }
+      };
       const thirdBySt = new Map();
       if (pend) for (const rec of pend.records) {
+        const ascandate = drDate(rec.scandate);
+        if (!isAscanSel(ascandate)) continue;
         const s = getSt(rec.station); if (!s) continue;
         const pc = drTxt(rec.postcode), th = drTxt(rec.third);
         const rawClient = drTxt(rec.client) || '(blank)';
         const ck = drKey(rawClient);
         if (!s.clientNames.has(ck)) s.clientNames.set(ck, rawClient);
+        const type = drTxt(rec.type) || '(blank)';
+        const lastscan = drDate(rec.lastscan);
+        const remark = drTxt(rec.remark);
+        const deadline = drDate(rec.deadline);
+        const rawDrv = drTxt(rec.driver);
+        const drvDisp = drValidDrv(rawDrv) ? rawDrv : '(blank)';
+        const code = (pc && th) ? (pc + '/' + th) : (pc || th || '');
+
         s.pending.push({
-          date: drDate(rec.scandate),
-          type: drTxt(rec.type) || '(blank)',
+          waybill: drTxt(rec.waybill),
+          date: ascandate,
+          lastscan,
+          type,
           client: s.clientNames.get(ck),
-          code: (pc || th) ? pc + '/' + th : ''
+          code,
+          driver: drvDisp,
+          remark,
+          deadline
         });
+        s.typeCountsMain.set(type, (s.typeCountsMain.get(type) || 0) + 1);
+        if (drValidDrv(rawDrv)) {
+          const d = getDrv(s, rawDrv);
+          if (d) d.pending++;
+        }
+
         if (th && th !== '0') {
           if (!thirdBySt.has(s.key)) thirdBySt.set(s.key, new Map());
           const cm = thirdBySt.get(s.key);
           cm.set(th, (cm.get(th) || 0) + 1);
+        }
+
+        if (deadline && (deadline === sysYest || deadline === sysToday)) {
+          applyPendingRisk(s, type, lastscan, rawDrv, false);
+        } else if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) {
+          applyPendingRisk(s, type, lastscan, rawDrv, true);
+        }
+        if (remark.toLowerCase() === 'da return') {
+          s.return1Total++;
+          if (drValidDrv(rawDrv)) {
+            const dk = drKey(rawDrv);
+            s.return1AllDrivers.set(dk, (s.return1AllDrivers.get(dk) || 0) + 1);
+            if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, rawDrv);
+            const d = getDrv(s, rawDrv);
+            if (d) {
+              d.needReturn++;
+              if (lastscan) d.returnScanDates.set(lastscan, (d.returnScanDates.get(lastscan) || 0) + 1);
+            }
+          }
+        }
+      }
+      if (pendPrev) for (const rec of pendPrev.records) {
+        const ascandate = drDate(rec.scandate);
+        if (!isAscanSel(ascandate)) continue;
+        const s = getSt(rec.station); if (!s) continue;
+        const pc = drTxt(rec.postcode), th = drTxt(rec.third);
+        const rawClient = drTxt(rec.client) || '(blank)';
+        const ck = drKey(rawClient);
+        if (!s.clientNames.has(ck)) s.clientNames.set(ck, rawClient);
+        const type = drTxt(rec.type) || '(blank)';
+        const lastscan = drDate(rec.lastscan);
+        const remark = drTxt(rec.remark);
+        const deadline = drDate(rec.deadline);
+        const rawDrv = drTxt(rec.driver);
+        const drvDisp = drValidDrv(rawDrv) ? rawDrv : '(blank)';
+        const code = (pc && th) ? (pc + '/' + th) : (pc || th || '');
+
+        s.pendingPrev.push({
+          waybill: drTxt(rec.waybill),
+          date: ascandate,
+          lastscan,
+          type,
+          client: s.clientNames.get(ck),
+          code,
+          driver: drvDisp,
+          remark,
+          deadline
+        });
+        s.typeCountsPrev.set(type, (s.typeCountsPrev.get(type) || 0) + 1);
+        if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) {
+          s.prevWillLostTotal++;
+        }
+        if (remark.toLowerCase() === 'da return') {
+          s.prevReturn1Total++;
+          if (drValidDrv(rawDrv)) {
+            const dk = drKey(rawDrv);
+            s.prevReturn1AllDrivers.set(dk, (s.prevReturn1AllDrivers.get(dk) || 0) + 1);
+            if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, rawDrv);
+          }
+        }
+        if (drValidDrv(rawDrv)) {
+          const d = getDrv(s, rawDrv);
+          if (d) {
+            d.prevPending++;
+            if (deadline && (deadline === sysYest || deadline === sysToday)) d.prevLost++;
+            else if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) d.prevWillLost++;
+            if (remark.toLowerCase() === 'da return') d.prevNeedReturn++;
+          }
         }
       }
       if (!thirdBySt.size && DR.sheets.ofd) {
@@ -5419,21 +5601,22 @@
         }
       }
 
-      // Global rule: Drivers appearing in Lost, DNR (finalBlame=Driver && Times=1), and Return1
-      const globalLostSet = new Set();
+      // Global rule: Drivers appearing in (Lost or WillLost), DNR (finalBlame=Driver && Times=1), and Return1
+      const globalLostOrWillLostSet = new Set();
       const globalReturn1Set = new Set();
       const globalDnrSet = new Set();
       for (const s of st.values()) {
-        for (const [k, cnt] of s.lostAllDrivers.entries()) { if (cnt >= 1) globalLostSet.add(k); }
+        for (const [k, cnt] of s.lostAllDrivers.entries()) { if (cnt >= 1) globalLostOrWillLostSet.add(k); }
+        for (const [k, cnt] of s.willLostAllDrivers.entries()) { if (cnt >= 1) globalLostOrWillLostSet.add(k); }
         for (const [k, cnt] of s.return1AllDrivers.entries()) { if (cnt >= 1) globalReturn1Set.add(k); }
         for (const [k, cnt] of s.dnrDrivers.entries()) { if (cnt >= 1) globalDnrSet.add(k); }
       }
       const triDriverSet = new Set();
-      for (const k of globalLostSet) {
+      for (const k of globalLostOrWillLostSet) {
         if (globalReturn1Set.has(k) && globalDnrSet.has(k)) triDriverSet.add(k);
       }
 
-      return { today, yest, yDnr, st, warnings, triDriverSet };
+      return { today, yest, yDnr, st, warnings, triDriverSet, hasPendingCompare };
     }
 
     function drBuildGroups(C) {
@@ -5485,22 +5668,56 @@
       return drCell(n, clsWhenPos || '');
     }
 
+    function drDiffHtml(cur, prev) {
+      const d = cur - prev;
+      if (d < 0) return `<span class="dr-diff-down">${d}</span>`;
+      if (d > 0) return `<span class="dr-diff-up">+${d}</span>`;
+      return `<span class="dr-diff-flat">\u2192</span>`;
+    }
+    function drDiffText(cur, prev) {
+      const d = cur - prev;
+      if (d < 0) return `${d}`;
+      if (d > 0) return `+${d}`;
+      return `\u2192`;
+    }
+
     // Matrix with totals shown at the top: header, TOTAL row, then each row
-    function drMatrixHtml(items, rowOf, colOf, labelOf, firstHdr, sortRows) {
-      if (!items.length) return '';
-      const cols = Array.from(new Set(items.map(colOf))).sort();
-      const rows = new Map(); const colTot = {}; let grand = 0;
-      cols.forEach(c => colTot[c] = 0);
+    function drMatrixHtml(items, rowOf, colOf, labelOf, firstHdr, sortRows, prevItems, colLabelOf, sortCols, opts) {
+      if (!items.length && (!prevItems || !prevItems.length)) return '';
+      const hasCmp = Array.isArray(prevItems);
+      const colSet = new Set(items.map(colOf));
+      if (hasCmp) prevItems.forEach(it => colSet.add(colOf(it)));
+      let cols = sortCols ? sortCols(Array.from(colSet)) : Array.from(colSet).sort();
+      const rows = new Map(); const colTot = {}; const prevColTot = {};
+      let grand = 0, prevGrand = 0;
+      cols.forEach(c => { colTot[c] = 0; prevColTot[c] = 0; });
       for (const it of items) {
         const rk = rowOf(it), ck = colOf(it);
-        if (!rows.has(rk)) rows.set(rk, { key: rk, cells: {}, total: 0 });
+        if (!rows.has(rk)) rows.set(rk, { key: rk, cells: {}, total: 0, prevTotal: 0 });
         const r = rows.get(rk); r.cells[ck] = (r.cells[ck] || 0) + 1; r.total++; colTot[ck]++; grand++;
       }
+      if (hasCmp) {
+        for (const it of prevItems) {
+          const rk = rowOf(it), ck = colOf(it);
+          if (!rows.has(rk)) rows.set(rk, { key: rk, cells: {}, total: 0, prevTotal: 0 });
+          const r = rows.get(rk); r.prevTotal++; prevColTot[ck]++; prevGrand++;
+        }
+      }
+      if (opts && opts.hideZeroCols) {
+        cols = cols.filter(c => colTot[c] > 0);
+      }
+      if (opts && opts.maxCols > 0 && cols.length > opts.maxCols) {
+        cols = cols.slice(0, opts.maxCols);
+      }
+      if (!cols.length) return '';
       const list = sortRows(Array.from(rows.values()));
-      let h = `<table class="dr-table"><thead><tr><th class="l">${firstHdr}</th><th class="dr-col-num">Total</th>${cols.map(c => `<th>${drEsc(c)}</th>`).join('')}</tr></thead><tbody>`;
-      h += `<tr class="dr-total"><td class="l">Total</td><td>${grand}</td>${cols.map(c => `<td>${colTot[c]}</td>`).join('')}</tr>`;
+      const colHdr = c => drEsc(colLabelOf ? colLabelOf(c) : c);
+      let h = `<table class="dr-table"><thead><tr><th class="l">${firstHdr}</th><th class="dr-col-num">Total</th>${cols.map(c => `<th>${colHdr(c)}</th>`).join('')}</tr></thead><tbody>`;
+      const totDiff = hasCmp ? drDiffHtml(grand, prevGrand) : '';
+      h += `<tr class="dr-total"><td class="l">Total</td><td>${grand}${totDiff}</td>${cols.map(c => `<td>${colTot[c]}${hasCmp ? drDiffHtml(colTot[c], prevColTot[c]) : ''}</td>`).join('')}</tr>`;
       for (const r of list) {
-        h += `<tr><td class="l">${drEsc(labelOf(r.key))}</td><td><b>${r.total}</b></td>${cols.map(c => r.cells[c] ? `<td>${r.cells[c]}</td>` : '<td class="dr-zero"></td>').join('')}</tr>`;
+        const rDiff = hasCmp ? drDiffHtml(r.total, r.prevTotal) : '';
+        h += `<tr><td class="l">${drEsc(labelOf(r.key))}</td><td><b>${r.total}</b>${rDiff}</td>${cols.map(c => r.cells[c] ? `<td>${r.cells[c]}</td>` : '<td class="dr-zero"></td>').join('')}</tr>`;
       }
       return h + '</tbody></table>';
     }
@@ -5522,34 +5739,44 @@
       return h + '</tbody></table>';
     }
 
-    function drFormatScanDetails(total, scanDatesMap) {
-      if (!total) return '';
-      const entries = Array.from(scanDatesMap.entries()).filter(e => e[1] > 0).sort((a, b) => a[0].localeCompare(b[0]));
-      if (!entries.length) return `Total:${total}`;
+    function drFormatScanDetails(total, scanDatesMap, diffHtml) {
+      if (!total && !diffHtml) return '';
+      const entries = Array.from(scanDatesMap.entries()).filter(e => e[1] > 0).sort((a, b) => b[0].localeCompare(a[0]));
+      const hdr = `Total:${total}${diffHtml || ''}`;
+      if (!entries.length) return hdr;
       const lines = [];
       for (let i = 0; i < entries.length; i += 2) {
         const pair = entries.slice(i, i + 2).map(e => `${drMD(e[0])} ${e[1]}`).join(', ');
         lines.push(pair);
       }
-      return `Total:${total}<br>` + lines.join('<br>');
+      return hdr + '<br>' + lines.join('<br>');
     }
 
-    function drFormatPods(pods) {
-      if (!pods || !pods.length) return '';
+    function drFormatDnrItems(dnrItems) {
+      if (!dnrItems || !dnrItems.length) return '';
+      const byPod = new Map();
+      for (const it of dnrItems) {
+        const key = it.pod || '';
+        if (!byPod.has(key)) byPod.set(key, []);
+        if (it.waybill) byPod.get(key).push(it.waybill);
+      }
       const lines = [];
-      const per = (pods.length === 3 && pods.join(', ').length <= 26) ? 3 : 2;
-      for (let i = 0; i < pods.length; i += per) {
-        lines.push(pods.slice(i, i + per).map(drEsc).join(', '));
+      for (const [pod, wbs] of byPod.entries()) {
+        const wbStr = wbs.map(drEsc).join(', ');
+        if (pod && wbStr) lines.push(`${drEsc(pod)}: ${wbStr}`);
+        else if (pod) lines.push(drEsc(pod));
+        else if (wbStr) lines.push(wbStr);
       }
       return lines.join('<br>');
     }
 
-    function drDriverHtml(s, daYCount, daTCount, triDriverSet) {
+    function drDriverHtml(s, daYCount, daTCount, triDriverSet, hasPendingCompare) {
       const list = Array.from(s.drivers.values()).sort((a, b) =>
-        (b.dnr + b.needReturn + b.returnResult + b.lost) - (a.dnr + a.needReturn + a.returnResult + a.lost) ||
+        (b.dnr + b.needReturn + b.lost + b.willLost) - (a.dnr + a.needReturn + a.lost + a.willLost) ||
         b.needReturn - a.needReturn ||
-        b.returnResult - a.returnResult ||
         b.lost - a.lost ||
+        b.willLost - a.willLost ||
+        b.pending - a.pending ||
         b.signed - a.signed ||
         a.name.localeCompare(b.name)
       );
@@ -5560,28 +5787,30 @@
         `<th class="l dr-col-2cm">\uD83D\uDE97 Driver (yest: ${yTxt}, today: ${tTxt})</th>` +
         `<th class="dr-col-num">Yest Signed</th>` +
         `<th class="dr-col-num">Attend</th>` +
-        `<th class="dr-col-num">Yest DNR</th>` +
-        `<th class="l dr-col-2cm">POD</th>` +
+        `<th class="l dr-col-dnr">DNR</th>` +
         `<th class="l dr-col-2cm">Need Return</th>` +
-        `<th class="l dr-col-2cm">Return Result</th>` +
+        `<th class="l dr-col-2cm">Lost</th>` +
         `<th class="l dr-col-2cm">WillLost</th>` +
         `</tr></thead><tbody>`;
       for (const d of list) {
         const noAtt = !d.hasT;
-        const returnDetails = drFormatScanDetails(d.needReturn, d.returnScanDates);
-        const returnResultDetails = drFormatScanDetails(d.returnResult, d.returnResultScanDates);
-        const willLostDetails = drFormatScanDetails(d.lost, d.scanDates);
-        const podStr = drFormatPods(d.pods);
+        const retDiff = (hasPendingCompare && (d.needReturn || d.prevNeedReturn)) ? drDiffHtml(d.needReturn, d.prevNeedReturn) : '';
+        const lostDiff = (hasPendingCompare && (d.lost || d.prevLost)) ? drDiffHtml(d.lost, d.prevLost) : '';
+        const willLostDiff = (hasPendingCompare && (d.willLost || d.prevWillLost)) ? drDiffHtml(d.willLost, d.prevWillLost) : '';
+        const pendDiff = (hasPendingCompare && (d.pending || d.prevPending)) ? `<br><small style="color:var(--text-muted)">P:${d.pending}${drDiffHtml(d.pending, d.prevPending)}</small>` : '';
+        const returnDetails = drFormatScanDetails(d.needReturn, d.returnScanDates, retDiff);
+        const lostDetails = drFormatScanDetails(d.lost, d.scanDates, lostDiff);
+        const willLostDetails = drFormatScanDetails(d.willLost, d.willLostScanDates, willLostDiff);
+        const dnrStr = drFormatDnrItems(d.dnrItems);
         const isTri = triDriverSet && triDriverSet.has(d.key);
-        const drvNameHtml = isTri ? `<span class="dr-bad-txt">${drEsc(d.name)}</span>` : drEsc(d.name);
+        const drvNameHtml = (isTri ? `<span class="dr-bad-txt">${drEsc(d.name)}</span>` : drEsc(d.name)) + pendDiff;
         h += '<tr>' +
           drCell(drvNameHtml, 'l dr-col-2cm wrap') +
           drZeroBlankCell(d.signed) +
           (noAtt ? drCell('No', 'dr-bad') : drCell('')) +
-          drZeroBlankCell(d.dnr, 'dr-bad') +
-          drCell(podStr, 'l dr-col-2cm wrap') +
+          drCell(dnrStr, 'l dr-col-dnr wrap') +
           drCell(returnDetails, 'dr-col-2cm wrap') +
-          drCell(returnResultDetails, 'dr-col-2cm wrap') +
+          drCell(lostDetails, 'dr-col-2cm wrap') +
           drCell(willLostDetails, 'dr-col-2cm wrap') + '</tr>';
       }
       return h + '</tbody></table>';
@@ -5601,7 +5830,18 @@
       return lines.join('<br>');
     }
 
+    function drHideRegionTodo() {
+      const todoPanel = document.getElementById('dr-region-todo-panel');
+      const layout = document.getElementById('dr-region-layout');
+      if (todoPanel) {
+        todoPanel.style.display = 'none';
+        todoPanel.innerHTML = '';
+      }
+      if (layout) layout.classList.remove('has-todo');
+    }
+
     function drRenderStation(s, g) {
+      drHideRegionTodo();
       const C = DR.computed;
       const frame = document.getElementById('dr-report-frame');
       frame.className = 'is-station';
@@ -5614,9 +5854,9 @@
 
       const spr = s.daY.size ? Math.floor(s.signed / s.daY.size) : null;
 
-      // 1. Yesterday summarize (Station column removed, Lost Details added)
-      h += '<div class="dr-sec"><div class="dr-sec-title">Yesterday Summarize</div><table class="dr-table"><thead><tr><th class="dr-col-num">Yest Signed</th><th class="dr-col-num">Yest DNR</th><th class="dr-col-num">Yest Lost</th><th class="dr-col-num">Today Lost</th><th class="l dr-col-2cm">Lost Details</th></tr></thead><tbody>';
-      h += '<tr>' + drZeroKeepCell(s.signed) + drZeroBlankCell(s.dnr, 'dr-bad') + drZeroBlankCell(s.lostY, 'dr-bad') + drZeroBlankCell(s.lostT, 'dr-warn') + drCell(drFormatStationLostDetails(s), 'l dr-col-2cm wrap') + '</tr>';
+      // 1. Yesterday summarize (Lost + WillLost)
+      h += '<div class="dr-sec"><div class="dr-sec-title">Yesterday Summarize</div><table class="dr-table"><thead><tr><th class="dr-col-num">Yest Signed</th><th class="dr-col-num">Yest DNR</th><th class="dr-col-num">Lost</th><th class="dr-col-num">WillLost</th><th class="l dr-col-2cm">Lost Details</th></tr></thead><tbody>';
+      h += '<tr>' + drZeroKeepCell(s.signed) + drZeroBlankCell(s.dnr, 'dr-bad') + drZeroBlankCell(s.lostTotal, 'dr-bad') + drZeroBlankCell(s.willLostTotal, 'dr-warn') + drCell(drFormatStationLostDetails(s), 'l dr-col-2cm wrap') + '</tr>';
       h += '</tbody></table></div>';
 
       // 2. Today capacity (Station column removed)
@@ -5625,20 +5865,39 @@
         drCell(s.pend3.map(drEsc).join(', '), 'wrap') + drZeroBlankCell(s.noAttend.length, 'dr-warn') + '</tr>';
       h += '</tbody></table></div>';
 
-      // 3. Backlog Matrices
-      const dateSort = rs => rs.sort((a, b) => (a.key === '' ? 1 : b.key === '' ? -1 : a.key.localeCompare(b.key)));
+      // 3. Backlog Matrices (2x2 compact side-by-side layout)
+      const dateDesc = (a, b) => (a === '' ? 1 : b === '' ? -1 : b.localeCompare(a));
+      const dateSort = rs => rs.sort((a, b) => dateDesc(a.key, b.key));
+      const dateColSort = cs => cs.sort(dateDesc);
       const totalSort = rs => rs.sort((a, b) => b.total - a.total || a.key.localeCompare(b.key));
-      const mScan = drMatrixHtml(s.pending, p => p.date, p => p.type, k => k ? drMD(k) : '-', 'AScanDate', dateSort);
-      const mClient = drMatrixHtml(s.pending, p => p.client, p => p.type, k => k, 'Client', totalSort);
+      const prevPend = C.hasPendingCompare ? s.pendingPrev : null;
+      const pendDiffHdr = C.hasPendingCompare ? ' ' + drDiffHtml(s.pending.length, s.pendingPrev.length) : '';
+      const mScan = drMatrixHtml(s.pending, p => p.date, p => p.type, k => k ? drMD(k) : '-', 'AScan', dateSort, prevPend, null, null, { hideZeroCols: true });
+      const mLastScan = drMatrixHtml(s.pending, p => p.lastscan, p => p.type, k => k ? drMD(k) : '-', 'LastScan', dateSort, prevPend, null, null, { hideZeroCols: true });
+      const mClient = drMatrixHtml(s.pending, p => p.client, p => p.type, k => k, 'Client', totalSort, prevPend, null, null, { hideZeroCols: true });
       const mDist = drDistHtml(s.pending);
-      if (mScan) h += `<div class="dr-sec"><div class="dr-sec-title sub">Backlog \u00B7 AScanDate \u00D7 Last scan type (${s.pending.length})</div>${mScan}</div>`;
-      if (mClient) h += `<div class="dr-sec"><div class="dr-sec-title sub">Backlog \u00B7 Client \u00D7 Last scan type</div>${mClient}</div>`;
-      if (mDist) h += `<div class="dr-sec"><div class="dr-sec-title sub">Backlog \u00B7 PLZ/3rd (parcels &gt; 20)</div>${mDist}</div>`;
+      const mDrvBacklog = drMatrixHtml(s.pending, p => p.driver, p => p.lastscan, k => k, 'Driver', totalSort, prevPend, k => k ? drMD(k) : '-', dateColSort, { maxCols: 8 });
+
+      if (mScan || mLastScan) {
+        h += '<div class="dr-backlog-grid">';
+        h += `<div class="dr-backlog-col dr-backlog-mini">${mScan ? `<div class="dr-sec-title sub">Backlog \u00B7 AScan \u00D7 Last scan type (${s.pending.length}${pendDiffHdr})</div>${mScan}` : ''}</div>`;
+        h += `<div class="dr-backlog-col dr-backlog-mini">${mLastScan ? `<div class="dr-sec-title sub">Backlog \u00B7 LastScan \u00D7 LastScanType</div>${mLastScan}` : ''}</div>`;
+        h += '</div>';
+      }
+      if (mClient || mDist || mDrvBacklog) {
+        h += '<div class="dr-backlog-grid is-row2">';
+        h += '<div class="dr-backlog-col dr-backlog-mini">' +
+          (mClient ? `<div class="dr-sec-title sub">Backlog \u00B7 Client \u00D7 Last scan type</div>${mClient}` : '') +
+          (mDist ? `<div style="margin-top:4px;"><div class="dr-sec-title sub">Backlog \u00B7 PLZ/3rd (parcels &gt; 20)</div>${mDist}</div>` : '') +
+          '</div>';
+        h += `<div class="dr-backlog-col dr-backlog-mini dr-backlog-drv">${mDrvBacklog ? `<div class="dr-sec-title sub">Backlog \u00B7 Driver \u00D7 LastScan</div>${mDrvBacklog}` : ''}</div>`;
+        h += '</div>';
+      }
 
       // 4. Drivers
       const daYCount = s.daY.size;
       const daTCount = s.daT.size;
-      const mDrv = drDriverHtml(s, daYCount, daTCount, C.triDriverSet);
+      const mDrv = drDriverHtml(s, daYCount, daTCount, C.triDriverSet, C.hasPendingCompare);
       if (mDrv) {
         h += `<div class="dr-sec"><div class="dr-sec-title sub">\uD83D\uDE97 Driver (yest: ${daYCount}, today: ${daTCount})</div>${mDrv}</div>`;
       }
@@ -5661,12 +5920,12 @@
       }
       stPillsHtml += '</div>';
 
-      // Row 2: Date controls & Buttons (View buttons removed)
+      // Row 2: signedDate controls & Buttons
       let ctrlRowHtml = '<div class="dr-sub-row" style="justify-content:space-between;">' +
         '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
-          '<span class="dr-sub-label">Date:</span>' +
+          '<span class="dr-sub-label">signedDate:</span>' +
           `<select id="dr-toolbar-date" style="padding:0.25rem 0.45rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.78rem;" onchange="drOnDateChange(this.value)">` +
-            (DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${d} (${drMD(d)})</option>`).join('') : `<option value="${C.today}">${C.today}</option>`) +
+            (DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${drMD(d)}</option>`).join('') : `<option value="${C.today}">${drMD(C.today)}</option>`) +
           `</select>` +
           '<span class="dr-date-pills" id="dr-toolbar-pills"></span>' +
         '</div>' +
@@ -5678,11 +5937,12 @@
         '</div>' +
       '</div>';
 
-      subNav.innerHTML = stPillsHtml + ctrlRowHtml;
+      subNav.innerHTML = stPillsHtml + ctrlRowHtml + drAscanPillsHtml();
       drRenderToolbarPills();
 
       const s = C.st.get(DR.activeStation);
       if (!s) {
+        drHideRegionTodo();
         document.getElementById('dr-report-frame').innerHTML = '<div class="dr-empty">Select a station</div>';
         return;
       }
@@ -5701,31 +5961,35 @@
       }
       return allStKeys.map(k => C.st.get(k) || {
         key: k, name: k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
-        lostTotal: 0, lostByDriver: 0, lostByHub: 0, return1Total: 0, return2Total: 0,
-        pend3: [], noAttend: [], drivers: new Map(), pending: [], clientNames: new Map(),
-        lostAllDrivers: new Map(), return1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
+        lostTotal: 0, lostByDriver: 0, lostByHub: 0,
+        willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0,
+        return1Total: 0, prevReturn1Total: 0, return2Total: 0,
+        pend3: [], noAttend: [], drivers: new Map(), pending: [], pendingPrev: [],
+        typeCountsMain: new Map(), typeCountsPrev: new Map(), clientNames: new Map(),
+        lostAllDrivers: new Map(), willLostAllDrivers: new Map(),
+        return1AllDrivers: new Map(), prevReturn1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
       });
     }
 
-    function drRegionDaLines(mapObj, s, triDriverSet, blueExcludeMap, asHtml) {
+    function drRegionDaLines(mapObj, s, triDriverSet, prevMap, asHtml) {
       return Array.from(mapObj.entries())
         .filter(([, cnt]) => cnt >= 1)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([k, cnt]) => {
           const name = s.driverDisplayNames.get(k) || k;
-          if (!asHtml) return `${name}: ${cnt}`;
+          const diffStr = prevMap
+            ? ' ' + (asHtml ? drDiffHtml(cnt, prevMap.get(k) || 0) : drDiffText(cnt, prevMap.get(k) || 0))
+            : '';
+          if (!asHtml) return `${name}: ${cnt}${diffStr}`;
           const escName = drEsc(name);
           if (triDriverSet && triDriverSet.has(k)) {
-            return `<span class="dr-bad-txt">${escName}</span>: ${cnt}`;
+            return `<span class="dr-bad-txt">${escName}</span>: ${cnt}${diffStr}`;
           }
-          if (blueExcludeMap && !blueExcludeMap.has(k)) {
-            return `<span class="dr-blue-txt">${escName}</span>: ${cnt}`;
-          }
-          return `${escName}: ${cnt}`;
+          return `${escName}: ${cnt}${diffStr}`;
         });
     }
 
-    function drRegionCellText(s, kind, triDriverSet, asHtml) {
+    function drRegionCellText(s, kind, triDriverSet, asHtml, hasCmp) {
       const sep = asHtml ? '<br>' : '\n';
       if (kind === 'dnr') {
         if (!s.dnrDriverTotal) return '';
@@ -5735,15 +5999,79 @@
         if (!s.lostTotal) return '';
         return [`Total:${s.lostTotal}`, `hub lost:${s.lostByHub}`, ...drRegionDaLines(s.lostAllDrivers, s, triDriverSet, null, asHtml)].join(sep);
       }
+      if (kind === 'willlost') {
+        if (!s.willLostTotal) return '';
+        return [`Total:${s.willLostTotal}`, `hub lost:${s.willLostByHub}`, ...drRegionDaLines(s.willLostAllDrivers, s, triDriverSet, null, asHtml)].join(sep);
+      }
       if (kind === 'return1') {
         if (!s.return1Total) return '';
-        return [`Total:${s.return1Total}`, ...drRegionDaLines(s.return1AllDrivers, s, triDriverSet, s.return2AllDrivers, asHtml)].join(sep);
-      }
-      if (kind === 'return2') {
-        if (!s.return2Total) return '';
-        return [`Total:${s.return2Total}`, ...drRegionDaLines(s.return2AllDrivers, s, triDriverSet, null, asHtml)].join(sep);
+        const totDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.return1Total, s.prevReturn1Total) : drDiffText(s.return1Total, s.prevReturn1Total)) : '';
+        const prevMap = hasCmp ? s.prevReturn1AllDrivers : null;
+        return [`Total:${s.return1Total}${totDiff}`, ...drRegionDaLines(s.return1AllDrivers, s, triDriverSet, prevMap, asHtml)].join(sep);
       }
       return '';
+    }
+
+    function drRegionResultLines(mainMap, prevMap, asHtml, maxTypeMap) {
+      const types = new Set([...mainMap.keys(), ...prevMap.keys()]);
+      if (!types.size) return '';
+      const sorted = Array.from(types).sort((a, b) => (mainMap.get(b) || 0) - (mainMap.get(a) || 0) || a.localeCompare(b));
+      const lines = sorted.map(t => {
+        const c2 = mainMap.get(t) || 0;
+        const c1 = prevMap.get(t) || 0;
+        if (!asHtml) return `${t} ${c2} ${drDiffText(c2, c1)}`;
+        const isMax = maxTypeMap && c2 > 0 && c2 === maxTypeMap.get(t);
+        const labelHtml = isMax ? `<span class="dr-bad-txt">${drEsc(t)} ${c2}</span>` : `${drEsc(t)} ${c2}`;
+        return `${labelHtml} ${drDiffHtml(c2, c1)}`;
+      });
+      return lines.join(asHtml ? '<br>' : '\n');
+    }
+
+    function drGetRegionTodoRows(sts, hasCmp) {
+      const rows = [];
+      for (const s of sts) {
+        const issues = [];
+        const pendCnt = s.pending.length;
+        const dnrCnt = s.dnrDriverTotal;
+        const willCnt = s.willLostTotal;
+        const retCnt = s.return1Total;
+        let severity = 0;
+
+        if (pendCnt > 100) {
+          const diffH = hasCmp ? ' ' + drDiffHtml(pendCnt, s.pendingPrev.length) : '';
+          const diffT = hasCmp ? ' ' + drDiffText(pendCnt, s.pendingPrev.length) : '';
+          issues.push({ html: `Pending ${pendCnt}${diffH}`, text: `Pending ${pendCnt}${diffT}` });
+          severity += pendCnt / 100;
+        }
+        if (dnrCnt > 5) {
+          issues.push({ html: `DNR DA ${dnrCnt}`, text: `DNR DA ${dnrCnt}` });
+          severity += dnrCnt / 5;
+        }
+        if (willCnt > 15) {
+          const diffH = hasCmp ? ' ' + drDiffHtml(willCnt, s.prevWillLostTotal || 0) : '';
+          const diffT = hasCmp ? ' ' + drDiffText(willCnt, s.prevWillLostTotal || 0) : '';
+          issues.push({ html: `WillLost ${willCnt}${diffH}`, text: `WillLost ${willCnt}${diffT}` });
+          severity += willCnt / 15;
+        }
+        if (retCnt > 25) {
+          const diffH = hasCmp ? ' ' + drDiffHtml(retCnt, s.prevReturn1Total) : '';
+          const diffT = hasCmp ? ' ' + drDiffText(retCnt, s.prevReturn1Total) : '';
+          issues.push({ html: `Return ${retCnt}${diffH}`, text: `Return ${retCnt}${diffT}` });
+          severity += retCnt / 25;
+        }
+
+        if (issues.length) {
+          rows.push({
+            name: s.name,
+            count: issues.length,
+            severity,
+            html: issues.map(i => i.html).join('<br>'),
+            text: issues.map(i => i.text).join('\n')
+          });
+        }
+      }
+      rows.sort((a, b) => b.count - a.count || b.severity - a.severity);
+      return rows;
     }
 
     function drRenderRegion(C) {
@@ -5755,21 +6083,21 @@
         subNav.innerHTML = `
           <div class="dr-sub-row" style="justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-              <span class="dr-sub-label">Date:</span>
+              <span class="dr-sub-label">signedDate:</span>
               <select id="dr-toolbar-date" style="padding:0.25rem 0.45rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.78rem;" onchange="drOnDateChange(this.value)">
-                ${DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${d} (${drMD(d)})</option>`).join('') : `<option value="${C.today}">${C.today}</option>`}
+                ${DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${drMD(d)}</option>`).join('') : `<option value="${C.today}">${drMD(C.today)}</option>`}
               </select>
               <span class="dr-date-pills" id="dr-toolbar-pills"></span>
             </div>
             <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
               <button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="document.getElementById('dr-file-input').click()">\uD83D\uDCCB Import To-Do List</button>
-              <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportImage()">\u2B07 Export Image</button>
+              <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportImage()">\u2B07 Export Region Report</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportRegionExcel()">\uD83D\uDCE5 Export Region Excel</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubReport()">\uD83D\uDDBC Batch Export Hub Report</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubExcel()">\uD83D\uDCCA Batch Export Hub Excel</button>
             </div>
           </div>
-        `;
+        ` + drAscanPillsHtml();
         drRenderToolbarPills();
       }
 
@@ -5782,6 +6110,27 @@
       let h = `<div class="dr-banner"><span>${drMD(C.today)} Region Report</span><small>Update Time: ${drEsc(DR.updateTime || '--:--')}</small></div>`;
       h += `<div class="dr-dates"><span>All Stations \u00B7 Region Overview</span><span>Today ${drDayLabel(C.today)} \u00B7 Yest ${drDayLabel(C.yest)}${C.yDnr !== C.yest ? ' \u00B7 DNR yest ' + drDayLabel(C.yDnr) : ''}</span></div>`;
 
+      const hasCmp = Boolean(C.hasPendingCompare);
+      const todoRows = drGetRegionTodoRows(sts, hasCmp);
+      const todoPanel = document.getElementById('dr-region-todo-panel');
+      const layout = document.getElementById('dr-region-layout');
+      if (todoPanel && layout) {
+        if (todoRows.length) {
+          todoPanel.innerHTML =
+            '<div class="dr-banner"><span>To-Do List</span></div>' +
+            '<div class="dr-sec"><table class="dr-table"><thead><tr>' +
+            '<th class="l dr-todo-col-st">Station</th>' +
+            '<th class="l dr-todo-col-issue">Top issue</th>' +
+            '</tr></thead><tbody>' +
+            todoRows.map(r => `<tr>${drCell(drEsc(r.name), 'l dr-todo-col-st')}${drCell(r.html, 'l dr-todo-col-issue')}</tr>`).join('') +
+            '</tbody></table></div>';
+          todoPanel.style.display = '';
+          layout.classList.add('has-todo');
+        } else {
+          drHideRegionTodo();
+        }
+      }
+
       h += '<div class="dr-sec"><table class="dr-table"><thead><tr>' +
         '<th class="l dr-col-st">Station</th>' +
         '<th class="dr-col-num">Yest Signed</th>' +
@@ -5789,41 +6138,58 @@
         '<th class="dr-col-num">Yest DA</th>' +
         '<th class="dr-col-num">Today DA</th>' +
         '<th class="dr-col-num">Pending</th>' +
+        (hasCmp ? '<th class="l dr-col-result">Result</th>' : '') +
         '<th class="l dr-col-da">DNR DA</th>' +
-        '<th class="l dr-col-da">WillLost Details</th>' +
-        '<th class="l dr-col-da">Return DA</th>' +
-        '<th class="l dr-col-da">Return Result</th>' +
-        '<th class="l dr-col-remark">Remark</th>' +
+        '<th class="l dr-col-da">Lost</th>' +
+        '<th class="l dr-col-da">WillLost</th>' +
+        '<th class="l dr-col-da">Return</th>' +
         '</tr></thead><tbody>';
 
+      const totTypeMain = new Map(), totTypePrev = new Map(), maxTypeMain = new Map();
+      if (hasCmp) {
+        for (const s of sts) {
+          for (const [k, v] of s.typeCountsMain.entries()) {
+            totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
+            if (v > (maxTypeMain.get(k) || 0)) maxTypeMain.set(k, v);
+          }
+          for (const [k, v] of s.typeCountsPrev.entries()) {
+            totTypePrev.set(k, (totTypePrev.get(k) || 0) + v);
+          }
+        }
+      }
+      let rowsHtml = '';
       for (const s of sts) {
         const dnrDaHtml = drRegionCellText(s, 'dnr', triDriverSet, true);
-        const willLostHtml = drRegionCellText(s, 'lost', triDriverSet, true);
-        const returnDaHtml = drRegionCellText(s, 'return1', triDriverSet, true);
-        const returnResHtml = drRegionCellText(s, 'return2', triDriverSet, true);
-        const remarkVal = drGetRemark(C.today, s.key);
+        const lostHtml = drRegionCellText(s, 'lost', triDriverSet, true);
+        const willLostHtml = drRegionCellText(s, 'willlost', triDriverSet, true);
+        const returnHtml = drRegionCellText(s, 'return1', triDriverSet, true, hasCmp);
+        const resultHtml = hasCmp ? drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, true, maxTypeMain) : '';
 
-        h += '<tr>' +
+        rowsHtml += '<tr>' +
           drCell(drEsc(s.name), 'l dr-col-st') +
           drZeroKeepCell(s.signed) +
           drZeroKeepCell(spr(s)) +
           drZeroKeepCell(s.daY.size) +
           drZeroKeepCell(s.daT.size) +
           drZeroKeepCell(s.pending.length) +
+          (hasCmp ? drCell(resultHtml, 'l dr-col-result') : '') +
           drCell(dnrDaHtml, 'l dr-col-da') +
+          drCell(lostHtml, 'l dr-col-da') +
           drCell(willLostHtml, 'l dr-col-da') +
-          drCell(returnDaHtml, 'l dr-col-da') +
-          drCell(returnResHtml, 'l dr-col-da') +
-          `<td class="l dr-col-remark"><div class="dr-remark-edit" contenteditable="true" data-st="${drEsc(s.key)}" data-placeholder="Remark..." oninput="drOnRemarkInput(this)">${drEsc(remarkVal)}</div></td>` +
+          drCell(returnHtml, 'l dr-col-da') +
           '</tr>';
       }
 
-      // Total row
+      // Total row (first row under header)
       const totDnr = sum(s => s.dnrDriverTotal);
       const totLost = sum(s => s.lostTotal);
       const totHubLost = sum(s => s.lostByHub);
+      const totWillLost = sum(s => s.willLostTotal);
+      const totHubWillLost = sum(s => s.willLostByHub);
       const totRet1 = sum(s => s.return1Total);
-      const totRet2 = sum(s => s.return2Total);
+      const totPrevRet1 = sum(s => s.prevReturn1Total);
+      const totRet1Diff = hasCmp ? ' ' + drDiffHtml(totRet1, totPrevRet1) : '';
+      const totResultHtml = hasCmp ? drRegionResultLines(totTypeMain, totTypePrev, true) : '';
       h += `<tr class="dr-total">` +
         `<td class="l dr-col-st">Total</td>` +
         `<td class="dr-col-num">${sum(s => s.signed)}</td>` +
@@ -5831,12 +6197,12 @@
         `<td class="dr-col-num">${totDaY}</td>` +
         `<td class="dr-col-num">${sum(s => s.daT.size)}</td>` +
         `<td class="dr-col-num">${sum(s => s.pending.length)}</td>` +
+        (hasCmp ? `<td class="l dr-col-result">${totResultHtml}</td>` : '') +
         `<td class="l dr-col-da">${totDnr ? 'Total:' + totDnr : ''}</td>` +
         `<td class="l dr-col-da">${totLost ? 'Total:' + totLost + '<br>hub lost:' + totHubLost : ''}</td>` +
-        `<td class="l dr-col-da">${totRet1 ? 'Total:' + totRet1 : ''}</td>` +
-        `<td class="l dr-col-da">${totRet2 ? 'Total:' + totRet2 : ''}</td>` +
-        `<td class="l dr-col-remark"></td>` +
-        `</tr>`;
+        `<td class="l dr-col-da">${totWillLost ? 'Total:' + totWillLost + '<br>hub lost:' + totHubWillLost : ''}</td>` +
+        `<td class="l dr-col-da">${(totRet1 || (hasCmp && totPrevRet1)) ? 'Total:' + totRet1 + totRet1Diff : ''}</td>` +
+        `</tr>` + rowsHtml;
 
       h += '</tbody></table></div>';
       h += '<div class="dr-foot">Generated by STR Performance Tool</div>';
@@ -5852,54 +6218,71 @@
       const totDaY = sum(s => s.daY.size);
       const triDriverSet = C.triDriverSet || new Set();
 
+      const hasCmp = Boolean(C.hasPendingCompare);
       const header = [
         'Station', 'Yest Signed', 'Yest SPR', 'Yest DA', 'Today DA', 'Pending',
-        'DNR DA', 'WillLost Details', 'Return DA', 'Return Result', 'Remark'
+        ...(hasCmp ? ['Result'] : []),
+        'DNR DA', 'Lost', 'WillLost', 'Return'
       ];
-      const aoa = [header];
+      const stRows = [];
+      const totTypeMain = new Map(), totTypePrev = new Map();
 
       for (const s of sts) {
-        aoa.push([
+        if (hasCmp) {
+          for (const [k, v] of s.typeCountsMain.entries()) totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
+          for (const [k, v] of s.typeCountsPrev.entries()) totTypePrev.set(k, (totTypePrev.get(k) || 0) + v);
+        }
+        stRows.push([
           s.name,
           s.signed,
           spr(s),
           s.daY.size,
           s.daT.size,
           s.pending.length,
+          ...(hasCmp ? [drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, false)] : []),
           drRegionCellText(s, 'dnr', triDriverSet, false),
           drRegionCellText(s, 'lost', triDriverSet, false),
-          drRegionCellText(s, 'return1', triDriverSet, false),
-          drRegionCellText(s, 'return2', triDriverSet, false),
-          drGetRemark(C.today, s.key)
+          drRegionCellText(s, 'willlost', triDriverSet, false),
+          drRegionCellText(s, 'return1', triDriverSet, false, hasCmp)
         ]);
       }
 
       const totDnr = sum(s => s.dnrDriverTotal);
       const totLost = sum(s => s.lostTotal);
       const totHubLost = sum(s => s.lostByHub);
+      const totWillLost = sum(s => s.willLostTotal);
+      const totHubWillLost = sum(s => s.willLostByHub);
       const totRet1 = sum(s => s.return1Total);
-      const totRet2 = sum(s => s.return2Total);
-      aoa.push([
+      const totPrevRet1 = sum(s => s.prevReturn1Total);
+      const totRet1Diff = hasCmp ? ' ' + drDiffText(totRet1, totPrevRet1) : '';
+      const totalRow = [
         'Total',
         sum(s => s.signed),
         totDaY ? Math.floor(sum(s => s.signed) / totDaY) : 0,
         totDaY,
         sum(s => s.daT.size),
         sum(s => s.pending.length),
+        ...(hasCmp ? [drRegionResultLines(totTypeMain, totTypePrev, false)] : []),
         totDnr ? `Total:${totDnr}` : '',
         totLost ? `Total:${totLost}\nhub lost:${totHubLost}` : '',
-        totRet1 ? `Total:${totRet1}` : '',
-        totRet2 ? `Total:${totRet2}` : '',
-        ''
-      ]);
+        totWillLost ? `Total:${totWillLost}\nhub lost:${totHubWillLost}` : '',
+        (totRet1 || (hasCmp && totPrevRet1)) ? `Total:${totRet1}${totRet1Diff}` : ''
+      ];
+      const aoa = [header, totalRow, ...stRows];
 
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = [
         { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        { wch: 24 }, { wch: 26 }, { wch: 24 }, { wch: 24 }, { wch: 28 }
+        ...(hasCmp ? [{ wch: 38 }] : []),
+        { wch: 36 }, { wch: 38 }, { wch: 38 }, { wch: 36 }
       ];
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Region');
+      const todoRows = drGetRegionTodoRows(sts, hasCmp);
+      const todoAoa = [['Station', 'Top issue'], ...todoRows.map(r => [r.name, r.text])];
+      const wsTodo = XLSX.utils.aoa_to_sheet(todoAoa);
+      wsTodo['!cols'] = [{ wch: 14 }, { wch: 28 }];
+      XLSX.utils.book_append_sheet(wb, wsTodo, 'To-Do List');
       const mmdd = drMD(C.today).replace('/', '-');
       XLSX.writeFile(wb, `${mmdd}_Region.xlsx`);
       showToast(`Exported ${mmdd}_Region.xlsx`);
@@ -5911,7 +6294,7 @@
       const sel = document.getElementById('dr-today-select');
       const dates = DR.daDates.length ? DR.daDates : (DR.today ? [DR.today] : []);
       if (sel) {
-        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${d} (${drMD(d)})</option>`).join('');
+        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${drMD(d)}</option>`).join('');
       }
       if (el) {
         el.innerHTML = dates.map(d =>
@@ -5926,12 +6309,71 @@
       const container = document.getElementById('dr-toolbar-pills');
       const dates = DR.daDates.length ? DR.daDates : (DR.today ? [DR.today] : []);
       if (sel) {
-        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${d} (${drMD(d)})</option>`).join('');
+        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${drMD(d)}</option>`).join('');
       }
       if (container) {
         container.innerHTML = dates.map(d =>
           `<button class="dr-date-pill ${d === DR.today ? 'active' : ''}" onclick="drOnDateChange('${d}')">${drMD(d)}</button>`
         ).join('');
+      }
+    }
+
+    function drAscanPillsHtml() {
+      if (!DR.ascanDates || !DR.ascanDates.length) return '';
+      const isAll = DR.selectedAscanDates === null;
+      const selList = isAll ? [] : DR.ascanDates.filter(d => DR.selectedAscanDates.has(d));
+      const summary = isAll
+        ? `All (${DR.ascanDates.length})`
+        : (selList.length <= 3 ? selList.map(drMD).join(', ') : `${selList.length} selected`);
+      let h = '<div class="dr-sub-row"><span class="dr-sub-label">AscanDate:</span>' +
+        '<div class="dr-ascan-dd" onclick="event.stopPropagation()">' +
+        `<button type="button" class="dr-ascan-btn" onclick="drToggleAscanMenu(event)">${drEsc(summary)} \u25BE</button>` +
+        `<div class="dr-ascan-menu ${DR.ascanMenuOpen ? 'open' : ''}" id="dr-ascan-menu">` +
+        `<label class="dr-ascan-opt"><input type="checkbox" ${isAll ? 'checked' : ''} onchange="drToggleAscanDate('ALL')"> <b>All</b></label>`;
+      for (const d of DR.ascanDates) {
+        const act = isAll || DR.selectedAscanDates.has(d);
+        h += `<label class="dr-ascan-opt"><input type="checkbox" ${act ? 'checked' : ''} onchange="drToggleAscanDate('${d}')"> ${drMD(d)}</label>`;
+      }
+      h += '</div></div></div>';
+      return h;
+    }
+
+    function drToggleAscanMenu(e) {
+      if (e) e.stopPropagation();
+      DR.ascanMenuOpen = !DR.ascanMenuOpen;
+      const m = document.getElementById('dr-ascan-menu');
+      if (m) m.classList.toggle('open', DR.ascanMenuOpen);
+    }
+
+    document.addEventListener('click', () => {
+      if (DR.ascanMenuOpen) {
+        DR.ascanMenuOpen = false;
+        const m = document.getElementById('dr-ascan-menu');
+        if (m) m.classList.remove('open');
+      }
+    });
+
+    function drToggleAscanDate(dt) {
+      if (dt === 'ALL') {
+        DR.selectedAscanDates = null;
+      } else {
+        if (DR.selectedAscanDates === null) {
+          DR.selectedAscanDates = new Set([dt]);
+        } else {
+          if (DR.selectedAscanDates.has(dt)) DR.selectedAscanDates.delete(dt);
+          else DR.selectedAscanDates.add(dt);
+          if (DR.selectedAscanDates.size === 0 || DR.selectedAscanDates.size >= DR.ascanDates.length) {
+            DR.selectedAscanDates = null;
+          }
+        }
+      }
+      DR.computed = drCompute();
+      DR.warnings = DR.computed.warnings;
+      DR.groups = drBuildGroups(DR.computed);
+      if (DR.active === 'region') drRenderRegion(DR.computed);
+      else if (DR.active.startsWith('g')) {
+        const g = DR.groups[+DR.active.slice(1)];
+        if (g) drRenderStationView(g);
       }
     }
 
@@ -6007,7 +6449,9 @@
         return;
       }
       let h = `<div>Files: ${DR.files.map(drEsc).join(', ')} \u00B7 Update Time: <b>${drEsc(DR.updateTime)}</b></div>`;
-      for (const k of ['da', 'lost', 'return1', 'return2', 'dnr', 'pending', 'group']) {
+      const hasCmpSheets = Boolean(DR.sheets.pending1 || DR.sheets.pending2);
+      const statusKinds = hasCmpSheets ? ['da', 'dnr', 'pending1', 'pending2', 'group'] : ['da', 'dnr', 'pending', 'group'];
+      for (const k of statusKinds) {
         const sh = DR.sheets[k];
         h += sh ? `<div class="ok">\u2713 ${DR_KIND_LABEL[k]} \u2190 "${drEsc(sh.name)}" (${Math.max(0, sh.rows.length - 1)} rows)</div>`
                 : `<div class="bad">\u2717 ${DR_KIND_LABEL[k]} sheet not found</div>`;
@@ -6021,9 +6465,17 @@
     }
 
     function drRecompute() {
-      if (!DR.files.length) { DR.computed = null; DR.groups = []; DR.warnings = []; DR.daDates = []; return; }
+      if (!DR.files.length) { DR.computed = null; DR.groups = []; DR.warnings = []; DR.daDates = []; DR.ascanDates = []; DR.selectedAscanDates = null; return; }
       if (!DR.today) DR.today = drLocalToday();
       DR.daDates = drGetDaDates();
+      DR.ascanDates = drGetAscanDates();
+      if (DR.selectedAscanDates) {
+        const valid = new Set(DR.ascanDates);
+        for (const d of Array.from(DR.selectedAscanDates)) {
+          if (!valid.has(d)) DR.selectedAscanDates.delete(d);
+        }
+        if (!DR.selectedAscanDates.size) DR.selectedAscanDates = null;
+      }
       DR.computed = drCompute();
       DR.warnings = DR.computed.warnings;
       DR.groups = drBuildGroups(DR.computed);
@@ -6042,7 +6494,7 @@
     }
 
     function drClearData() {
-      DR.sheets = {}; DR.files = []; DR.groups = []; DR.computed = null; DR.warnings = []; DR.daDates = []; DR.updateTime = '';
+      DR.sheets = {}; DR.files = []; DR.groups = []; DR.computed = null; DR.warnings = []; DR.daDates = []; DR.ascanDates = []; DR.selectedAscanDates = null; DR.updateTime = '';
       DR.activeStation = '';
       document.getElementById('dr-file-input').value = '';
       drRenderStatus();
@@ -6110,7 +6562,29 @@
         scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: document.body.getAttribute('data-theme') === 'dark' ? '#0b1220' : '#ffffff'
+        scrollX: 0,
+        scrollY: 0,
+        backgroundColor: document.body.getAttribute('data-theme') === 'dark' ? '#0b1220' : '#ffffff',
+        onclone: clonedDoc => {
+          const clonedFrame = clonedDoc.getElementById('dr-report-frame');
+          if (!clonedFrame || !clonedFrame.classList.contains('is-region')) return;
+          clonedFrame.querySelectorAll('.dr-region-todo').forEach(el => el.remove());
+          clonedFrame.scrollLeft = 0;
+          clonedFrame.scrollTop = 0;
+          clonedFrame.style.maxWidth = 'none';
+          clonedFrame.style.width = 'max-content';
+          clonedFrame.style.minWidth = `${Math.max(frame.offsetWidth, frame.scrollWidth)}px`;
+          clonedFrame.style.overflow = 'visible';
+          clonedFrame.querySelectorAll('.dr-sec').forEach(sec => {
+            sec.scrollLeft = 0;
+            sec.scrollTop = 0;
+            sec.style.maxHeight = 'none';
+            sec.style.overflow = 'visible';
+          });
+          clonedFrame.querySelectorAll('.dr-table thead th, .dr-table th:first-child, .dr-table td:first-child').forEach(el => {
+            el.style.position = 'static';
+          });
+        }
       }).then(canvas => {
         const link = document.createElement('a');
         link.download = `${filename}.png`;
@@ -6242,7 +6716,7 @@
 
       isDrBatchExporting = true;
       const mmdd = drMD(C.today).replace('/', '-');
-      const sheetOrder = ['da', 'lost', 'return1', 'return2', 'dnr', 'pending', 'ofd', 'group'];
+      const sheetOrder = ['da', 'dnr', 'pending', 'pending1', 'pending2', 'lost', 'return1', 'return2', 'ofd', 'group'];
 
       try {
         for (let i = 0; i < list.length; i++) {
