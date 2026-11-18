@@ -757,7 +757,7 @@
                             <ul>
                                 <li><strong>单 Sheet 极速加载</strong>：中文表含 3 个 Sheet，解析时直接读取 Sheet 2 <code>"组件1"</code> 并删除其余 2 个 Sheet，大幅提高计算效率。</li>
                                 <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>，且 <code>派件网点名称</code> 包含 <code>"BAW"</code>，且 <code>最新扫描机构名称</code> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）。</li>
-                                <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件/20&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>Warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>Parcel Pickup</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间 &rarr; Latest scan time / last scan date</code>、<code>订单来源 &rarr; Order source name (client)</code>、<code>最新问题件原因 &rarr; Latest problem reason</code>、<code>派件业务员编号</code> &amp; <code>接收业务员编号</code> &rarr; 用于计算 Pending <code>DriverID</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
+                                <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件/20&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>Warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>Parcel Pickup</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间</code>（若<code>接收时间</code>不为空，取<code>最新扫描时间</code>与<code>接收时间</code>中较新者；若<code>接收时间</code>为空，取<code>最新扫描时间</code>）<code> &rarr; Latest scan time / last scan date</code>、<code>订单来源 &rarr; Order source name (client)</code>、<code>最新问题件原因 &rarr; Latest problem reason</code>、<code>派件业务员编号</code> &amp; <code>接收业务员编号</code> &rarr; 用于计算 Pending <code>DriverID</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
                                 <li><strong>参与计算范围</strong>：支持单独上传或与英文版合并计算，参与 <code>export Pending</code>、<code>export to get driver</code>、<code>export Final Pending</code> 及 <code>export PUDO</code> 的计算。</li>
                             </ul>
                         </li>
@@ -4614,6 +4614,14 @@
             "Receive Driver ID"
         ];
 
+        function resolveZhLatestScanTime(lastScanRaw, receiveRaw) {
+            const receiveDate = getJSDate(receiveRaw);
+            if (!receiveDate) return lastScanRaw;
+            const lastScanDate = getJSDate(lastScanRaw);
+            if (!lastScanDate) return receiveRaw;
+            return receiveDate.getTime() > lastScanDate.getTime() ? receiveRaw : lastScanRaw;
+        }
+
         // Read Chinese 48h Shipping Excel file: only parse Sheet 2 ("组件1") without formatting/styles, then stream-filter directly from sheet cells
         function readZhShippingExcelFile(file) {
             return new Promise((resolve, reject) => {
@@ -4707,6 +4715,7 @@
             const iPoint = idx("最新扫描机构名称");
             const iType = idx("最新扫描类型");
             const iLastTime = lastIdx("最新扫描时间");
+            const iReceiveTime = idx("接收时间");
             const iOrderSource = idx("订单来源");
             const iProblemReason = idx("最新问题件原因");
             const iDispatchDriverId = idx("派件业务员编号");
@@ -4725,6 +4734,7 @@
             const colPoint = colLetters[iPoint];
             const colType = colLetters[iType];
             const colLastTime = colLetters[iLastTime];
+            const colReceiveTime = iReceiveTime !== -1 ? colLetters[iReceiveTime] : null;
             const colOrderSource = iOrderSource !== -1 ? colLetters[iOrderSource] : null;
             const colProblemReason = iProblemReason !== -1 ? colLetters[iProblemReason] : null;
             const colDispatchDriverId = iDispatchDriverId !== -1 ? colLetters[iDispatchDriverId] : null;
@@ -4776,6 +4786,11 @@
                 const dispatchDriverId = String(getCellVal(colDispatchDriverId, rowNum)).trim();
                 const receiveDriverId = String(getCellVal(colReceiveDriverId, rowNum)).trim();
 
+                const resolvedLastTime = resolveZhLatestScanTime(
+                    getCellVal(colLastTime, rowNum),
+                    getCellVal(colReceiveTime, rowNum)
+                );
+
                 const nr = [
                     waybill,
                     getCellVal(colAscan, rowNum),
@@ -4783,7 +4798,7 @@
                     zip.slice(-3),
                     pointVal,
                     mappedType,
-                    getCellVal(colLastTime, rowNum),
+                    resolvedLastTime,
                     "Undelivered",
                     retRaw === "" ? "未退件" : retRaw,
                     orderSource,
