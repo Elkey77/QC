@@ -955,6 +955,106 @@
       word-break: break-word;
     }
 
+    /* --- ReDeliver Tab Styling --- */
+    .redeliver-route-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4mm;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid var(--blue);
+      border-radius: 4px;
+      padding: 2mm 3mm;
+      margin-bottom: 2.5mm;
+    }
+    .redeliver-route-info {
+      display: flex;
+      flex-direction: column;
+      gap: 1mm;
+      min-width: 0;
+      flex: 1;
+    }
+    .redeliver-route-title {
+      font-size: 11px;
+      font-weight: 800;
+      color: #1e3a8a;
+    }
+    .redeliver-route-desc {
+      font-size: 9.5px;
+      line-height: 1.35;
+      color: #1e40af;
+      font-weight: 600;
+    }
+    .redeliver-route-qr-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      flex-shrink: 0;
+    }
+    .redeliver-route-qr-wrap .qr-code,
+    .redeliver-route-qr-wrap .qr-code canvas,
+    .redeliver-route-qr-wrap .qr-code img,
+    .redeliver-route-qr-wrap .qr-image {
+      width: 21mm !important;
+      height: 21mm !important;
+      display: block;
+    }
+    .redeliver-route-qr-caption {
+      font-size: 8px;
+      font-weight: 800;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      letter-spacing: 0.2px;
+    }
+    .redeliver-address-cell {
+      grid-column: span 2;
+    }
+    .redeliver-address-sidebar {
+      flex: 0 0 26mm;
+      width: 26mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px dashed #cfd8e3;
+      padding-right: 3mm;
+      box-sizing: border-box;
+    }
+    .redeliver-address-qr-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .redeliver-address-qr-box .qr-code,
+    .redeliver-address-qr-box .qr-code canvas,
+    .redeliver-address-qr-box .qr-code img,
+    .redeliver-address-qr-box .qr-image {
+      width: 21mm !important;
+      height: 21mm !important;
+      display: block;
+    }
+    .redeliver-address-placeholder {
+      width: 21mm;
+      height: 21mm;
+      border: 1px dashed #cbd5e1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8.5px;
+      color: var(--muted);
+      background: #fafbfc;
+      text-align: center;
+      padding: 2px;
+      box-sizing: border-box;
+    }
+    .map-color {
+      color: #1d4ed8;
+    }
+
     @media print {
       body { background: #fff; }
       .sidebar, .result-head, .tabs-nav, .slogan-form, .slogan-preview-title, .call-to-sign-toolbar { display: none !important; }
@@ -964,7 +1064,8 @@
       /* When normal CS Paper is printed */
       body:not(.printing-slogan) #sloganView,
       body:not(.printing-slogan) #dnrSummarizeView,
-      body:not(.printing-slogan) #callToSignView { display: none !important; }
+      body:not(.printing-slogan) #callToSignView,
+      body:not(.printing-slogan) #reDeliverView { display: none !important; }
       body:not(.printing-slogan) #csPaperView { display: block !important; }
       body:not(.printing-slogan) .paper {
         width: 210mm;
@@ -1027,6 +1128,13 @@
       <input id="callToSignFile" type="file" accept=".xlsx,.xls">
       <button type="button" id="exportCallToSignPdfBtnSidebar" class="btn-slogan-pdf" disabled>export CallToSign PDF</button>
       <div id="callToSignStatus" class="status">Waiting for CallToSign Excel file.</div>
+
+      <hr style="border: 0; border-top: 1px solid var(--line); margin: 16px 0;">
+      <h2 style="margin: 0 0 8px; font-size: 16px;">ReDeliver</h2>
+      <p style="margin: 0 0 10px; font-size: 13px; color: var(--muted); line-height: 1.4;">Upload ReDeliver Excel (Headers: Waybill, Driver, Address, phone, Client).</p>
+      <input id="reDeliverFile" type="file" accept=".xlsx,.xls">
+      <button type="button" id="exportReDeliverPdfBtnSidebar" class="btn-slogan-pdf" disabled>export ReDeliver PDF</button>
+      <div id="reDeliverStatus" class="status">Waiting for ReDeliver Excel file.</div>
     </aside>
 
     <section class="panel">
@@ -1036,6 +1144,7 @@
           <button type="button" class="tab-btn" id="tabDnrSummarize" data-tab="dnrSummarize">DNR Summarize</button>
           <button type="button" class="tab-btn" id="tabSlogan" data-tab="slogan">Slogan Tab</button>
           <button type="button" class="tab-btn" id="tabCallToSign" data-tab="callToSign">CallToSign</button>
+          <button type="button" class="tab-btn" id="tabReDeliver" data-tab="reDeliver">ReDeliver</button>
         </div>
         <div class="result-actions" id="csPaperActions">
           <button id="exportHubBtnTop" disabled>export paper by hub</button>
@@ -1050,6 +1159,9 @@
         </div>
         <div class="result-actions" id="callToSignTopActions" style="display: none;">
           <button type="button" id="exportCallToSignPdfBtn" class="btn-slogan-pdf" disabled>Export PDF</button>
+        </div>
+        <div class="result-actions" id="reDeliverTopActions" style="display: none;">
+          <button type="button" id="exportReDeliverPdfBtn" class="btn-slogan-pdf" disabled>Export PDF</button>
         </div>
       </div>
 
@@ -1079,6 +1191,11 @@
       <!-- CallToSign View -->
       <div id="callToSignView" class="tab-view" style="display: none;">
         <div id="callToSignPapers" class="empty">No CallToSign paper generated yet. Please upload an Excel file.</div>
+      </div>
+
+      <!-- ReDeliver View -->
+      <div id="reDeliverView" class="tab-view" style="display: none;">
+        <div id="reDeliverPapers" class="empty">No ReDeliver paper generated yet. Please upload an Excel file.</div>
       </div>
     </section>
   </main>
@@ -2516,16 +2633,21 @@
         `;
       }
 
+      const hasExplicitEmptyMsg = customMsgBody === "";
       let msgBody = customMsgBody;
-      if (!msgBody) {
+      if (!hasExplicitEmptyMsg && !msgBody) {
         const waybill = record.waybill || record.shipmentId || "";
         const waybillPart = waybill ? ` ${waybill}` : "";
         msgBody = `Haben Sie dieses Paket schon erhalten?${waybillPart} Bitte antworten Sie mit 'JA' zur Bestätigung.`;
       }
 
-      const smsQrText = `sms:${cleanPhone}?body=${encodeURIComponent(msgBody)}`;
+      const smsQrText = hasExplicitEmptyMsg
+        ? `sms:${cleanPhone}`
+        : `sms:${cleanPhone}?body=${encodeURIComponent(msgBody)}`;
       const waDigits = cleanPhone.replace(/\D/g, "");
-      const waQrText = `https://wa.me/${waDigits}?text=${encodeURIComponent(msgBody)}`;
+      const waQrText = hasExplicitEmptyMsg
+        ? `https://wa.me/${waDigits}`
+        : `https://wa.me/${waDigits}?text=${encodeURIComponent(msgBody)}`;
 
       return `
         <div class="ticket-qr-stack">
@@ -2639,6 +2761,17 @@
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
     }
 
+    function googleMapsRouteUrl(addresses) {
+      const valid = (addresses || []).map(a => (a || "").trim()).filter(a => a && a !== "-");
+      if (valid.length === 0) return "";
+      if (valid.length === 1) {
+        return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(valid[0])}&travelmode=driving`;
+      }
+      const destination = valid[valid.length - 1];
+      const waypoints = valid.slice(0, -1).map(encodeURIComponent).join("|");
+      return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&waypoints=${waypoints}&travelmode=driving`;
+    }
+
     function hydrateQrCodes() {
       document.querySelectorAll(".qr-code").forEach(container => {
         if (container.dataset.ready === "true") return;
@@ -2648,16 +2781,36 @@
 
         container.textContent = "";
         const size = container.dataset.size ? parseInt(container.dataset.size, 10) : 120;
+        const levelKey = (container.dataset.level || "M").toUpperCase();
 
         if (typeof QRCode === "function") {
-          new QRCode(container, {
-            text,
-            width: size,
-            height: size,
-            correctLevel: QRCode.CorrectLevel.M
-          });
-          container.dataset.ready = "true";
-          return;
+          const correctLevel = (QRCode.CorrectLevel && QRCode.CorrectLevel[levelKey]) || QRCode.CorrectLevel.M;
+          try {
+            new QRCode(container, {
+              text,
+              width: size,
+              height: size,
+              correctLevel
+            });
+            container.dataset.ready = "true";
+            return;
+          } catch (err) {
+            container.textContent = "";
+            if (levelKey !== "L" && QRCode.CorrectLevel && QRCode.CorrectLevel.L) {
+              try {
+                new QRCode(container, {
+                  text,
+                  width: size,
+                  height: size,
+                  correctLevel: QRCode.CorrectLevel.L
+                });
+                container.dataset.ready = "true";
+                return;
+              } catch (_) {
+                container.textContent = "";
+              }
+            }
+          }
         }
 
         const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${size * 2}x${size * 2}&margin=0&data=${encodeURIComponent(text)}`;
@@ -3163,14 +3316,17 @@
     const tabDnrSummarize = document.getElementById("tabDnrSummarize");
     const tabSlogan = document.getElementById("tabSlogan");
     const tabCallToSign = document.getElementById("tabCallToSign");
+    const tabReDeliver = document.getElementById("tabReDeliver");
     const csPaperView = document.getElementById("csPaperView");
     const dnrSummarizeView = document.getElementById("dnrSummarizeView");
     const sloganView = document.getElementById("sloganView");
     const callToSignView = document.getElementById("callToSignView");
+    const reDeliverView = document.getElementById("reDeliverView");
     const csPaperActions = document.getElementById("csPaperActions");
     const dnrTopActions = document.getElementById("dnrTopActions");
     const sloganTopActions = document.getElementById("sloganTopActions");
     const callToSignTopActions = document.getElementById("callToSignTopActions");
+    const reDeliverTopActions = document.getElementById("reDeliverTopActions");
 
     const sloganStatusTag = document.getElementById("sloganStatusTag");
     const sloganPapersContainer = document.getElementById("sloganPapersContainer");
@@ -3271,16 +3427,19 @@
       if (tabDnrSummarize) tabDnrSummarize.classList.toggle("active", tab === "dnrSummarize");
       if (tabSlogan) tabSlogan.classList.toggle("active", tab === "slogan");
       if (tabCallToSign) tabCallToSign.classList.toggle("active", tab === "callToSign");
+      if (tabReDeliver) tabReDeliver.classList.toggle("active", tab === "reDeliver");
 
       if (csPaperView) csPaperView.style.display = tab === "csPaper" ? "block" : "none";
       if (dnrSummarizeView) dnrSummarizeView.style.display = tab === "dnrSummarize" ? "block" : "none";
       if (sloganView) sloganView.style.display = tab === "slogan" ? "block" : "none";
       if (callToSignView) callToSignView.style.display = tab === "callToSign" ? "block" : "none";
+      if (reDeliverView) reDeliverView.style.display = tab === "reDeliver" ? "block" : "none";
 
       if (csPaperActions) csPaperActions.style.display = tab === "csPaper" ? "flex" : "none";
       if (dnrTopActions) dnrTopActions.style.display = tab === "dnrSummarize" ? "flex" : "none";
       if (sloganTopActions) sloganTopActions.style.display = tab === "slogan" ? "flex" : "none";
       if (callToSignTopActions) callToSignTopActions.style.display = tab === "callToSign" ? "flex" : "none";
+      if (reDeliverTopActions) reDeliverTopActions.style.display = tab === "reDeliver" ? "flex" : "none";
 
       if (tab === "dnrSummarize") {
         ensureDnrRendered();
@@ -3293,6 +3452,7 @@
     if (tabDnrSummarize) tabDnrSummarize.addEventListener("click", () => switchTab("dnrSummarize"));
     if (tabSlogan) tabSlogan.addEventListener("click", () => switchTab("slogan"));
     if (tabCallToSign) tabCallToSign.addEventListener("click", () => switchTab("callToSign"));
+    if (tabReDeliver) tabReDeliver.addEventListener("click", () => switchTab("reDeliver"));
 
     function getPodGridDimensions(n) {
       if (n <= 1) return { cols: 1, rows: 1 };
@@ -3587,6 +3747,9 @@
       driverGroups.forEach(group => {
         const total = group.records.length;
         const totalPages = Math.ceil(total / TICKETS_PER_PAGE);
+        const allAddresses = group.records
+          .map(r => (r.address || "").trim())
+          .filter(a => a && a !== "-");
         for (let i = 0; i < total; i += TICKETS_PER_PAGE) {
           pages.push({
             driver: group.driver,
@@ -3594,6 +3757,7 @@
             totalPages,
             totalDriverTickets: total,
             startIndex: i,
+            allAddresses,
             records: group.records.slice(i, i + TICKETS_PER_PAGE)
           });
         }
@@ -3721,15 +3885,15 @@
       });
     }
 
-    async function exportCallToSignPdf() {
-      const paperElements = Array.from(document.querySelectorAll("#callToSignPapers .paper"));
+    async function exportPapersToPdf({ containerSelector, statusEl, buttons, fileName, label }) {
+      const paperElements = Array.from(document.querySelectorAll(containerSelector));
       if (paperElements.length === 0) {
-        alert("No CallToSign papers to export.");
+        alert(`No ${label} papers to export.`);
         return;
       }
 
-      const origTexts = exportCallToSignPdfButtons.map(btn => (btn ? btn.textContent : ""));
-      const origStatus = callToSignStatus ? callToSignStatus.innerHTML : "";
+      const origTexts = buttons.map(btn => (btn ? btn.textContent : ""));
+      const origStatus = statusEl ? statusEl.innerHTML : "";
       const tempHolder = document.createElement("div");
       tempHolder.className = "pdf-export-container";
       tempHolder.style.position = "fixed";
@@ -3742,7 +3906,7 @@
       document.body.appendChild(tempHolder);
 
       try {
-        exportCallToSignPdfButtons.forEach(btn => {
+        buttons.forEach(btn => {
           if (btn) {
             btn.disabled = true;
             btn.textContent = "Generating PDF...";
@@ -3759,8 +3923,8 @@
 
         const pdf = createJsPdf();
         for (let i = 0; i < paperElements.length; i++) {
-          if (callToSignStatus) {
-            callToSignStatus.innerHTML = `<strong>Status:</strong> Rendering PDF page ${i + 1}/${paperElements.length}...`;
+          if (statusEl) {
+            statusEl.innerHTML = `<strong>Status:</strong> Rendering PDF page ${i + 1}/${paperElements.length}...`;
           }
           await new Promise(resolve => setTimeout(resolve, 30));
 
@@ -3805,17 +3969,17 @@
           pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
         }
 
-        pdf.save(`CallToSign_${getTodayString()}.pdf`);
-        if (callToSignStatus) callToSignStatus.innerHTML = origStatus;
+        pdf.save(fileName);
+        if (statusEl) statusEl.innerHTML = origStatus;
       } catch (error) {
         console.error(error);
-        alert("Failed to export CallToSign PDF: " + error.message);
-        if (callToSignStatus) {
-          callToSignStatus.innerHTML = `<strong style="color:#b91c1c;">Error:</strong> ${escapeHtml(error.message)}`;
+        alert(`Failed to export ${label} PDF: ` + error.message);
+        if (statusEl) {
+          statusEl.innerHTML = `<strong style="color:#b91c1c;">Error:</strong> ${escapeHtml(error.message)}`;
         }
       } finally {
         if (tempHolder.parentNode) tempHolder.parentNode.removeChild(tempHolder);
-        exportCallToSignPdfButtons.forEach((btn, idx) => {
+        buttons.forEach((btn, idx) => {
           if (btn) {
             btn.disabled = false;
             btn.textContent = origTexts[idx] || "Export PDF";
@@ -3824,8 +3988,216 @@
       }
     }
 
+    function exportCallToSignPdf() {
+      return exportPapersToPdf({
+        containerSelector: "#callToSignPapers .paper",
+        statusEl: callToSignStatus,
+        buttons: exportCallToSignPdfButtons,
+        fileName: `CallToSign_${getTodayString()}.pdf`,
+        label: "CallToSign"
+      });
+    }
+
     exportCallToSignPdfButtons.forEach(btn => {
       if (btn) btn.addEventListener("click", exportCallToSignPdf);
+    });
+
+    // ==========================================
+    // ReDeliver Tab Logic
+    // ==========================================
+    const reDeliverFile = document.getElementById("reDeliverFile");
+    const reDeliverStatus = document.getElementById("reDeliverStatus");
+    const reDeliverPapers = document.getElementById("reDeliverPapers");
+    const exportReDeliverPdfButtons = [
+      document.getElementById("exportReDeliverPdfBtn"),
+      document.getElementById("exportReDeliverPdfBtnSidebar")
+    ];
+
+    function rowToReDeliverRecord(row, index, order) {
+      const waybill = index.waybill >= 0
+        ? valueAt(row, index.waybill)
+        : (index.shipmentId >= 0 ? valueAt(row, index.shipmentId) : "");
+      const driver = index.driver >= 0 ? valueAt(row, index.driver) : "";
+      const address = index.address >= 0 ? valueAt(row, index.address) : "";
+      const phone = index.phone >= 0 ? valueAt(row, index.phone) : "";
+      const client = index.client >= 0 ? valueAt(row, index.client) : "";
+
+      return {
+        order,
+        waybill,
+        shipmentId: waybill,
+        driver,
+        address,
+        phone,
+        client
+      };
+    }
+
+    function reDeliverAddressQrBox(address) {
+      const cleanAddress = (address || "").trim();
+      if (!cleanAddress || cleanAddress === "-") {
+        return `
+          <div class="redeliver-address-qr-box">
+            <div class="redeliver-address-placeholder">Keine<br>Adresse</div>
+            <div class="ticket-sms-caption">Google Maps</div>
+          </div>
+        `;
+      }
+      const mapUrl = googleMapsUrl(cleanAddress);
+      return `
+        <div class="redeliver-address-qr-box">
+          <div class="qr-code" data-qr="${escapeHtml(mapUrl)}" data-size="84" aria-label="Google Maps: ${escapeHtml(cleanAddress)}"></div>
+          <div class="ticket-sms-caption map-color">Google Maps</div>
+        </div>
+      `;
+    }
+
+    function reDeliverCardTemplate(record, itemIndex) {
+      return `
+        <div class="ticket-card">
+          <div class="redeliver-address-sidebar">
+            ${reDeliverAddressQrBox(record.address)}
+          </div>
+
+          <div class="ticket-main">
+            <div class="call-to-sign-grid">
+              <div class="call-to-sign-cell">
+                <div class="call-to-sign-cell-head">
+                  <span class="ticket-index-tag">#${itemIndex}</span>
+                  <span>Driver</span>
+                </div>
+                <div class="call-to-sign-cell-val">${escapeHtml(record.driver || "-")}</div>
+              </div>
+              <div class="call-to-sign-cell">
+                <div class="call-to-sign-cell-head">Waybill</div>
+                <div class="call-to-sign-cell-val">${escapeHtml(record.waybill || "-")}</div>
+              </div>
+              <div class="call-to-sign-cell">
+                <div class="call-to-sign-cell-head">Client</div>
+                <div class="call-to-sign-cell-val">${escapeHtml(record.client || "-")}</div>
+              </div>
+              <div class="call-to-sign-cell">
+                <div class="call-to-sign-cell-head">Phone</div>
+                <div class="call-to-sign-cell-val">${escapeHtml(formatDisplayPhone(record.phone))}</div>
+              </div>
+              <div class="call-to-sign-cell redeliver-address-cell">
+                <div class="call-to-sign-cell-head">Address</div>
+                <div class="call-to-sign-cell-val">${escapeHtml(record.address || "-")}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ticket-sms-sidebar">
+            ${compactContactQrDuo(record, "")}
+          </div>
+        </div>
+      `;
+    }
+
+    function reDeliverPageTemplate(page) {
+      const startIdx = page.startIndex ?? 0;
+      const cardsHtml = page.records
+        .map((record, idx) => reDeliverCardTemplate(record, startIdx + idx + 1))
+        .join("");
+
+      const allAddresses = page.allAddresses || [];
+      const routeUrl = googleMapsRouteUrl(allAddresses);
+      const routeQrHtml = routeUrl
+        ? `
+          <div class="redeliver-route-qr-wrap">
+            <div class="qr-code" data-qr="${escapeHtml(routeUrl)}" data-size="84" data-level="L" aria-label="Google Maps Route"></div>
+            <div class="redeliver-route-qr-caption">Route QR</div>
+          </div>
+        `
+        : `<div class="redeliver-address-placeholder">Keine<br>Route</div>`;
+
+      return `
+        <article class="paper" data-driver="${escapeHtml(page.driver)}">
+          <div class="meta-line">
+            <div class="meta-group">
+              <span><strong>Driver:</strong> ${escapeHtml(page.driver)}</span>
+            </div>
+            <div class="meta-group">
+              <span class="meta-badge">Seite ${page.pageIndex} / ${page.totalPages} (Driver Gesamt: ${page.totalDriverTickets})</span>
+              <span style="white-space: nowrap;"><strong>Datum:</strong> ${escapeHtml(today())}</span>
+            </div>
+          </div>
+
+          <div class="redeliver-route-bar">
+            ${routeQrHtml}
+            <div class="redeliver-route-info">
+              <div class="redeliver-route-title">Google Maps Gesamtroute (${allAddresses.length} Adresse${allAddresses.length === 1 ? "" : "n"})</div>
+              <div class="redeliver-route-desc">QR-Code scannen, um alle Adressen als Navigation ab aktuellem Standort in Google Maps zu öffnen.</div>
+            </div>
+          </div>
+
+          <div class="tickets-container">
+            ${cardsHtml}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderReDeliverPapers(pages) {
+      exportReDeliverPdfButtons.forEach(btn => {
+        if (btn) btn.disabled = pages.length === 0;
+      });
+
+      if (!pages.length) {
+        reDeliverPapers.className = "empty";
+        reDeliverPapers.textContent = "No ReDeliver ticket data found in the Excel file.";
+        return;
+      }
+
+      reDeliverPapers.className = "";
+      reDeliverPapers.innerHTML = pages.map(page => reDeliverPageTemplate(page)).join("");
+      hydrateQrCodes();
+    }
+
+    if (reDeliverFile) {
+      reDeliverFile.addEventListener("change", async () => {
+        const file = reDeliverFile.files[0];
+        if (!file) return;
+
+        try {
+          reDeliverStatus.innerHTML = `<strong>Status:</strong> Reading Excel file...`;
+          const workbook = await readWorkbook(file);
+          const rows = sheetToRows(workbook.Sheets[workbook.SheetNames[0]]);
+          const headers = rows[0] || [];
+          const dataRows = rows.slice(1);
+          const index = buildColumnIndex(headers);
+
+          const records = [];
+          dataRows.forEach(row => {
+            if (!row.some(cellHasContent)) return;
+            records.push(rowToReDeliverRecord(row, index, records.length));
+          });
+
+          const { pages, totalDrivers } = groupAndPaginateByDriver(records);
+          renderReDeliverPapers(pages);
+          switchTab("reDeliver");
+
+          reDeliverStatus.innerHTML = `<strong>File:</strong> ${escapeHtml(file.name)} | <strong>Rows:</strong> ${records.length} | <strong>Drivers:</strong> ${totalDrivers} | <strong>Pages:</strong> ${pages.length}`;
+        } catch (error) {
+          renderReDeliverPapers([]);
+          reDeliverStatus.innerHTML = `<strong style="color:#b91c1c;">Error:</strong> ${escapeHtml(error.message || String(error))}`;
+          console.error(error);
+        }
+      });
+    }
+
+    function exportReDeliverPdf() {
+      return exportPapersToPdf({
+        containerSelector: "#reDeliverPapers .paper",
+        statusEl: reDeliverStatus,
+        buttons: exportReDeliverPdfButtons,
+        fileName: `ReDeliver_${getTodayString()}.pdf`,
+        label: "ReDeliver"
+      });
+    }
+
+    exportReDeliverPdfButtons.forEach(btn => {
+      if (btn) btn.addEventListener("click", exportReDeliverPdf);
     });
   </script>
 </body>
