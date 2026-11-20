@@ -565,7 +565,7 @@
                                     若为 <code>"Als zugestellt markiert, aber nicht erhalten/签收未收到"</code>，则 Type 为 <code>"DNR"</code>；
                                     若为 <code>others</code>（其他值），则 Type 为 <code>"others"</code>。
                                 </li>
-                                <li><strong>Deadline 规则</strong>：若 channel 包含 <code>"CC录入（CC Entry）"</code> 或 <code>"IM录入（IM Entry）"</code>，则 <code>Deadline = Check-in time + 48h</code>；其他渠道为 <code>Check-in time + 36h</code>（全额扣除周末及指定公共假期）。</li>
+                                <li><strong>Deadline 规则</strong>：所有工单统一为 <code>Deadline = Check-in time + 48h</code>（不再区分渠道，全额扣除周末及指定公共假期）。</li>
                                 <li><strong>NeedClose 规则</strong>：以当前运营日（柏林时间）为基准，展示为清晰易读的相对时间（<code>today</code>、<code>tomorrow</code>、<code>Wednesday</code>、<code>next Monday</code> 等）。每日工作时间为 <code>09:30-17:30</code>，若 Deadline 落在工作日 09:30 之前或非工作日，必须在当天关闭；全表严格按 <strong>NeedClose 从 today 往后顺延排序</strong>，同组内按 <strong>Complaint Date（登记时间）升序排序</strong>。</li>
                                 <li><strong>Problem 规则</strong>：位于 <code>Total hours</code> 列之后，取自上传文件的 <code>Problem Description</code> 列；若为加密串或乱码（如 <code>Y!$O#1#...=$=</code>、含 <code></code> 乱码符或长串无空格密文），则显示为空。</li>
                                 <li><strong>total Sheet（每小时各网点工单量）</strong>：导出文件中额外增加 <code>total</code> Sheet，统计<strong>离今天（柏林时间）最近的上一个有工单的日期</strong>（一律不统计今天，自动跳过周末/无工单日）。<strong>首行</strong>注明统计日期（如 <code>2026/11/05</code>）；表头为 <code>station</code>（取自 <code>Responsible node with forwarding orderorders</code>，空值归入 <code>Unknown</code>）+ <code>Check-in time</code> 的小时（<code>hh</code>，直接取文件原始时间）+ <code>Total</code>；单元格为<strong>工单行数</strong>；只展示有工单的小时，值为 0 时留空；末列 <code>Total</code> 为各网点合计，底部 <code>Total</code> 行为各小时合计。</li>
@@ -706,7 +706,8 @@
                                 <li><strong>NoUpdateScanType</strong>:
                                     <ul>
                                         <li>按该运单在 <strong>Scan records</strong> 中的所有扫描记录按扫描时间从早到晚升序排列，依次计算每两条相邻扫描记录之间的时间间隔（小时数）：<code>gapHours = (R[k+1].time - R[k].time)</code>。</li>
-                                        <li>若存在相邻两条扫描记录间隔时间 <code>&gt; 120</code> 小时，取该次超期断更对应的<strong>上一条扫描记录（<code>R[k]</code>）的扫描类型</strong>作为 <code>NoUpdateScanType</code>（若出现多次 <code>&gt; 120</code> 小时，则取<strong>最新一次</strong>）；若所有相邻扫描间隔均 <code>&le; 120</code> 小时，则留空。</li>
+                                        <li>若存在相邻两条扫描记录间隔时间 <code>&ge; 168</code> 小时（7 天），取该次超期断更对应的<strong>上一条扫描记录（<code>R[k]</code>）的扫描类型</strong>作为 <code>NoUpdateScanType</code>（若出现多次 <code>&ge; 168</code> 小时，则取<strong>最新一次</strong>）；若所有相邻扫描间隔均 <code>&lt; 168</code> 小时，则留空。</li>
+                                        <li>对于未完结包裹（非 <code>"Return registration"</code>、<code>"Parcel Signed"</code>、<code>"Scan Inbound parcel"</code>），额外判定 <code>now - last scan time &gt; 168</code> 小时（7 天）；若满足，同样视作断更超期，取 <code>last scan type</code> 作为 <code>NoUpdateScanType</code>。</li>
                                     </ul>
                                 </li>
                                 <li><strong>SLA (Hours)</strong>:
@@ -718,10 +719,10 @@
                                 </li>
                                 <li><strong>Appeal</strong>:
                                     <ul>
-                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：若 <code>SLA &le; 240</code>（所有客户含 TT 均为 10 天 = 240 小时）&rarr; <code>"in SLA"</code>，否则 &rarr; <code>"Over"</code>。</li>
-                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时：若 <code>SLA &ge; 24 * 8</code>（即 &ge; 192 小时，满 8 天视作遗失）&rarr; <code>"Over"</code>，否则 &rarr; <code>"in SLA"</code>。</li>
-                                        <li>未计算 <code>SLA</code> 时默认留空。</li>
-                                        <li><strong>NoUpdate &gt; 120h 优先判定</strong>：若该运单存在相邻扫描间隔 <code>&gt; 120</code> 小时（即 <code>NoUpdate &gt; 120</code> / <code>NoUpdateScanType</code> 非空），则无论原本 <code>SLA</code> 判定结果如何，<code>Appeal</code> 均强制设为 <code>"Over"</code>。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Return registration"</code> 或 <code>"Parcel Signed"</code> 时：若 <code>SLA &le; 288</code>（所有客户含 TT 均为 12 天 = 288 小时）&rarr; <code>"in SLA"</code>，否则（<code>SLA &gt; 288</code>）&rarr; <code>"Over"</code>（不可 appeal）。</li>
+                                        <li>当 <code>last scan type</code> 为 <code>"Scan Inbound parcel"</code> 时：若 <code>SLA &ge; 24 * 8</code>（即 &ge; 192 小时，满 8 天视作遗失）&rarr; <code>"Over"</code>，否则 &rarr; <code>"in SLA"</code>（PUDO 保持不变）。</li>
+                                        <li>其余未完结状态：若 <code>now - last scan time &gt; 168</code> 小时，强制设为 <code>"Over"</code>；否则默认留空。</li>
+                                        <li><strong>NoUpdate &ge; 168h 优先判定</strong>：若该运单存在相邻扫描间隔 <code>&ge; 168</code> 小时，或未完结包裹满足 <code>now - last scan time &gt; 168</code> 小时，则无论原本 <code>SLA</code> 判定结果如何，<code>Appeal</code> 均强制设为 <code>"Over"</code>（不可 appeal）。</li>
                                     </ul>
                                 </li>
                                 <li><strong>reason</strong>: 计算了 <code>SLA</code> 时（无论 <code>"in SLA"</code> 或 <code>"Over"</code>），格式为 <code>=SLA &amp; " hours " &amp; last scan type</code>（例如 <code>120.5 hours Parcel Signed</code> 或 <code>150.25 hours Scan Inbound parcel</code>）；未计算 <code>SLA</code> 时留空。</li>
@@ -1071,11 +1072,11 @@
                 "TIKTOK": 10,
                 "default": 10
             },
-            // Lost Appeal SLA thresholds in hours by client (all clients including TT: 240 hours / 10 days)
+            // Lost Appeal SLA thresholds in hours by client (all clients including TT: 288 hours / 12 days)
             lostAppealSlaHours: {
-                "TT": 240,
-                "TIKTOK": 240,
-                "default": 240
+                "TT": 288,
+                "TIKTOK": 288,
+                "default": 288
             },
             // LifeCycle days by client (all clients including TT: 9 days, Ascan + 10 regarded as lost)
             lifeCycles: {
@@ -1285,7 +1286,7 @@
             }
             return (CLIENT_CONFIG.lostAppealSlaHours && CLIENT_CONFIG.lostAppealSlaHours.default !== undefined)
                 ? CLIENT_CONFIG.lostAppealSlaHours.default
-                : 240;
+                : 288;
         }
 
         // Global Helper: Get LifeCycle days for a client
@@ -1797,16 +1798,10 @@
             return CS_SLA_HOLIDAYS_SET.has(`${y}-${m}-${day}`);
         }
 
-        function calculateCSSLADeadline(checkInDate, rawChannel) {
+        function calculateCSSLADeadline(checkInDate) {
             if (!checkInDate || isNaN(checkInDate.getTime())) return null;
 
-            const ch = String(rawChannel || '').toLowerCase();
-            let targetHours = 36;
-            if (ch.includes("cc录入") || ch.includes("cc entry") ||
-                ch.includes("im录入") || ch.includes("im entry") ||
-                ch === "cc" || ch === "im") {
-                targetHours = 48;
-            }
+            const targetHours = 48;
 
             let curMs = checkInDate.getTime();
             let remainingMs = targetHours * 3600 * 1000;
@@ -1979,7 +1974,7 @@
                 }
 
                 // Deadline & NeedClose calculation
-                const deadlineDate = calculateCSSLADeadline(checkInDate, channel);
+                const deadlineDate = calculateCSSLADeadline(checkInDate);
                 const deadlineStr = formatCSSLADateTime(deadlineDate);
                 const needCloseDate = calculateNeedCloseDate(deadlineDate);
                 const needCloseLabel = formatNeedCloseLabel(needCloseDate, todayDate);
@@ -4328,23 +4323,23 @@
                     lastScanStation = "Stuttgart HUB";
                 }
 
-                // Check all adjacent scan records (sorted chronologically ascending) for gap > 120 hours.
-                // If multiple gaps > 120h exist, take the latest one.
+                // Check all adjacent scan records (sorted chronologically ascending) for gap >= 168 hours (7 days).
+                // If multiple gaps >= 168h exist, take the latest one.
                 const ascGroup = [...group].sort((a, b) => a.date - b.date);
                 let noUpdateScanType = "";
-                let hasNoUpdateOver120 = false;
+                let hasNoUpdateOver = false;
                 if (ascGroup.length >= 2) {
                     for (let k = 0; k < ascGroup.length - 1; k++) {
                         const gapHours = (ascGroup[k + 1].date.getTime() - ascGroup[k].date.getTime()) / (1000 * 60 * 60);
-                        if (gapHours > 120) {
-                            hasNoUpdateOver120 = true;
+                        if (gapHours >= 168) {
+                            hasNoUpdateOver = true;
                             noUpdateScanType = String(ascGroup[k].row[scanTypeIdx] !== undefined ? ascGroup[k].row[scanTypeIdx] : '').trim();
                         }
                     }
                 }
 
                 // 1. SLA & Appeal & Reason Calculation:
-                // - "Return registration" / "Parcel Signed": SLA = (last scan time - Ascan time); Appeal = SLA <= 240 ? "in SLA" : "Over"
+                // - "Return registration" / "Parcel Signed": SLA = (last scan time - Ascan time); Appeal = SLA <= 288 ? "in SLA" : "Over"
                 // - "Scan inbound" / "Scan Inbound parcel": SLA = (now - last scan time); Appeal = SLA >= 24 * 8 (192h) ? "Over" : "in SLA"
                 const lstLower = lastScanType.trim().toLowerCase().replace(/\s+/g, ' ');
                 const isSignedOrReturn = (lstLower === "return registration" || lstLower === "parcel signed");
@@ -4376,11 +4371,19 @@
                         sla = "";
                     }
                 } else {
-                    // Other scan types: do not calculate SLA, Appeal, or reason
+                    // Other scan types (uncompleted parcels): do not calculate SLA or reason,
+                    // but check if (now - last scan time) > 168 hours (7 days)
+                    if (lastScanDateObj) {
+                        const tailGapHours = (nowUTCMs - lastScanDateObj.getTime()) / (1000 * 60 * 60);
+                        if (tailGapHours > 168) {
+                            hasNoUpdateOver = true;
+                            noUpdateScanType = lastScanType;
+                        }
+                    }
                 }
 
-                // Rule: If NoUpdate > 120 hours (adjacent scan gap > 120h), Appeal is forced to "Over"
-                if (hasNoUpdateOver120) {
+                // Rule: If NoUpdate >= 168 hours (adjacent scan gap >= 168h, or uncompleted parcel now - last scan time > 168h), Appeal is forced to "Over"
+                if (hasNoUpdateOver) {
                     appeal = "Over";
                 }
 
