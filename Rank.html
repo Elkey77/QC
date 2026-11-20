@@ -956,34 +956,35 @@
     }
     /* Source Data Drill-Down Modal & Clickable Counts */
     .source-modal-card {
-      max-width: 980px;
-      max-height: 86vh;
+      max-width: 1180px;
+      width: 96vw;
+      max-height: 90vh;
     }
     .source-modal-toolbar {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.6rem;
+      gap: 0.5rem;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
     }
     .source-modal-search {
       flex: 1;
       min-width: 200px;
-      padding: 0.45rem 0.75rem;
+      padding: 0.35rem 0.65rem;
       border: 1px solid var(--card-border);
       border-radius: 8px;
       background: var(--bg-color);
       color: var(--text-main);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
     .source-modal-count {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       font-weight: 600;
     }
     .source-table-wrap {
-      max-height: 55vh;
+      max-height: 68vh;
       overflow: auto;
       border: 1px solid var(--card-border);
       border-radius: 8px;
@@ -991,7 +992,8 @@
     .source-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
+      line-height: 1.2;
       text-align: left;
     }
     .source-table thead th {
@@ -1000,16 +1002,17 @@
       z-index: 2;
       background: var(--card-bg);
       border-bottom: 2px solid var(--card-border);
-      padding: 0.55rem 0.65rem;
+      padding: 0.28rem 0.4rem;
+      font-size: 0.7rem;
       font-weight: 700;
       white-space: nowrap;
       color: var(--text-main);
     }
     .source-table tbody td {
-      padding: 0.45rem 0.65rem;
+      padding: 0.2rem 0.4rem;
       border-bottom: 1px solid var(--card-border);
       white-space: nowrap;
-      max-width: 260px;
+      max-width: 150px;
       overflow: hidden;
       text-overflow: ellipsis;
     }
@@ -1307,6 +1310,30 @@
       margin: 0 auto;
       overflow-x: auto;
     }
+    #dr-report-frame.is-dnr {
+      max-width: 60%;
+      width: 60%;
+      padding: 4px;
+      margin: 0 auto;
+      overflow-x: auto;
+      box-sizing: border-box;
+    }
+    #dr-report-frame.is-dnr .dr-banner { padding: 4px 8px; font-size: 13px; }
+    #dr-report-frame.is-dnr .dr-dates { padding: 2px 6px; margin-bottom: 4px; font-size: 10px; }
+    #dr-report-frame.is-dnr .dr-table {
+      font-size: 9px;
+      table-layout: fixed;
+      width: 100%;
+    }
+    #dr-report-frame.is-dnr .dr-table th,
+    #dr-report-frame.is-dnr .dr-table td {
+      padding: 1.5px 2px;
+      line-height: 1.18;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      vertical-align: top;
+    }
     .dr-region-layout {
       display: flex;
       justify-content: center;
@@ -1408,6 +1435,10 @@
     .dr-ascan-opt:hover { background: rgba(37, 99, 235, 0.08); }
     .dr-diff-down { color: #16a34a; font-weight: 700; font-size: 0.9em; margin-left: 2px; white-space: nowrap; }
     .dr-diff-up, .dr-diff-flat { color: inherit; font-weight: 700; font-size: 0.9em; margin-left: 2px; white-space: nowrap; }
+    .dr-dnr-cell { text-align: left !important; min-width: 0; vertical-align: top; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+    .dr-dnr-top { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; font-weight: 700; line-height: 1.25; }
+    .dr-dnr-pods { font-size: 0.72rem; color: #64748b; line-height: 1.25; margin-top: 2px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+    .dr-dnr-zero { color: #94a3b8; font-weight: 500; }
 
     /* Region-specific ultra-compact layout */
     #dr-report-frame.is-region .dr-banner { padding: 4px 8px; font-size: 13px; }
@@ -1428,6 +1459,7 @@
     #dr-report-frame.is-region .dr-col-st { width: 28px; min-width: 26px; max-width: 30px; font-size: 8.5px; vertical-align: middle; }
     #dr-report-frame.is-region .dr-col-num { width: 18px; min-width: 16px; max-width: 20px; padding: 1px 1px !important; font-size: 8.5px; vertical-align: middle; }
     #dr-report-frame.is-region .dr-table thead th.dr-col-num { font-size: 7.5px; line-height: 1.08; }
+    #dr-report-frame.is-region .dr-col-signed { width: 1.4cm; min-width: 1.3cm; white-space: normal; word-break: break-word; text-align: left; padding: 1.5px 2px !important; }
     #dr-report-frame.is-region .dr-col-result { width: 1.7cm; min-width: 1.7cm; white-space: normal; word-break: break-word; text-align: left; padding: 1.5px 2px !important; }
     #dr-report-frame.is-region .dr-col-da { width: 1.7cm; min-width: 1.7cm; white-space: normal; word-break: break-word; text-align: left; padding: 1.5px 2px !important; }
     #dr-report-frame.is-region .dr-col-remark { width: 3.6cm; min-width: 3cm; max-width: 4.5cm; white-space: normal; word-break: break-word; text-align: left; padding: 0 !important; }
@@ -1793,10 +1825,9 @@
         <input type="file" id="dr-file-input" class="hidden-file-input" accept=".xlsx, .xls" multiple onchange="drHandleFiles(this.files)">
       </div>
       <div class="dr-setup-row">
-        <label for="dr-today-select"><b>signedDate:</b></label>
-        <select id="dr-today-select" style="padding:0.3rem 0.5rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.8rem;" onchange="drOnDateChange(this.value)"></select>
-        <span class="dr-date-pills" id="dr-da-dates"></span>
         <span id="dr-dates-info" style="color:var(--text-muted);"></span>
+        <button class="btn btn-primary btn-sm" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="drExportDataJson()">&#128230; Export Data (JSON)</button>
+        <button class="btn btn-sm" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="drCopyAllStationLinks()">&#128279; Copy All Links</button>
         <button class="btn btn-sm" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="drClearData()">Clear data</button>
       </div>
       <div class="dr-status" id="dr-status">No data loaded yet.</div>
@@ -1986,7 +2017,15 @@
       filtered.forEach((r, idx) => {
         html += `<tr><td style="color:var(--text-muted);">${idx + 1}</td>` +
           columns.map(c => {
-            const val = r && r[c.key] != null ? String(r[c.key]) : '';
+            const rawVal = r && r[c.key] != null ? String(r[c.key]) : '';
+            const isDateCol = c.key === 'date' || c.key === 'lastscan' || c.key === 'deadline' || c.key === 'cdate';
+            let val = rawVal;
+            if (isDateCol && rawVal) {
+              const iso = typeof drDate === 'function' ? drDate(rawVal) : '';
+              val = iso ? (typeof drMD === 'function' ? drMD(iso) : iso.slice(5, 10).replace('-', '/')) : rawVal;
+            } else if (/^\d{4}-\d{2}-\d{2}/.test(rawVal)) {
+              val = rawVal.slice(5, 10).replace('-', '/');
+            }
             const cls = c.isWb ? ' class="source-wb-cell"' : '';
             return `<td${cls} title="${escSourceHtml(val)}">${escSourceHtml(val)}</td>`;
           }).join('') +
@@ -5386,6 +5425,7 @@
       today: '',
       updateTime: '',
       daDates: [],
+      selectedSignedDate: '',
       ascanDates: [],
       selectedAscanDates: null, // null = All selected
       ascanMenuOpen: false,
@@ -5393,6 +5433,8 @@
       active: 'rank',
       activeStation: '',
       stationViewMode: 'all', // 'all' | 'backlog' | 'driver'
+      dnrStationFilter: '',
+      dnrDimension: 'avg', // 'avg' | 'total' | 'daily'
       computed: null,
       warnings: []
     };
@@ -5468,7 +5510,18 @@
     function drNextDeliveryDay(iso) { let p = drAddDays(iso, 1); if (drDow(p) === 0) p = drAddDays(p, 1); return p; }
     // DNR dates skip the weekend (Monday -> last Friday)
     function drPrevWeekday(iso) { let p = drAddDays(iso, -1); while (drDow(p) === 0 || drDow(p) === 6) p = drAddDays(p, -1); return p; }
-    function drMD(iso) { return iso ? iso.slice(5).replace('-', '/') : '-'; }
+    function drIsoValid(y, m, d) {
+      const yy = +y, mm = +m, dd = +d;
+      if (!yy || mm < 1 || mm > 12 || dd < 1 || dd > 31) return '';
+      return drIso(yy, mm, dd);
+    }
+    function drMD(iso) {
+      if (!iso) return '-';
+      const s = String(iso).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(5, 10).replace('-', '/');
+      const parsed = drDate(s);
+      return parsed ? parsed.slice(5, 10).replace('-', '/') : s;
+    }
     function drDayLabel(iso) { return drMD(iso) + ' ' + ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][drDow(iso)]; }
     function drLocalToday() { const d = new Date(); return drIso(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
 
@@ -5483,23 +5536,33 @@
       }
       const s = String(v).trim();
       let m = s.match(/^(\d{4})[-\/\.](\d{1,2})[-\/\.](\d{1,2})/);
-      if (m) return drIso(m[1], m[2], m[3]);
+      if (m) return drIsoValid(m[1], m[2], m[3]);
       m = s.match(/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})/);
       if (m) {
         let first = +m[1], second = +m[2];
-        if (first > 12) return drIso(m[3], second, first);
-        return drIso(m[3], first, second);
+        if (first > 12) return drIsoValid(m[3], second, first);
+        return drIsoValid(m[3], first, second);
+      }
+      m = s.match(/^(\d{2})[-\/\.](\d{1,2})[-\/\.](\d{1,2})(?:\s|$)/);
+      if (m) {
+        const a = +m[1], b = +m[2], c = +m[3];
+        if (a >= 20 && a <= 49 && b >= 1 && b <= 12 && c >= 1 && c <= 31) return drIsoValid(2000 + a, b, c);
+        if (a >= 20 && a <= 49 && c >= 1 && c <= 12 && b >= 1 && b <= 31) return drIsoValid(2000 + a, c, b);
+        if (c >= 20 && c <= 49) {
+          if (a > 12) return drIsoValid(2000 + c, b, a);
+          return drIsoValid(2000 + c, a, b);
+        }
       }
       m = s.match(/^(\d{1,2})[\u6708\/\-](\d{1,2})[\u65e5\u53f7]?/);
       if (m) {
         const yr = new Date().getFullYear();
-        return drIso(yr, m[1], m[2]);
+        return drIsoValid(yr, m[1], m[2]);
       }
       m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})/);
       if (m) {
         const mon = DR_MON[m[2].toLowerCase()];
         let yr = +m[3]; if (yr < 100) yr += 2000;
-        if (mon) return drIso(yr, mon, m[1]);
+        if (mon) return drIsoValid(yr, mon, m[1]);
       }
       return '';
     }
@@ -5644,6 +5707,14 @@
       return Array.from(set).sort((a, b) => b.localeCompare(a));
     }
 
+    function drFormatDateRange(dateSet) {
+      if (!dateSet || !dateSet.size) return '';
+      const arr = Array.from(dateSet).filter(Boolean).sort();
+      if (!arr.length) return '';
+      if (arr.length === 1) return drMD(arr[0]);
+      return `${drMD(arr[0])}-${drMD(arr[arr.length - 1])}`;
+    }
+
     // ---- computation ----
     function drCompute() {
       const today = DR.today;
@@ -5662,13 +5733,14 @@
         if (!s) {
           const disp = k === 'BACKUP' ? 'BackUp' : drTxt(raw);
           s = {
-            key: k, name: disp || k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
-            lostTotal: 0, lostByDriver: 0, lostByHub: 0,
-            willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0,
+            key: k, name: disp || k, signed: 0, daY: new Set(), daT: new Set(), daByDate: new Map(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
+            dnrDriverByDate: new Map(), dnrDriverLastTotal: 0, dnrDriverPrevTotal: 0, dnrDriverLastMap: new Map(), dnrDriverPrevMap: new Map(),
+            lostTotal: 0, prevLostTotal: 0, lostByDriver: 0, lostByHub: 0, prevLostByHub: 0,
+            willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0, prevWillLostByHub: 0,
             return1Total: 0, prevReturn1Total: 0, return2Total: 0,
             pend3: [], noAttend: [], drivers: new Map(), pending: [], pendingPrev: [],
             typeCountsMain: new Map(), typeCountsPrev: new Map(), clientNames: new Map(),
-            lostAllDrivers: new Map(), willLostAllDrivers: new Map(),
+            lostAllDrivers: new Map(), prevLostAllDrivers: new Map(), willLostAllDrivers: new Map(), prevWillLostAllDrivers: new Map(),
             daYRecords: [], daTRecords: [], noAttendRecords: [],
             dnrDriverRecords: [], dnrDriverRecordsByDrv: new Map(), dnrYestRecords: [],
             lostRecords: [], lostByDriverRecords: [], lostByHubRecords: [], lostRecordsByDrv: new Map(),
@@ -5688,7 +5760,7 @@
         let d = s.drivers.get(k);
         if (!d) {
           d = {
-            key: k, name: drTxt(raw), signed: 0, hasY: false, hasT: false, dnr: 0,
+            key: k, name: drTxt(raw), signed: 0, hasY: false, hasT: false, latestAttendDate: '', dnr: 0,
             lost: 0, prevLost: 0, scanDates: new Map(),
             willLost: 0, prevWillLost: 0, willLostScanDates: new Map(),
             needReturn: 0, prevNeedReturn: 0, returnScanDates: new Map(),
@@ -5740,11 +5812,12 @@
         });
       }
 
-      // DA (capacity): yesterday / today
+      // DA (all uploaded DA data)
+      const daDatesSet = new Set();
       if (da) {
-        const daHasYest = da.records.some(rec => drDate(rec.date) === yest);
         da.records.forEach((rec, idx) => {
           const date = drDate(rec.date);
+          if (date) daDatesSet.add(date);
           const s = getSt(rec.station);
           if (!s) return;
           const rawName = drTxt(rec.driver);
@@ -5756,24 +5829,24 @@
             const dk = drKey(name);
             if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, name);
           }
-          if (date === yest) {
-            const n = drNum(rec.signed);
-            const daRec = { date, station: s.name, driverid: drvId, driver: name, signed: n };
-            s.signed += n;
-            s.daY.add(capKey);
-            s.daYRecords.push(daRec);
-            if (d) { d.hasY = true; d.signed += n; d.signedRecords.push(daRec); }
-          } else if (date === today) {
-            const daRecT = { date, station: s.name, driverid: drvId, driver: name, signed: drNum(rec.signed) };
-            s.daT.add(capKey);
-            s.daTRecords.push(daRecT);
-            if (d) d.hasT = true;
-            if (!daHasYest) {
-              const n = drNum(rec.signed);
-              s.signed += n;
-              s.daY.add(capKey);
-              s.daYRecords.push(daRecT);
-              if (d) { d.hasY = true; d.signed += n; d.signedRecords.push(daRecT); }
+          const n = drNum(rec.signed);
+          const daRec = { date, station: s.name, driverid: drvId, driver: name, signed: n };
+          s.signed += n;
+          s.daY.add(capKey);
+          s.daYRecords.push(daRec);
+          if (date) {
+            if (!s.daByDate.has(date)) s.daByDate.set(date, { signed: 0, daSet: new Set(), records: [] });
+            const db = s.daByDate.get(date);
+            db.signed += n;
+            db.daSet.add(capKey);
+            db.records.push(daRec);
+          }
+          if (d) {
+            d.hasY = true;
+            d.signed += n;
+            d.signedRecords.push(daRec);
+            if (date && (!d.latestAttendDate || date > d.latestAttendDate)) {
+              d.latestAttendDate = date;
             }
           }
         });
@@ -5781,7 +5854,9 @@
 
       // DNR:
       // 1) Region DNR DA: all dates where finalBlame="Driver" and Times = 1
-      // 2) Station/Driver Yest DNR: Times = 1 and Complaint Date = yesterday (weekday rule)
+      // 2) Station/Driver DNR: all uploaded DNR rows where Times = 1
+      const dnrDatesSet = new Set();
+      const dnrDriverDatesSet = new Set();
       if (dnr && !dnr.missing.length) {
         if (!('finalblame' in dnr.map)) {
           warnings.push('DNR sheet: column finalBlame / final responsibility not found (DNR DA may be 0)');
@@ -5791,15 +5866,27 @@
           if ('waybill' in dnr.map && !drTxt(rec.waybill)) continue;
           const raw = drTxt(rec.driver);
           const timesVal = drNum(rec.times);
+          const cdateIso = drDate(rec.cdate);
+          if (timesVal === 1 && cdateIso) dnrDatesSet.add(cdateIso);
           const fb = ('finalblame' in dnr.map) ? drTxt(rec.finalblame).toLowerCase() : '';
           const isDriverBlame = (fb === 'driver' || fb.includes('driver') || fb.includes('\u53f8\u673a'));
           const dnrWb = ('waybill' in dnr.map) ? drTxt(rec.waybill) : '';
           const dnrPodRaw = drTxt(rec.pod);
           const dnrPodClean = (dnrPodRaw && dnrPodRaw !== '0') ? dnrPodRaw : '';
-          const dnrRec = { waybill: dnrWb, station: s.name, driver: raw, cdate: drDate(rec.cdate), finalblame: ('finalblame' in dnr.map) ? drTxt(rec.finalblame) : '', pod: dnrPodClean, times: timesVal };
+          const dnrRec = { waybill: dnrWb, station: s.name, driver: raw, cdate: cdateIso, finalblame: ('finalblame' in dnr.map) ? drTxt(rec.finalblame) : '', pod: dnrPodClean, times: timesVal };
           if (timesVal === 1 && isDriverBlame) {
             s.dnrDriverTotal++;
             s.dnrDriverRecords.push(dnrRec);
+            if (cdateIso) {
+              dnrDriverDatesSet.add(cdateIso);
+              if (!s.dnrDriverByDate.has(cdateIso)) s.dnrDriverByDate.set(cdateIso, { total: 0, drivers: new Map() });
+              const dEntry = s.dnrDriverByDate.get(cdateIso);
+              dEntry.total++;
+              if (drValidDrv(raw)) {
+                const dk = drKey(raw);
+                dEntry.drivers.set(dk, (dEntry.drivers.get(dk) || 0) + 1);
+              }
+            }
             if (drValidDrv(raw)) {
               const dk = drKey(raw);
               s.dnrDrivers.set(dk, (s.dnrDrivers.get(dk) || 0) + 1);
@@ -5808,7 +5895,7 @@
               if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, raw);
             }
           }
-          if (drDate(rec.cdate) !== yDnr || timesVal !== 1) continue;
+          if (timesVal !== 1) continue;
           s.dnr++;
           s.dnrYestRecords.push(dnrRec);
           if (drValidDrv(raw)) {
@@ -5969,8 +6056,24 @@
           deadline
         });
         s.typeCountsPrev.set(type, (s.typeCountsPrev.get(type) || 0) + 1);
-        if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) {
+        const prevScanType = type.toLowerCase().replace(/\s+/g, ' ');
+        const prevIsDrvScan = (prevScanType === 'problem scan' || prevScanType === 'out of warehouse scan');
+        if (deadline && (deadline === sysYest || deadline === sysToday)) {
+          s.prevLostTotal++;
+          if (!prevIsDrvScan) s.prevLostByHub++;
+          if (drValidDrv(rawDrv)) {
+            const dk = drKey(rawDrv);
+            s.prevLostAllDrivers.set(dk, (s.prevLostAllDrivers.get(dk) || 0) + 1);
+            if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, rawDrv);
+          }
+        } else if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) {
           s.prevWillLostTotal++;
+          if (!prevIsDrvScan) s.prevWillLostByHub++;
+          if (drValidDrv(rawDrv)) {
+            const dk = drKey(rawDrv);
+            s.prevWillLostAllDrivers.set(dk, (s.prevWillLostAllDrivers.get(dk) || 0) + 1);
+            if (!s.driverDisplayNames.has(dk)) s.driverDisplayNames.set(dk, rawDrv);
+          }
         }
         if (remark.toLowerCase() === 'da return') {
           s.prevReturn1Total++;
@@ -6030,7 +6133,128 @@
         if (globalReturn1Set.has(k) && globalDnrSet.has(k)) triDriverSet.add(k);
       }
 
-      return { today, yest, yDnr, st, warnings, triDriverSet, hasPendingCompare };
+      const dnrDriverDates = Array.from(dnrDriverDatesSet).sort();
+      const hasDnrCompare = dnrDriverDates.length >= 2;
+      const dnrLastDate = dnrDriverDates.length ? dnrDriverDates[dnrDriverDates.length - 1] : '';
+      const dnrPrevDate = hasDnrCompare ? dnrDriverDates[dnrDriverDates.length - 2] : '';
+      if (hasDnrCompare) {
+        for (const s of st.values()) {
+          const lastE = s.dnrDriverByDate.get(dnrLastDate);
+          const prevE = s.dnrDriverByDate.get(dnrPrevDate);
+          s.dnrDriverLastTotal = lastE ? lastE.total : 0;
+          s.dnrDriverPrevTotal = prevE ? prevE.total : 0;
+          s.dnrDriverLastMap = lastE ? lastE.drivers : new Map();
+          s.dnrDriverPrevMap = prevE ? prevE.drivers : new Map();
+        }
+      }
+
+      // Build DNR Tab aggregation (strictly finalBlame=Driver & Times=1)
+      const dnrTabDatesSet = new Set();
+      const dnrTabStMap = new Map();
+      const dnrTabDrvMap = new Map();
+      if (dnr && !dnr.missing.length) {
+        for (const rec of dnr.records) {
+          const s = getSt(rec.station);
+          if (!s) continue;
+          if ('waybill' in dnr.map && !drTxt(rec.waybill)) continue;
+          const timesVal = drNum(rec.times);
+          if (timesVal !== 1) continue;
+          const fb = ('finalblame' in dnr.map) ? drTxt(rec.finalblame).toLowerCase() : '';
+          if (fb !== 'driver') continue;
+          const cdateIso = drDate(rec.cdate);
+          if (!cdateIso) continue;
+          dnrTabDatesSet.add(cdateIso);
+
+          const rawDrv = drTxt(rec.driver);
+          const dk = drValidDrv(rawDrv) ? drKey(rawDrv) : (rawDrv ? ('RAW:' + rawDrv.toUpperCase()) : 'UNKNOWN');
+          const drvName = (drValidDrv(rawDrv) && s.driverDisplayNames.get(dk)) || rawDrv || 'Unknown';
+          const podRaw = drTxt(rec.pod);
+          const podClean = (podRaw && podRaw !== '0') ? podRaw : '';
+          const wb = ('waybill' in dnr.map) ? drTxt(rec.waybill) : '';
+          const dnrRec = { waybill: wb, station: s.name, driver: drvName, cdate: cdateIso, finalblame: drTxt(rec.finalblame), pod: podClean, times: timesVal };
+
+          const stKey = drStKey(s.name);
+          if (!dnrTabStMap.has(stKey)) {
+            dnrTabStMap.set(stKey, { station: s.name, stationKey: stKey, total: 0, records: [], podCounts: new Map(), drvDateCounts: new Map(), drvTotals: new Map(), drvNames: new Map(), byDate: new Map() });
+          }
+          const stEntry = dnrTabStMap.get(stKey);
+          stEntry.total++;
+          stEntry.records.push(dnrRec);
+          if (podClean) stEntry.podCounts.set(podClean, (stEntry.podCounts.get(podClean) || 0) + 1);
+          if (!stEntry.byDate.has(cdateIso)) stEntry.byDate.set(cdateIso, { count: 0, records: [], pods: new Map() });
+          const stDateCell = stEntry.byDate.get(cdateIso);
+          stDateCell.count++;
+          stDateCell.records.push(dnrRec);
+          stDateCell.pods.set(podClean || 'Unknown', (stDateCell.pods.get(podClean || 'Unknown') || 0) + 1);
+          stEntry.drvTotals.set(dk, (stEntry.drvTotals.get(dk) || 0) + 1);
+          if (!stEntry.drvNames.has(dk)) stEntry.drvNames.set(dk, drvName);
+          if (!stEntry.drvDateCounts.has(dk)) stEntry.drvDateCounts.set(dk, new Map());
+          const dMap = stEntry.drvDateCounts.get(dk);
+          dMap.set(cdateIso, (dMap.get(cdateIso) || 0) + 1);
+
+          const rowKey = stKey + '||' + dk;
+          if (!dnrTabDrvMap.has(rowKey)) {
+            dnrTabDrvMap.set(rowKey, { station: s.name, stationKey: stKey, driverKey: dk, driver: drvName, total: 0, records: [], pods: new Map(), byDate: new Map() });
+          }
+          const row = dnrTabDrvMap.get(rowKey);
+          row.total++;
+          row.records.push(dnrRec);
+          if (!row.byDate.has(cdateIso)) row.byDate.set(cdateIso, { count: 0, records: [], pods: new Map() });
+          const cell = row.byDate.get(cdateIso);
+          cell.count++;
+          cell.records.push(dnrRec);
+          const podLabel = podClean || 'Unknown';
+          cell.pods.set(podLabel, (cell.pods.get(podLabel) || 0) + 1);
+          row.pods.set(podLabel, (row.pods.get(podLabel) || 0) + 1);
+        }
+      }
+      const dnrTabDates = Array.from(dnrTabDatesSet).sort();
+      const dnrTabDayCount = dnrTabDates.length;
+      const drJoinPairs = arr => {
+        if (!arr.length) return '-';
+        const lines = [];
+        for (let i = 0; i < arr.length; i += 2) {
+          lines.push(arr.slice(i, i + 2).join(', '));
+        }
+        return lines.join('\n');
+      };
+      const dnrTabStations = Array.from(dnrTabStMap.values()).map(se => {
+        const commonPodList = Array.from(se.podCounts.entries())
+          .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+          .map(e => `${e[0]}:${e[1]}`);
+        const topDrvList = [];
+        for (const [dk, dMap] of se.drvDateCounts.entries()) {
+          let hasGt1 = false;
+          for (const cnt of dMap.values()) { if (cnt > 1) { hasGt1 = true; break; } }
+          if (hasGt1) topDrvList.push({ dk, name: se.drvNames.get(dk) || dk, total: se.drvTotals.get(dk) || 0 });
+        }
+        topDrvList.sort((a, b) => (b.total - a.total) || a.name.localeCompare(b.name));
+        return {
+          station: se.station,
+          stationKey: se.stationKey,
+          total: se.total,
+          dnrPerDay: dnrTabDayCount ? Math.round(se.total / dnrTabDayCount) : 0,
+          commonPod: drJoinPairs(commonPodList),
+          topDriver: drJoinPairs(topDrvList.map(x => `${x.name}:${x.total}`)),
+          topDriverTotal: drJoinPairs(Array.from(se.drvTotals.entries()).sort((a, b) => (b[1] - a[1])).map(([dk2, tot2]) => `${se.drvNames.get(dk2) || dk2}:${tot2}`)),
+          byDate: se.byDate,
+          records: se.records
+        };
+      }).sort((a, b) => (b.total - a.total) || a.station.localeCompare(b.station));
+
+      const lastDnrDate = dnrTabDates.length ? dnrTabDates[dnrTabDates.length - 1] : '';
+      const dnrTabDrivers = Array.from(dnrTabDrvMap.values()).sort((a, b) => {
+        if (b.total !== a.total) return b.total - a.total;
+        const aLast = lastDnrDate && a.byDate.has(lastDnrDate) ? a.byDate.get(lastDnrDate).count : 0;
+        const bLast = lastDnrDate && b.byDate.has(lastDnrDate) ? b.byDate.get(lastDnrDate).count : 0;
+        if (bLast !== aLast) return bLast - aLast;
+        return a.station.localeCompare(b.station) || a.driver.localeCompare(b.driver);
+      });
+      const dnrTab = { dates: dnrTabDates, stationRows: dnrTabStations, driverRows: dnrTabDrivers };
+
+      const daDateLabel = drFormatDateRange(daDatesSet);
+      const dnrDateLabel = drFormatDateRange(dnrDatesSet);
+      return { today, yest, yDnr, daDateLabel, dnrDateLabel, st, warnings, triDriverSet, hasPendingCompare, hasDnrCompare, dnrLastDate, dnrPrevDate, dnrTab };
     }
 
     function drBuildGroups(C) {
@@ -6224,7 +6448,7 @@
       return lines.join('<br>');
     }
 
-    function drDriverHtml(s, daYCount, daTCount, triDriverSet, hasPendingCompare) {
+    function drDriverHtml(s, daYCount, triDriverSet, hasPendingCompare, daDateLabel, dnrDateLabel) {
       const list = Array.from(s.drivers.values()).sort((a, b) =>
         (b.dnr + b.needReturn + b.lost + b.willLost) - (a.dnr + a.needReturn + a.lost + a.willLost) ||
         b.needReturn - a.needReturn ||
@@ -6236,20 +6460,19 @@
       );
       if (!list.length) return '<div class="dr-empty">No driver data</div>';
       const yTxt = daYCount != null ? daYCount : s.daY.size;
-      const tTxt = daTCount != null ? daTCount : s.daT.size;
-      const yHdr = drDrillWrap(yTxt, `${s.name} · Yest DA (${yTxt})`, s.daYRecords, 'da');
-      const tHdr = drDrillWrap(tTxt, `${s.name} · Today DA (${tTxt})`, s.daTRecords, 'da');
+      const yHdr = drDrillWrap(yTxt, `${s.name} · DA (${yTxt})`, s.daYRecords, 'da');
+      const daSub = daDateLabel ? ` (${drEsc(daDateLabel)})` : '';
+      const dnrSub = dnrDateLabel ? ` (${drEsc(dnrDateLabel)})` : '';
       let h = `<table class="dr-table"><thead><tr>` +
-        `<th class="l dr-col-2cm">\uD83D\uDE97 Driver (yest: ${yHdr}, today: ${tHdr})</th>` +
-        `<th class="dr-col-num">Yest Signed</th>` +
-        `<th class="dr-col-num">Attend</th>` +
-        `<th class="l dr-col-dnr">DNR</th>` +
+        `<th class="l dr-col-2cm">\uD83D\uDE97 Driver (${yHdr})</th>` +
+        `<th class="dr-col-num">Signed${daSub}</th>` +
+        `<th class="dr-col-num">The latest attend Date</th>` +
+        `<th class="l dr-col-dnr">DNR${dnrSub}</th>` +
         `<th class="l dr-col-2cm">Need Return</th>` +
         `<th class="l dr-col-2cm">Lost</th>` +
         `<th class="l dr-col-2cm">WillLost</th>` +
         `</tr></thead><tbody>`;
       for (const d of list) {
-        const noAtt = !d.hasT;
         const retDiff = (hasPendingCompare && (d.needReturn || d.prevNeedReturn)) ? drDiffHtml(d.needReturn, d.prevNeedReturn) : '';
         const lostDiff = (hasPendingCompare && (d.lost || d.prevLost)) ? drDiffHtml(d.lost, d.prevLost) : '';
         const willLostDiff = (hasPendingCompare && (d.willLost || d.prevWillLost)) ? drDiffHtml(d.willLost, d.prevWillLost) : '';
@@ -6261,10 +6484,11 @@
         const dnrStr = drFormatDnrItems(d.dnrItems);
         const isTri = triDriverSet && triDriverSet.has(d.key);
         const drvNameHtml = (isTri ? `<span class="dr-bad-txt">${drEsc(d.name)}</span>` : drEsc(d.name)) + pendDiff;
+        const latestAttStr = d.latestAttendDate ? drMD(d.latestAttendDate) : '';
         h += '<tr>' +
           drCell(drvNameHtml, 'l dr-col-2cm wrap') +
-          drZeroBlankCell(d.signed, '', { title: `${s.name} · ${d.name} · Yest Signed (${d.signed})`, rows: d.signedRecords, kind: 'da' }) +
-          (noAtt ? drCell('No', 'dr-bad') : drCell('')) +
+          drZeroBlankCell(d.signed, '', { title: `${s.name} · ${d.name} · Signed (${d.signed})`, rows: d.signedRecords, kind: 'da' }) +
+          drCell(latestAttStr) +
           drCell(dnrStr, 'l dr-col-dnr wrap') +
           drCell(returnDetails, 'dr-col-2cm wrap') +
           drCell(lostDetails, 'dr-col-2cm wrap') +
@@ -6305,22 +6529,24 @@
       frame.className = 'is-station';
 
       const shortStn = drGetShortStName(s.name);
-      const reportTitle = `${drMD(C.today)} ${shortStn} Report`;
+      const daLbl = C.daDateLabel ? ` (${drEsc(C.daDateLabel)})` : '';
+      const dnrLbl = C.dnrDateLabel ? ` (${drEsc(C.dnrDateLabel)})` : '';
+      const reportTitle = `${C.daDateLabel || drMD(C.today)} ${shortStn} Report`;
 
       let h = `<div class="dr-banner"><span>${drEsc(reportTitle)}</span><small>Update Time: ${drEsc(DR.updateTime || '--:--')}</small></div>`;
-      h += `<div class="dr-dates"><span>${drEsc(g.resp || g.name)} \u00B7 ${drEsc(s.name)}</span><span>Today ${drDayLabel(C.today)} \u00B7 Yest ${drDayLabel(C.yest)}${C.yDnr !== C.yest ? ' \u00B7 DNR yest ' + drDayLabel(C.yDnr) : ''}</span></div>`;
+      h += `<div class="dr-dates"><span>${drEsc(g.resp || g.name)} \u00B7 ${drEsc(s.name)}</span><span>DA: ${drEsc(C.daDateLabel || '-')} \u00B7 DNR: ${drEsc(C.dnrDateLabel || '-')}</span></div>`;
 
       const spr = s.daY.size ? Math.floor(s.signed / s.daY.size) : null;
 
-      // 1. Yesterday summarize (Lost + WillLost)
-      h += '<div class="dr-sec"><div class="dr-sec-title">Yesterday Summarize</div><table class="dr-table"><thead><tr><th class="dr-col-num">Yest Signed</th><th class="dr-col-num">Yest DNR</th><th class="dr-col-num">Lost</th><th class="dr-col-num">WillLost</th><th class="l dr-col-2cm">Lost Details</th></tr></thead><tbody>';
-      h += '<tr>' + drZeroKeepCell(s.signed, { title: `${s.name} · Yest Signed (${s.signed})`, rows: s.daYRecords, kind: 'da' }) + drZeroBlankCell(s.dnr, 'dr-bad', { title: `${s.name} · Yest DNR (${s.dnr})`, rows: s.dnrYestRecords, kind: 'dnr' }) + drZeroBlankCell(s.lostTotal, 'dr-bad', { title: `${s.name} · Lost (${s.lostTotal})`, rows: s.lostRecords, kind: 'pending' }) + drZeroBlankCell(s.willLostTotal, 'dr-warn', { title: `${s.name} · WillLost (${s.willLostTotal})`, rows: s.willLostRecords, kind: 'pending' }) + drCell(drFormatStationLostDetails(s), 'l dr-col-2cm wrap') + '</tr>';
+      // 1. Summarize (Lost + WillLost)
+      h += `<div class="dr-sec"><div class="dr-sec-title">Summarize</div><table class="dr-table"><thead><tr><th class="dr-col-num">Signed${daLbl}</th><th class="dr-col-num">DNR${dnrLbl}</th><th class="dr-col-num">Lost</th><th class="dr-col-num">WillLost</th><th class="l dr-col-2cm">Lost Details</th></tr></thead><tbody>`;
+      h += '<tr>' + drZeroKeepCell(s.signed, { title: `${s.name} · Signed (${s.signed})`, rows: s.daYRecords, kind: 'da' }) + drZeroBlankCell(s.dnr, 'dr-bad', { title: `${s.name} · DNR (${s.dnr})`, rows: s.dnrYestRecords, kind: 'dnr' }) + drZeroBlankCell(s.lostTotal, 'dr-bad', { title: `${s.name} · Lost (${s.lostTotal})`, rows: s.lostRecords, kind: 'pending' }) + drZeroBlankCell(s.willLostTotal, 'dr-warn', { title: `${s.name} · WillLost (${s.willLostTotal})`, rows: s.willLostRecords, kind: 'pending' }) + drCell(drFormatStationLostDetails(s), 'l dr-col-2cm wrap') + '</tr>';
       h += '</tbody></table></div>';
 
-      // 2. Today capacity (Station column removed)
-      h += '<div class="dr-sec"><div class="dr-sec-title">Today Capacity</div><table class="dr-table"><thead><tr><th class="dr-col-num">Yest SPR</th><th class="dr-col-num">Yest DA</th><th class="dr-col-num">Today DA</th><th>Pending 3rd</th><th class="dr-col-num">No attend</th></tr></thead><tbody>';
-      h += '<tr>' + drZeroKeepCell(spr) + drZeroKeepCell(s.daY.size, { title: `${s.name} · Yest DA (${s.daY.size})`, rows: s.daYRecords, kind: 'da' }) + drZeroKeepCell(s.daT.size, { title: `${s.name} · Today DA (${s.daT.size})`, rows: s.daTRecords, kind: 'da' }) +
-        drCell(s.pend3.map(drEsc).join(', '), 'wrap') + drZeroBlankCell(s.noAttend.length, 'dr-warn', { title: `${s.name} · No Attend (${s.noAttend.length})`, rows: s.noAttendRecords, kind: 'da' }) + '</tr>';
+      // 2. Capacity (Station column removed)
+      h += `<div class="dr-sec"><div class="dr-sec-title">Capacity</div><table class="dr-table"><thead><tr><th class="dr-col-num">SPR${daLbl}</th><th class="dr-col-num">DA${daLbl}</th><th>Pending 3rd</th></tr></thead><tbody>`;
+      h += '<tr>' + drZeroKeepCell(spr) + drZeroKeepCell(s.daY.size, { title: `${s.name} · DA (${s.daY.size})`, rows: s.daYRecords, kind: 'da' }) +
+        drCell(s.pend3.map(drEsc).join(', '), 'wrap') + '</tr>';
       h += '</tbody></table></div>';
 
       // 3. Backlog Matrices (2x2 compact side-by-side layout)
@@ -6354,10 +6580,9 @@
 
       // 4. Drivers
       const daYCount = s.daY.size;
-      const daTCount = s.daT.size;
-      const mDrv = drDriverHtml(s, daYCount, daTCount, C.triDriverSet, C.hasPendingCompare);
+      const mDrv = drDriverHtml(s, daYCount, C.triDriverSet, C.hasPendingCompare, C.daDateLabel, C.dnrDateLabel);
       if (mDrv) {
-        h += `<div class="dr-sec"><div class="dr-sec-title sub">\uD83D\uDE97 Driver (yest: ${drDrillWrap(daYCount, `${s.name} · Yest DA (${daYCount})`, s.daYRecords, 'da')}, today: ${drDrillWrap(daTCount, `${s.name} · Today DA (${daTCount})`, s.daTRecords, 'da')})</div>${mDrv}</div>`;
+        h += `<div class="dr-sec"><div class="dr-sec-title sub">\uD83D\uDE97 Driver (${drDrillWrap(daYCount, `${s.name} · DA (${daYCount})`, s.daYRecords, 'da')})</div>${mDrv}</div>`;
       }
 
       h += '<div class="dr-foot">Generated by STR Performance Tool</div>';
@@ -6378,17 +6603,15 @@
       }
       stPillsHtml += '</div>';
 
-      // Row 2: signedDate controls & Buttons
+      // Row 2: Action Buttons
       let ctrlRowHtml = '<div class="dr-sub-row" style="justify-content:space-between;">' +
         '<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">' +
-          '<span class="dr-sub-label">signedDate:</span>' +
-          `<select id="dr-toolbar-date" style="padding:0.25rem 0.45rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.78rem;" onchange="drOnDateChange(this.value)">` +
-            (DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${drMD(d)}</option>`).join('') : `<option value="${C.today}">${drMD(C.today)}</option>`) +
-          `</select>` +
-          '<span class="dr-date-pills" id="dr-toolbar-pills"></span>' +
+          `<span class="dr-sub-label">DA: ${drEsc(C.daDateLabel || '-')} \u00B7 DNR: ${drEsc(C.dnrDateLabel || '-')}</span>` +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">' +
           '<button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="document.getElementById(\'dr-file-input\').click()">\uD83D\uDCCB Import To-Do List</button>' +
+          '<button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drCopyStationLink()">\uD83D\uDD17 Copy Station Link</button>' +
+          '<button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportDataJson()">\uD83D\uDCE6 Export Data (JSON)</button>' +
           '<button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportImage()">\u2B07 Export Image</button>' +
           '<button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubReport()">\uD83D\uDDBC Batch Export Hub Report</button>' +
           '<button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubExcel()">\uD83D\uDCCA Batch Export Hub Excel</button>' +
@@ -6396,7 +6619,6 @@
       '</div>';
 
       subNav.innerHTML = stPillsHtml + ctrlRowHtml + drAscanPillsHtml();
-      drRenderToolbarPills();
 
       const s = C.st.get(DR.activeStation);
       if (!s) {
@@ -6418,25 +6640,27 @@
         if (!allStKeys.includes(k)) allStKeys.push(k);
       }
       return allStKeys.map(k => C.st.get(k) || {
-        key: k, name: k, signed: 0, daY: new Set(), daT: new Set(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
-        lostTotal: 0, lostByDriver: 0, lostByHub: 0,
-        willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0,
+        key: k, name: k, signed: 0, daY: new Set(), daT: new Set(), daByDate: new Map(), dnr: 0, dnrDriverTotal: 0, lostY: 0, lostT: 0,
+        dnrDriverByDate: new Map(), dnrDriverLastTotal: 0, dnrDriverPrevTotal: 0, dnrDriverLastMap: new Map(), dnrDriverPrevMap: new Map(),
+        lostTotal: 0, prevLostTotal: 0, lostByDriver: 0, lostByHub: 0, prevLostByHub: 0,
+        willLostTotal: 0, prevWillLostTotal: 0, willLostByDriver: 0, willLostByHub: 0, prevWillLostByHub: 0,
         return1Total: 0, prevReturn1Total: 0, return2Total: 0,
         pend3: [], noAttend: [], drivers: new Map(), pending: [], pendingPrev: [],
         typeCountsMain: new Map(), typeCountsPrev: new Map(), clientNames: new Map(),
-        lostAllDrivers: new Map(), willLostAllDrivers: new Map(),
+        lostAllDrivers: new Map(), prevLostAllDrivers: new Map(), willLostAllDrivers: new Map(), prevWillLostAllDrivers: new Map(),
         return1AllDrivers: new Map(), prevReturn1AllDrivers: new Map(), return2AllDrivers: new Map(), dnrDrivers: new Map(), driverDisplayNames: new Map()
       });
     }
 
-    function drRegionDaLines(mapObj, s, triDriverSet, prevMap, asHtml, recMap, modalKind, secLabel) {
+    function drRegionDaLines(mapObj, s, triDriverSet, prevMap, asHtml, recMap, modalKind, secLabel, curCompareMap) {
       return Array.from(mapObj.entries())
         .filter(([, cnt]) => cnt >= 1)
         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([k, cnt]) => {
           const name = s.driverDisplayNames.get(k) || k;
+          const cmpCur = curCompareMap ? (curCompareMap.get(k) || 0) : cnt;
           const diffStr = prevMap
-            ? ' ' + (asHtml ? drDiffHtml(cnt, prevMap.get(k) || 0) : drDiffText(cnt, prevMap.get(k) || 0))
+            ? ' ' + (asHtml ? drDiffHtml(cmpCur, prevMap.get(k) || 0) : drDiffText(cmpCur, prevMap.get(k) || 0))
             : '';
           if (!asHtml) return `${name}: ${cnt}${diffStr}`;
           const escName = drEsc(name);
@@ -6453,19 +6677,36 @@
       const sep = asHtml ? '<br>' : '\n';
       const wrapTot = (lbl, rows, mKind, title) => (asHtml && rows && rows.length) ? drDrillWrap(lbl, title, rows, mKind) : lbl;
       if (kind === 'dnr') {
-        if (!s.dnrDriverTotal) return '';
-        return [wrapTot(`Total:${s.dnrDriverTotal}`, s.dnrDriverRecords, 'dnr', `${s.name} · DNR DA (${s.dnrDriverTotal})`), ...drRegionDaLines(s.dnrDrivers, s, triDriverSet, null, asHtml, s.dnrDriverRecordsByDrv, 'dnr', 'DNR DA')].join(sep);
+        if (!s.dnrDriverTotal && !(hasCmp && s.dnrDriverPrevTotal)) return '';
+        const totDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.dnrDriverLastTotal || 0, s.dnrDriverPrevTotal || 0) : drDiffText(s.dnrDriverLastTotal || 0, s.dnrDriverPrevTotal || 0)) : '';
+        const prevMap = hasCmp ? (s.dnrDriverPrevMap || new Map()) : null;
+        const curMap = hasCmp ? (s.dnrDriverLastMap || new Map()) : null;
+        return [wrapTot(`Total:${s.dnrDriverTotal}`, s.dnrDriverRecords, 'dnr', `${s.name} · DNR DA (${s.dnrDriverTotal})`) + totDiff, ...drRegionDaLines(s.dnrDrivers, s, triDriverSet, prevMap, asHtml, s.dnrDriverRecordsByDrv, 'dnr', 'DNR DA', curMap)].join(sep);
       }
       if (kind === 'lost') {
-        if (!s.lostTotal) return '';
-        return [wrapTot(`Total:${s.lostTotal}`, s.lostRecords, 'pending', `${s.name} · Lost (${s.lostTotal})`), wrapTot(`hub lost:${s.lostByHub}`, s.lostByHubRecords, 'pending', `${s.name} · Hub Lost (${s.lostByHub})`), ...drRegionDaLines(s.lostAllDrivers, s, triDriverSet, null, asHtml, s.lostRecordsByDrv, 'pending', 'Lost')].join(sep);
+        if (!s.lostTotal && !(hasCmp && s.prevLostTotal)) return '';
+        const totDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.lostTotal, s.prevLostTotal) : drDiffText(s.lostTotal, s.prevLostTotal)) : '';
+        const hubDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.lostByHub, s.prevLostByHub) : drDiffText(s.lostByHub, s.prevLostByHub)) : '';
+        const prevMap = hasCmp ? s.prevLostAllDrivers : null;
+        return [
+          wrapTot(`Total:${s.lostTotal}`, s.lostRecords, 'pending', `${s.name} · Lost (${s.lostTotal})`) + totDiff,
+          wrapTot(`hub lost:${s.lostByHub}`, s.lostByHubRecords, 'pending', `${s.name} · Hub Lost (${s.lostByHub})`) + hubDiff,
+          ...drRegionDaLines(s.lostAllDrivers, s, triDriverSet, prevMap, asHtml, s.lostRecordsByDrv, 'pending', 'Lost')
+        ].join(sep);
       }
       if (kind === 'willlost') {
-        if (!s.willLostTotal) return '';
-        return [wrapTot(`Total:${s.willLostTotal}`, s.willLostRecords, 'pending', `${s.name} · WillLost (${s.willLostTotal})`), wrapTot(`hub lost:${s.willLostByHub}`, s.willLostByHubRecords, 'pending', `${s.name} · Hub WillLost (${s.willLostByHub})`), ...drRegionDaLines(s.willLostAllDrivers, s, triDriverSet, null, asHtml, s.willLostRecordsByDrv, 'pending', 'WillLost')].join(sep);
+        if (!s.willLostTotal && !(hasCmp && s.prevWillLostTotal)) return '';
+        const totDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.willLostTotal, s.prevWillLostTotal) : drDiffText(s.willLostTotal, s.prevWillLostTotal)) : '';
+        const hubDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.willLostByHub, s.prevWillLostByHub) : drDiffText(s.willLostByHub, s.prevWillLostByHub)) : '';
+        const prevMap = hasCmp ? s.prevWillLostAllDrivers : null;
+        return [
+          wrapTot(`Total:${s.willLostTotal}`, s.willLostRecords, 'pending', `${s.name} · WillLost (${s.willLostTotal})`) + totDiff,
+          wrapTot(`hub lost:${s.willLostByHub}`, s.willLostByHubRecords, 'pending', `${s.name} · Hub WillLost (${s.willLostByHub})`) + hubDiff,
+          ...drRegionDaLines(s.willLostAllDrivers, s, triDriverSet, prevMap, asHtml, s.willLostRecordsByDrv, 'pending', 'WillLost')
+        ].join(sep);
       }
       if (kind === 'return1') {
-        if (!s.return1Total) return '';
+        if (!s.return1Total && !(hasCmp && s.prevReturn1Total)) return '';
         const totDiff = hasCmp ? ' ' + (asHtml ? drDiffHtml(s.return1Total, s.prevReturn1Total) : drDiffText(s.return1Total, s.prevReturn1Total)) : '';
         const prevMap = hasCmp ? s.prevReturn1AllDrivers : null;
         return [wrapTot(`Total:${s.return1Total}`, s.return1Records, 'pending', `${s.name} · Return (${s.return1Total})`) + totDiff, ...drRegionDaLines(s.return1AllDrivers, s, triDriverSet, prevMap, asHtml, s.return1RecordsByDrv, 'pending', 'Return')].join(sep);
@@ -6473,19 +6714,19 @@
       return '';
     }
 
-    function drRegionResultLines(mainMap, prevMap, asHtml, maxTypeMap, recMap, labelPrefix) {
-      const types = new Set([...mainMap.keys(), ...prevMap.keys()]);
+    function drRegionResultLines(mainMap, prevMap, asHtml, maxTypeMap, recMap, labelPrefix, hasCmp = true) {
+      const types = new Set([...mainMap.keys(), ...(hasCmp && prevMap ? prevMap.keys() : [])]);
       if (!types.size) return '';
       const sorted = Array.from(types).sort((a, b) => (mainMap.get(b) || 0) - (mainMap.get(a) || 0) || a.localeCompare(b));
       const lines = sorted.map(t => {
         const c2 = mainMap.get(t) || 0;
-        const c1 = prevMap.get(t) || 0;
-        if (!asHtml) return `${t} ${c2} ${drDiffText(c2, c1)}`;
+        const c1 = (prevMap && prevMap.get(t)) || 0;
+        if (!asHtml) return hasCmp ? `${t} ${c2} ${drDiffText(c2, c1)}` : `${t} ${c2}`;
         const isMax = maxTypeMap && c2 > 0 && c2 === maxTypeMap.get(t);
         const recs = recMap && recMap.get(t);
         const rawLbl = isMax ? `<span class="dr-bad-txt">${drEsc(t)} ${c2}</span>` : `${drEsc(t)} ${c2}`;
-        const labelHtml = (recs && recs.length) ? drDrillWrap(rawLbl, `${labelPrefix || 'Result'} · ${t} (${c2})`, recs, 'pending') : rawLbl;
-        return `${labelHtml} ${drDiffHtml(c2, c1)}`;
+        const labelHtml = (recs && recs.length) ? drDrillWrap(rawLbl, `${labelPrefix || 'Pending'} · ${t} (${c2})`, recs, 'pending') : rawLbl;
+        return hasCmp ? `${labelHtml} ${drDiffHtml(c2, c1)}` : labelHtml;
       });
       return lines.join(asHtml ? '<br>' : '\n');
     }
@@ -6537,24 +6778,43 @@
       return rows;
     }
 
+    function drOnSignedDateChange(val) {
+      DR.selectedSignedDate = val || '';
+      if (DR.computed && DR.active === 'region') drRenderRegion(DR.computed);
+    }
+
+    function drGetSignedSlice(s, selDate) {
+      if (selDate && s.daByDate && s.daByDate.has(selDate)) {
+        const db = s.daByDate.get(selDate);
+        return { signed: db.signed, daCount: db.daSet.size, records: db.records };
+      }
+      if (selDate) {
+        return { signed: 0, daCount: 0, records: [] };
+      }
+      return { signed: s.signed, daCount: s.daY ? s.daY.size : 0, records: s.daYRecords || [] };
+    }
+
     function drRenderRegion(C) {
       DR_DRILL_BUCKETS = [];
       const frame = document.getElementById('dr-report-frame');
       frame.className = 'is-region';
+
+      const selSignedDate = DR.selectedSignedDate || '';
+      const signedDateLbl = selSignedDate ? drMD(selSignedDate) : (C.daDateLabel || drMD(C.today));
+      const daDatesOpts = (DR.daDates || []).map(d => `<option value="${drEsc(d)}"${d === selSignedDate ? ' selected' : ''}>${drEsc(drMD(d))}</option>`).join('');
 
       const subNav = document.getElementById('dr-sub-nav');
       if (subNav) {
         subNav.innerHTML = `
           <div class="dr-sub-row" style="justify-content:space-between;">
             <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-              <span class="dr-sub-label">signedDate:</span>
-              <select id="dr-toolbar-date" style="padding:0.25rem 0.45rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.78rem;" onchange="drOnDateChange(this.value)">
-                ${DR.daDates.length ? DR.daDates.map(d => `<option value="${d}"${d === C.today ? ' selected' : ''}>${drMD(d)}</option>`).join('') : `<option value="${C.today}">${drMD(C.today)}</option>`}
-              </select>
-              <span class="dr-date-pills" id="dr-toolbar-pills"></span>
+              <span class="dr-sub-label">DA: ${drEsc(C.daDateLabel || '-')} \u00B7 DNR: ${drEsc(C.dnrDateLabel || '-')}</span>
+              ${DR.daDates && DR.daDates.length ? `<label class="dr-sub-label" style="display:inline-flex;align-items:center;gap:0.3rem;">signedDate: <select onchange="drOnSignedDateChange(this.value)" style="padding:0.2rem 0.45rem;border:1px solid var(--card-border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.78rem;"><option value=""${!selSignedDate ? ' selected' : ''}>All (${DR.daDates.length})</option>${daDatesOpts}</select></label>` : ''}
             </div>
             <div style="display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;">
               <button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="document.getElementById('dr-file-input').click()">\uD83D\uDCCB Import To-Do List</button>
+              <button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drCopyAllStationLinks()">\uD83D\uDD17 Copy All Links</button>
+              <button class="btn btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportDataJson()">\uD83D\uDCE6 Export Data (JSON)</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportImage()">\u2B07 Export Region Report</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drExportRegionExcel()">\uD83D\uDCE5 Export Region Excel</button>
               <button class="btn btn-primary btn-sm" style="font-size:0.78rem;padding:0.35rem 0.7rem;" onclick="drBatchExportHubReport()">\uD83D\uDDBC Batch Export Hub Report</button>
@@ -6562,19 +6822,18 @@
             </div>
           </div>
         ` + drAscanPillsHtml();
-        drRenderToolbarPills();
       }
 
       const sts = drGetRegionStations(C);
-      const spr = s => s.daY.size ? Math.floor(s.signed / s.daY.size) : null;
       const sum = f => sts.reduce((a, s) => a + f(s), 0);
-      const totDaY = sum(s => s.daY.size);
       const triDriverSet = C.triDriverSet || new Set();
 
-      let h = `<div class="dr-banner"><span>${drMD(C.today)} Region Report</span><small>Update Time: ${drEsc(DR.updateTime || '--:--')}</small></div>`;
-      h += `<div class="dr-dates"><span>All Stations \u00B7 Region Overview</span><span>Today ${drDayLabel(C.today)} \u00B7 Yest ${drDayLabel(C.yest)}${C.yDnr !== C.yest ? ' \u00B7 DNR yest ' + drDayLabel(C.yDnr) : ''}</span></div>`;
+      const dnrLbl = C.dnrDateLabel ? ` (${drEsc(C.dnrDateLabel)})` : '';
+      let h = `<div class="dr-banner"><span>${drEsc(signedDateLbl)} Region Report</span><small>Update Time: ${drEsc(DR.updateTime || '--:--')}</small></div>`;
+      h += `<div class="dr-dates"><span>All Stations \u00B7 Region Overview</span><span>signedDate: ${drEsc(signedDateLbl)} \u00B7 DNR: ${drEsc(C.dnrDateLabel || '-')}</span></div>`;
 
       const hasCmp = Boolean(C.hasPendingCompare);
+      const hasDnrCmp = Boolean(C.hasDnrCompare);
       const todoRows = drGetRegionTodoRows(sts, hasCmp);
       const todoPanel = document.getElementById('dr-region-todo-panel');
       const layout = document.getElementById('dr-region-layout');
@@ -6597,52 +6856,60 @@
 
       h += '<div class="dr-sec"><table class="dr-table"><thead><tr>' +
         '<th class="l dr-col-st">Station</th>' +
-        '<th class="dr-col-num">Yest Signed</th>' +
-        '<th class="dr-col-num">Yest SPR</th>' +
-        '<th class="dr-col-num">Yest DA</th>' +
-        '<th class="dr-col-num">Today DA</th>' +
-        '<th class="dr-col-num">Pending</th>' +
-        (hasCmp ? '<th class="l dr-col-result">Result</th>' : '') +
-        '<th class="l dr-col-da">DNR DA</th>' +
+        '<th class="l dr-col-signed">Signed</th>' +
+        '<th class="l dr-col-result">Pending</th>' +
+        `<th class="l dr-col-da">DNR DA${dnrLbl}</th>` +
         '<th class="l dr-col-da">Lost</th>' +
         '<th class="l dr-col-da">WillLost</th>' +
         '<th class="l dr-col-da">Return</th>' +
         '</tr></thead><tbody>';
 
       const totTypeMain = new Map(), totTypePrev = new Map(), maxTypeMain = new Map(), totTypeRecordsMain = new Map();
-      if (hasCmp) {
-        for (const s of sts) {
-          for (const [k, v] of s.typeCountsMain.entries()) {
-            totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
-            if (v > (maxTypeMain.get(k) || 0)) maxTypeMain.set(k, v);
+      for (const s of sts) {
+        for (const [k, v] of s.typeCountsMain.entries()) {
+          totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
+          if (v > (maxTypeMain.get(k) || 0)) maxTypeMain.set(k, v);
+        }
+        if (s.typeRecordsMain) {
+          for (const [k, list] of s.typeRecordsMain.entries()) {
+            if (!totTypeRecordsMain.has(k)) totTypeRecordsMain.set(k, []);
+            totTypeRecordsMain.get(k).push(...list);
           }
-          if (s.typeRecordsMain) {
-            for (const [k, list] of s.typeRecordsMain.entries()) {
-              if (!totTypeRecordsMain.has(k)) totTypeRecordsMain.set(k, []);
-              totTypeRecordsMain.get(k).push(...list);
-            }
-          }
+        }
+        if (hasCmp) {
           for (const [k, v] of s.typeCountsPrev.entries()) {
             totTypePrev.set(k, (totTypePrev.get(k) || 0) + v);
           }
         }
       }
       let rowsHtml = '';
+      let totSignedVal = 0, totDaVal = 0;
+      const allSignedRecs = [];
       for (const s of sts) {
-        const dnrDaHtml = drRegionCellText(s, 'dnr', triDriverSet, true);
-        const lostHtml = drRegionCellText(s, 'lost', triDriverSet, true);
-        const willLostHtml = drRegionCellText(s, 'willlost', triDriverSet, true);
+        const sig = drGetSignedSlice(s, selSignedDate);
+        totSignedVal += sig.signed;
+        totDaVal += sig.daCount;
+        if (sig.records.length) allSignedRecs.push(...sig.records);
+        const sprVal = sig.daCount ? Math.floor(sig.signed / sig.daCount) : 0;
+        const signedCntHtml = sig.signed ? drDrillWrap(sig.signed, `${s.name} · Signed (${sig.signed})`, sig.records, 'da') : '0';
+        const daCntHtml = sig.daCount ? drDrillWrap(`DA${sig.daCount}`, `${s.name} · DA (${sig.daCount})`, sig.records, 'da') : 'DA0';
+        const signedCellHtml = `${drEsc(signedDateLbl)}<br>${signedCntHtml}<br>SPR${sprVal}<br>${daCntHtml}`;
+
+        const pendTotHtml = (s.pending.length || (hasCmp && s.pendingPrev.length))
+          ? `${s.pending.length ? drDrillWrap(`Total${s.pending.length}`, `${s.name} · Pending (${s.pending.length})`, s.pending, 'pending') : 'Total0'}${hasCmp ? ' ' + drDiffHtml(s.pending.length, s.pendingPrev.length) : ''}`
+          : '';
+        const resultLinesHtml = drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, true, maxTypeMain, s.typeRecordsMain, `${s.name} · Pending`, hasCmp);
+        const pendingCellHtml = [pendTotHtml, resultLinesHtml].filter(Boolean).join('<br>');
+
+        const dnrDaHtml = drRegionCellText(s, 'dnr', triDriverSet, true, hasDnrCmp);
+        const lostHtml = drRegionCellText(s, 'lost', triDriverSet, true, hasCmp);
+        const willLostHtml = drRegionCellText(s, 'willlost', triDriverSet, true, hasCmp);
         const returnHtml = drRegionCellText(s, 'return1', triDriverSet, true, hasCmp);
-        const resultHtml = hasCmp ? drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, true, maxTypeMain, s.typeRecordsMain, `${s.name} · Result`) : '';
 
         rowsHtml += '<tr>' +
           drCell(drEsc(s.name), 'l dr-col-st') +
-          drZeroKeepCell(s.signed, { title: `${s.name} · Yest Signed (${s.signed})`, rows: s.daYRecords, kind: 'da' }) +
-          drZeroKeepCell(spr(s)) +
-          drZeroKeepCell(s.daY.size, { title: `${s.name} · Yest DA (${s.daY.size})`, rows: s.daYRecords, kind: 'da' }) +
-          drZeroKeepCell(s.daT.size, { title: `${s.name} · Today DA (${s.daT.size})`, rows: s.daTRecords, kind: 'da' }) +
-          drZeroKeepCell(s.pending.length, { title: `${s.name} · Pending (${s.pending.length})`, rows: s.pending, kind: 'pending' }) +
-          (hasCmp ? drCell(resultHtml, 'l dr-col-result') : '') +
+          drCell(signedCellHtml, 'l dr-col-signed') +
+          drCell(pendingCellHtml, 'l dr-col-result') +
           drCell(dnrDaHtml, 'l dr-col-da') +
           drCell(lostHtml, 'l dr-col-da') +
           drCell(willLostHtml, 'l dr-col-da') +
@@ -6652,37 +6919,50 @@
 
       // Total row (first row under header)
       const totDnr = sum(s => s.dnrDriverTotal);
+      const totDnrLast = sum(s => s.dnrDriverLastTotal || 0);
+      const totDnrPrev = sum(s => s.dnrDriverPrevTotal || 0);
+      const totDnrDiff = hasDnrCmp ? ' ' + drDiffHtml(totDnrLast, totDnrPrev) : '';
       const totLost = sum(s => s.lostTotal);
+      const totPrevLost = sum(s => s.prevLostTotal || 0);
       const totHubLost = sum(s => s.lostByHub);
+      const totPrevHubLost = sum(s => s.prevLostByHub || 0);
+      const totLostDiff = hasCmp ? ' ' + drDiffHtml(totLost, totPrevLost) : '';
+      const totHubLostDiff = hasCmp ? ' ' + drDiffHtml(totHubLost, totPrevHubLost) : '';
       const totWillLost = sum(s => s.willLostTotal);
+      const totPrevWillLost = sum(s => s.prevWillLostTotal || 0);
       const totHubWillLost = sum(s => s.willLostByHub);
+      const totPrevHubWillLost = sum(s => s.prevWillLostByHub || 0);
+      const totWillLostDiff = hasCmp ? ' ' + drDiffHtml(totWillLost, totPrevWillLost) : '';
+      const totHubWillLostDiff = hasCmp ? ' ' + drDiffHtml(totHubWillLost, totPrevHubWillLost) : '';
       const totRet1 = sum(s => s.return1Total);
       const totPrevRet1 = sum(s => s.prevReturn1Total);
       const totRet1Diff = hasCmp ? ' ' + drDiffHtml(totRet1, totPrevRet1) : '';
-      const totResultHtml = hasCmp ? drRegionResultLines(totTypeMain, totTypePrev, true, null, totTypeRecordsMain, 'Region Total · Result') : '';
-      const allDaYRecs = sts.flatMap(s => s.daYRecords || []);
-      const allDaTRecs = sts.flatMap(s => s.daTRecords || []);
+      const totPendVal = sum(s => s.pending.length);
+      const totPrevPendVal = sum(s => s.pendingPrev.length);
       const allPendRecs = sts.flatMap(s => s.pending || []);
+      const totPendTotHtml = (totPendVal || (hasCmp && totPrevPendVal))
+        ? `${totPendVal ? drDrillWrap(`Total${totPendVal}`, `Region Total · Pending (${totPendVal})`, allPendRecs, 'pending') : 'Total0'}${hasCmp ? ' ' + drDiffHtml(totPendVal, totPrevPendVal) : ''}`
+        : '';
+      const totResultLinesHtml = drRegionResultLines(totTypeMain, totTypePrev, true, null, totTypeRecordsMain, 'Region Total · Pending', hasCmp);
+      const totResultHtml = [totPendTotHtml, totResultLinesHtml].filter(Boolean).join('<br>');
+
       const allDnrRecs = sts.flatMap(s => s.dnrDriverRecords || []);
       const allLostRecs = sts.flatMap(s => s.lostRecords || []);
       const allLostHubRecs = sts.flatMap(s => s.lostByHubRecords || []);
       const allWillLostRecs = sts.flatMap(s => s.willLostRecords || []);
       const allWillLostHubRecs = sts.flatMap(s => s.willLostByHubRecords || []);
       const allRetRecs = sts.flatMap(s => s.return1Records || []);
-      const totSignedVal = sum(s => s.signed);
-      const totDaTVal = sum(s => s.daT.size);
-      const totPendVal = sum(s => s.pending.length);
+
+      const totSprVal = totDaVal ? Math.floor(totSignedVal / totDaVal) : 0;
+      const totSignedCellHtml = `${drEsc(signedDateLbl)}<br>${totSignedVal ? drDrillWrap(totSignedVal, `Region Total · Signed (${totSignedVal})`, allSignedRecs, 'da') : 0}<br>SPR${totSprVal}<br>${totDaVal ? drDrillWrap(`DA${totDaVal}`, `Region Total · DA (${totDaVal})`, allSignedRecs, 'da') : 'DA0'}`;
+
       h += `<tr class="dr-total">` +
         `<td class="l dr-col-st">Total</td>` +
-        `<td class="dr-col-num">${totSignedVal ? drDrillWrap(totSignedVal, `Region Total · Yest Signed (${totSignedVal})`, allDaYRecs, 'da') : 0}</td>` +
-        `<td class="dr-col-num">${totDaY ? Math.floor(totSignedVal / totDaY) : 0}</td>` +
-        `<td class="dr-col-num">${totDaY ? drDrillWrap(totDaY, `Region Total · Yest DA (${totDaY})`, allDaYRecs, 'da') : 0}</td>` +
-        `<td class="dr-col-num">${totDaTVal ? drDrillWrap(totDaTVal, `Region Total · Today DA (${totDaTVal})`, allDaTRecs, 'da') : 0}</td>` +
-        `<td class="dr-col-num">${totPendVal ? drDrillWrap(totPendVal, `Region Total · Pending (${totPendVal})`, allPendRecs, 'pending') : 0}</td>` +
-        (hasCmp ? `<td class="l dr-col-result">${totResultHtml}</td>` : '') +
-        `<td class="l dr-col-da">${totDnr ? drDrillWrap('Total:' + totDnr, `Region Total · DNR DA (${totDnr})`, allDnrRecs, 'dnr') : ''}</td>` +
-        `<td class="l dr-col-da">${totLost ? drDrillWrap('Total:' + totLost, `Region Total · Lost (${totLost})`, allLostRecs, 'pending') + '<br>' + drDrillWrap('hub lost:' + totHubLost, `Region Total · Hub Lost (${totHubLost})`, allLostHubRecs, 'pending') : ''}</td>` +
-        `<td class="l dr-col-da">${totWillLost ? drDrillWrap('Total:' + totWillLost, `Region Total · WillLost (${totWillLost})`, allWillLostRecs, 'pending') + '<br>' + drDrillWrap('hub lost:' + totHubWillLost, `Region Total · Hub WillLost (${totHubWillLost})`, allWillLostHubRecs, 'pending') : ''}</td>` +
+        `<td class="l dr-col-signed">${totSignedCellHtml}</td>` +
+        `<td class="l dr-col-result">${totResultHtml}</td>` +
+        `<td class="l dr-col-da">${(totDnr || (hasDnrCmp && totDnrPrev)) ? (totDnr ? drDrillWrap('Total:' + totDnr, `Region Total · DNR DA (${totDnr})`, allDnrRecs, 'dnr') : 'Total:0') + totDnrDiff : ''}</td>` +
+        `<td class="l dr-col-da">${(totLost || (hasCmp && totPrevLost)) ? drDrillWrap('Total:' + totLost, `Region Total · Lost (${totLost})`, allLostRecs, 'pending') + totLostDiff + '<br>' + drDrillWrap('hub lost:' + totHubLost, `Region Total · Hub Lost (${totHubLost})`, allLostHubRecs, 'pending') + totHubLostDiff : ''}</td>` +
+        `<td class="l dr-col-da">${(totWillLost || (hasCmp && totPrevWillLost)) ? drDrillWrap('Total:' + totWillLost, `Region Total · WillLost (${totWillLost})`, allWillLostRecs, 'pending') + totWillLostDiff + '<br>' + drDrillWrap('hub lost:' + totHubWillLost, `Region Total · Hub WillLost (${totHubWillLost})`, allWillLostHubRecs, 'pending') + totHubWillLostDiff : ''}</td>` +
         `<td class="l dr-col-da">${(totRet1 || (hasCmp && totPrevRet1)) ? drDrillWrap('Total:' + totRet1, `Region Total · Return (${totRet1})`, allRetRecs, 'pending') + totRet1Diff : ''}</td>` +
         `</tr>` + rowsHtml;
 
@@ -6695,67 +6975,89 @@
       const C = DR.computed;
       if (!C) { showToast('Please import To-Do List data first'); return; }
       const sts = drGetRegionStations(C);
-      const spr = s => s.daY.size ? Math.floor(s.signed / s.daY.size) : '';
       const sum = f => sts.reduce((a, s) => a + f(s), 0);
-      const totDaY = sum(s => s.daY.size);
       const triDriverSet = C.triDriverSet || new Set();
 
+      const selSignedDate = DR.selectedSignedDate || '';
+      const signedDateLbl = selSignedDate ? drMD(selSignedDate) : (C.daDateLabel || drMD(C.today));
       const hasCmp = Boolean(C.hasPendingCompare);
+      const hasDnrCmp = Boolean(C.hasDnrCompare);
+      const dnrLbl = C.dnrDateLabel || '-';
       const header = [
-        'Station', 'Yest Signed', 'Yest SPR', 'Yest DA', 'Today DA', 'Pending',
-        ...(hasCmp ? ['Result'] : []),
-        'DNR DA', 'Lost', 'WillLost', 'Return'
+        'Station', 'Signed', 'Pending',
+        `DNR DA (${dnrLbl})`, 'Lost', 'WillLost', 'Return'
       ];
       const stRows = [];
       const totTypeMain = new Map(), totTypePrev = new Map();
+      let totSignedVal = 0, totDaVal = 0;
 
       for (const s of sts) {
+        for (const [k, v] of s.typeCountsMain.entries()) totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
         if (hasCmp) {
-          for (const [k, v] of s.typeCountsMain.entries()) totTypeMain.set(k, (totTypeMain.get(k) || 0) + v);
           for (const [k, v] of s.typeCountsPrev.entries()) totTypePrev.set(k, (totTypePrev.get(k) || 0) + v);
         }
+        const sig = drGetSignedSlice(s, selSignedDate);
+        totSignedVal += sig.signed;
+        totDaVal += sig.daCount;
+        const sprVal = sig.daCount ? Math.floor(sig.signed / sig.daCount) : 0;
+        const signedText = `${signedDateLbl}\n${sig.signed}\nSPR${sprVal}\nDA${sig.daCount}`;
+        const pendHead = (s.pending.length || (hasCmp && s.pendingPrev.length))
+          ? `Total${s.pending.length}${hasCmp ? ' ' + drDiffText(s.pending.length, s.pendingPrev.length) : ''}`
+          : '';
+        const pendLines = drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, false, null, null, '', hasCmp);
+        const pendText = [pendHead, pendLines].filter(Boolean).join('\n');
+
         stRows.push([
           s.name,
-          s.signed,
-          spr(s),
-          s.daY.size,
-          s.daT.size,
-          s.pending.length,
-          ...(hasCmp ? [drRegionResultLines(s.typeCountsMain, s.typeCountsPrev, false)] : []),
-          drRegionCellText(s, 'dnr', triDriverSet, false),
-          drRegionCellText(s, 'lost', triDriverSet, false),
-          drRegionCellText(s, 'willlost', triDriverSet, false),
+          signedText,
+          pendText,
+          drRegionCellText(s, 'dnr', triDriverSet, false, hasDnrCmp),
+          drRegionCellText(s, 'lost', triDriverSet, false, hasCmp),
+          drRegionCellText(s, 'willlost', triDriverSet, false, hasCmp),
           drRegionCellText(s, 'return1', triDriverSet, false, hasCmp)
         ]);
       }
 
       const totDnr = sum(s => s.dnrDriverTotal);
+      const totDnrLast = sum(s => s.dnrDriverLastTotal || 0);
+      const totDnrPrev = sum(s => s.dnrDriverPrevTotal || 0);
+      const totDnrDiff = hasDnrCmp ? ' ' + drDiffText(totDnrLast, totDnrPrev) : '';
       const totLost = sum(s => s.lostTotal);
+      const totPrevLost = sum(s => s.prevLostTotal || 0);
       const totHubLost = sum(s => s.lostByHub);
+      const totPrevHubLost = sum(s => s.prevLostByHub || 0);
+      const totLostDiff = hasCmp ? ' ' + drDiffText(totLost, totPrevLost) : '';
+      const totHubLostDiff = hasCmp ? ' ' + drDiffText(totHubLost, totPrevHubLost) : '';
       const totWillLost = sum(s => s.willLostTotal);
+      const totPrevWillLost = sum(s => s.prevWillLostTotal || 0);
       const totHubWillLost = sum(s => s.willLostByHub);
+      const totPrevHubWillLost = sum(s => s.prevWillLostByHub || 0);
+      const totWillLostDiff = hasCmp ? ' ' + drDiffText(totWillLost, totPrevWillLost) : '';
+      const totHubWillLostDiff = hasCmp ? ' ' + drDiffText(totHubWillLost, totPrevHubWillLost) : '';
       const totRet1 = sum(s => s.return1Total);
       const totPrevRet1 = sum(s => s.prevReturn1Total);
       const totRet1Diff = hasCmp ? ' ' + drDiffText(totRet1, totPrevRet1) : '';
+      const totPendVal = sum(s => s.pending.length);
+      const totPrevPendVal = sum(s => s.pendingPrev.length);
+      const totPendHead = (totPendVal || (hasCmp && totPrevPendVal))
+        ? `Total${totPendVal}${hasCmp ? ' ' + drDiffText(totPendVal, totPrevPendVal) : ''}`
+        : '';
+      const totPendLines = drRegionResultLines(totTypeMain, totTypePrev, false, null, null, '', hasCmp);
+      const totSprVal = totDaVal ? Math.floor(totSignedVal / totDaVal) : 0;
       const totalRow = [
         'Total',
-        sum(s => s.signed),
-        totDaY ? Math.floor(sum(s => s.signed) / totDaY) : 0,
-        totDaY,
-        sum(s => s.daT.size),
-        sum(s => s.pending.length),
-        ...(hasCmp ? [drRegionResultLines(totTypeMain, totTypePrev, false)] : []),
-        totDnr ? `Total:${totDnr}` : '',
-        totLost ? `Total:${totLost}\nhub lost:${totHubLost}` : '',
-        totWillLost ? `Total:${totWillLost}\nhub lost:${totHubWillLost}` : '',
+        `${signedDateLbl}\n${totSignedVal}\nSPR${totSprVal}\nDA${totDaVal}`,
+        [totPendHead, totPendLines].filter(Boolean).join('\n'),
+        (totDnr || (hasDnrCmp && totDnrPrev)) ? `Total:${totDnr}${totDnrDiff}` : '',
+        (totLost || (hasCmp && totPrevLost)) ? `Total:${totLost}${totLostDiff}\nhub lost:${totHubLost}${totHubLostDiff}` : '',
+        (totWillLost || (hasCmp && totPrevWillLost)) ? `Total:${totWillLost}${totWillLostDiff}\nhub lost:${totHubWillLost}${totHubWillLostDiff}` : '',
         (totRet1 || (hasCmp && totPrevRet1)) ? `Total:${totRet1}${totRet1Diff}` : ''
       ];
       const aoa = [header, totalRow, ...stRows];
 
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = [
-        { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
-        ...(hasCmp ? [{ wch: 38 }] : []),
+        { wch: 12 }, { wch: 16 }, { wch: 38 },
         { wch: 36 }, { wch: 38 }, { wch: 38 }, { wch: 36 }
       ];
       const wb = XLSX.utils.book_new();
@@ -6771,34 +7073,9 @@
     }
 
     // ---- navigation / view ----
-    function drRenderDatePills() {
-      const el = document.getElementById('dr-da-dates');
-      const sel = document.getElementById('dr-today-select');
-      const dates = DR.daDates.length ? DR.daDates : (DR.today ? [DR.today] : []);
-      if (sel) {
-        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${drMD(d)}</option>`).join('');
-      }
-      if (el) {
-        el.innerHTML = dates.map(d =>
-          `<button class="dr-date-pill ${d === DR.today ? 'active' : ''}" onclick="drOnDateChange('${d}')">${drMD(d)}</button>`
-        ).join('');
-      }
-      drRenderToolbarPills();
-    }
+    function drRenderDatePills() {}
 
-    function drRenderToolbarPills() {
-      const sel = document.getElementById('dr-toolbar-date');
-      const container = document.getElementById('dr-toolbar-pills');
-      const dates = DR.daDates.length ? DR.daDates : (DR.today ? [DR.today] : []);
-      if (sel) {
-        sel.innerHTML = dates.map(d => `<option value="${d}"${d === DR.today ? ' selected' : ''}>${drMD(d)}</option>`).join('');
-      }
-      if (container) {
-        container.innerHTML = dates.map(d =>
-          `<button class="dr-date-pill ${d === DR.today ? 'active' : ''}" onclick="drOnDateChange('${d}')">${drMD(d)}</button>`
-        ).join('');
-      }
-    }
+    function drRenderToolbarPills() {}
 
     function drAscanPillsHtml() {
       if (!DR.ascanDates || !DR.ascanDates.length) return '';
@@ -6840,7 +7117,8 @@
         DR.selectedAscanDates = null;
       } else {
         if (DR.selectedAscanDates === null) {
-          DR.selectedAscanDates = new Set([dt]);
+          DR.selectedAscanDates = new Set(DR.ascanDates.filter(d => d !== dt));
+          if (DR.selectedAscanDates.size === 0) DR.selectedAscanDates = null;
         } else {
           if (DR.selectedAscanDates.has(dt)) DR.selectedAscanDates.delete(dt);
           else DR.selectedAscanDates.add(dt);
@@ -6857,6 +7135,195 @@
         const g = DR.groups[+DR.active.slice(1)];
         if (g) drRenderStationView(g);
       }
+      drSaveToIDB();
+    }
+
+    function drOnDnrStationFilter(val) {
+      DR.dnrStationFilter = val || '';
+      if (DR.active === 'dnr' && DR.computed) drRenderDnrTab(DR.computed);
+    }
+
+    function drOnDnrDimensionChange(dim) {
+      DR.dnrDimension = dim || 'avg';
+      if (DR.computed && DR.active === 'dnr') drRenderDnrTab(DR.computed);
+    }
+
+    function drRenderDnrTab(C) {
+      const subNav = document.getElementById('dr-sub-nav');
+      const todoPanel = document.getElementById('dr-region-todo-panel');
+      const regionLayout = document.getElementById('dr-region-layout');
+      if (todoPanel) { todoPanel.style.display = 'none'; todoPanel.innerHTML = ''; }
+      if (regionLayout) regionLayout.classList.remove('has-todo');
+
+      const dnrTab = (C && C.dnrTab) || { dates: [], stationRows: [], driverRows: [] };
+      const dates = dnrTab.dates || [];
+      const stFilter = DR.dnrStationFilter || '';
+      const dim = DR.dnrDimension || 'avg';
+      const stOptions = dnrTab.stationRows.map(r => r.station);
+      const stationRows = stFilter ? dnrTab.stationRows.filter(r => r.station === stFilter) : dnrTab.stationRows;
+      const driverRows = stFilter ? dnrTab.driverRows.filter(r => r.station === stFilter) : dnrTab.driverRows;
+
+      if (subNav) {
+        let s = '<div class="dr-toolbar">';
+        s += `<div class="dr-toolbar-group"><span class="dr-toolbar-label">DNR Report (Final Blame = Driver · Times = 1)</span></div>`;
+        s += `<div class="dr-toolbar-group"><span class="dr-toolbar-label">Dimension:</span>` +
+          ['avg', 'total', 'daily'].map(k => {
+            const lbl = k === 'avg' ? 'AVG' : (k === 'total' ? 'Total' : 'Daily');
+            const act = dim === k ? ' active' : '';
+            return `<button type="button" class="dr-pill${act}" onclick="drOnDnrDimensionChange('${k}')">${lbl}</button>`;
+          }).join('') +
+          `</div>`;
+        s += `<div class="dr-toolbar-group"><span class="dr-toolbar-label">Station:</span>` +
+          `<select onchange="drOnDnrStationFilter(this.value)" style="padding:0.28rem 0.5rem;border:1px solid var(--border);border-radius:6px;background:var(--card-bg);color:var(--text-main);font-size:0.8rem;">` +
+          `<option value="">All Stations (${stOptions.length})</option>` +
+          stOptions.map(stName => `<option value="${drEsc(stName)}"${stName === stFilter ? ' selected' : ''}>${drEsc(stName)}</option>`).join('') +
+          `</select></div>`;
+        s += `<div class="dr-toolbar-group" style="margin-left:auto;">`;
+        s += `<button class="btn btn-sm" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="drExportDataJson()">&#128230; Export Data (JSON)</button>`;
+        s += `<button class="btn btn-primary btn-sm" style="padding:0.3rem 0.7rem;font-size:0.78rem;" onclick="drExportImage()">&#128248; Export PNG</button>`;
+        s += `</div></div>`;
+        subNav.innerHTML = s;
+      }
+
+      const frame = document.getElementById('dr-report-frame');
+      frame.className = 'is-dnr';
+
+      const dateRangeLbl = dates.length
+        ? (dates.length === 1 ? drMD(dates[0]) : `${drMD(dates[0])}-${drMD(dates[dates.length - 1])}`)
+        : '-';
+      const dimLabel = dim === 'avg' ? 'AVG' : (dim === 'total' ? 'Total' : 'Daily');
+      let h = `<div class="dr-banner"><span>&#128230; DNR Report (${dimLabel} &middot; Driver &middot; Times=1)</span><span>${dates.length} day(s) &middot; ${driverRows.length} driver(s)</span></div>` +
+        `<div class="dr-dates">Complaint Date: ${drEsc(dateRangeLbl)} &middot; Update Time: ${drEsc(DR.updateTime || drNowHHMM())}</div>`;
+
+      if (!dates.length || !driverRows.length) {
+        h += `<div class="dr-empty">No DNR records matching Final Blame = Driver &amp; Times = 1</div>`;
+        frame.innerHTML = h;
+        return;
+      }
+
+      // 1) Station Summary Table
+      h += `<div class="dr-sec">Station Summary (${stationRows.length})</div>`;
+      if (dim === 'daily') {
+        h += `<table class="dr-table"><thead><tr>` +
+          `<th class="l" style="width:56px;">Station</th>` +
+          dates.map(dt => `<th>${drEsc(drMD(dt))}</th>`).join('') +
+          `</tr></thead><tbody>`;
+        stationRows.forEach(r => {
+          h += `<tr><td class="l"><b>${drEsc(r.station)}</b></td>`;
+          dates.forEach((dt, di) => {
+            const cell = r.byDate ? r.byDate.get(dt) : null;
+            const cnt = cell ? cell.count : 0;
+            const prevCell = (di > 0 && r.byDate) ? r.byDate.get(dates[di - 1]) : null;
+            const prevCnt = prevCell ? prevCell.count : 0;
+            const diffHtml = di > 0 ? drDiffHtml(cnt, prevCnt) : '';
+            const md = drMD(dt);
+            if (cnt > 0) {
+              const podList = Array.from(cell.pods.entries())
+                .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+                .slice(0, 4)
+                .map(([p, c]) => `${drEsc(p)}:${c}`)
+                .join(', ');
+              const cntHtml = drDrillWrap(cnt, `${r.station} · ${md} (${cnt})`, cell.records, 'dnr');
+              h += `<td class="dr-dnr-cell"><div class="dr-dnr-top"><span>Total ${cntHtml}</span>${diffHtml}</div><div class="dr-dnr-pods">${podList}</div></td>`;
+            } else {
+              h += `<td class="dr-dnr-cell"><div class="dr-dnr-top"><span class="dr-dnr-zero">Total 0</span>${diffHtml}</div><div class="dr-dnr-pods">-</div></td>`;
+            }
+          });
+          h += `</tr>`;
+        });
+        h += `</tbody></table>`;
+      } else {
+        const isTotal = dim === 'total';
+        h += `<table class="dr-table"><thead><tr>` +
+          `<th class="l" style="width:56px;">Station</th>` +
+          `<th style="width:58px;">${isTotal ? 'Total DNR' : 'DNR/Day'}</th>` +
+          `<th class="l">Common POD</th>` +
+          `<th class="l">${isTotal ? 'Top Driver (Total)' : 'Top Driver (Daily &gt; 1)'}</th>` +
+          `</tr></thead><tbody>`;
+        stationRows.forEach(r => {
+          const val = isTotal ? r.total : r.dnrPerDay;
+          const dnrValDrill = r.records && r.records.length
+            ? drDrillWrap(val, `${r.station} · DNR Driver (${r.total})`, r.records, 'dnr')
+            : val;
+          const commonPodHtml = drEsc(r.commonPod).replace(/\n/g, '<br>');
+          const topDriverRaw = isTotal ? (r.topDriverTotal || r.topDriver) : r.topDriver;
+          const topDriverHtml = drEsc(topDriverRaw).replace(/\n/g, '<br>');
+          h += `<tr>` +
+            `<td class="l"><b>${drEsc(r.station)}</b></td>` +
+            `<td>${dnrValDrill}</td>` +
+            `<td class="l wrap">${commonPodHtml}</td>` +
+            `<td class="l wrap">${topDriverHtml}</td>` +
+            `</tr>`;
+        });
+        h += `</tbody></table>`;
+      }
+
+      // 2) Driver Detail Table
+      h += `<div class="dr-sec">Driver Detail (${driverRows.length})</div>`;
+      if (dim === 'total') {
+        h += `<table class="dr-table"><thead><tr>` +
+          `<th class="l" style="width:52px;">Station</th>` +
+          `<th class="l" style="width:92px;">Driver</th>` +
+          `<th style="width:62px;">Total DNR</th>` +
+          `<th class="l">POD Summary</th>` +
+          `</tr></thead><tbody>`;
+        driverRows.forEach(r => {
+          const totHtml = r.records && r.records.length
+            ? drDrillWrap(r.total, `${r.station} · ${r.driver} · Total (${r.total})`, r.records, 'dnr')
+            : r.total;
+          const podSummary = r.pods && r.pods.size
+            ? Array.from(r.pods.entries()).sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0])).map(([p, c]) => `${drEsc(p)}:${c}`).join(', ')
+            : '-';
+          h += `<tr>` +
+            `<td class="l"><b>${drEsc(r.station)}</b></td>` +
+            `<td class="l">${drEsc(r.driver)}</td>` +
+            `<td><b>${totHtml}</b></td>` +
+            `<td class="l wrap">${podSummary}</td>` +
+            `</tr>`;
+        });
+        h += `</tbody></table>`;
+      } else {
+        h += `<table class="dr-table"><thead><tr>` +
+          `<th class="l" style="width:48px;">Station</th>` +
+          `<th class="l" style="width:82px;">Driver</th>` +
+          dates.map(dt => `<th>${drEsc(drMD(dt))}</th>`).join('') +
+          `</tr></thead><tbody>`;
+
+        driverRows.forEach(r => {
+          h += `<tr>` +
+            `<td class="l"><b>${drEsc(r.station)}</b></td>` +
+            `<td class="l">${drEsc(r.driver)}</td>`;
+          dates.forEach((dt, di) => {
+            const cell = r.byDate.get(dt);
+            const cnt = cell ? cell.count : 0;
+            const prevCell = di > 0 ? r.byDate.get(dates[di - 1]) : null;
+            const prevCnt = prevCell ? prevCell.count : 0;
+            const diffHtml = di > 0 ? drDiffHtml(cnt, prevCnt) : '';
+            const md = drMD(dt);
+
+            if (cnt > 0) {
+              const podList = Array.from(cell.pods.entries())
+                .sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0]))
+                .map(([p, c]) => `${drEsc(p)}:${c}`)
+                .join(', ');
+              const cntHtml = drDrillWrap(cnt, `${r.station} · ${r.driver} · ${md} (${cnt})`, cell.records, 'dnr');
+              h += `<td class="dr-dnr-cell">` +
+                `<div class="dr-dnr-top"><span>Total ${cntHtml}</span>${diffHtml}</div>` +
+                `<div class="dr-dnr-pods">${podList}</div>` +
+                `</td>`;
+            } else {
+              h += `<td class="dr-dnr-cell">` +
+                `<div class="dr-dnr-top"><span class="dr-dnr-zero">Total 0</span>${diffHtml}</div>` +
+                `<div class="dr-dnr-pods">-</div>` +
+                `</td>`;
+            }
+          });
+          h += `</tr>`;
+        });
+        h += `</tbody></table>`;
+      }
+
+      frame.innerHTML = h;
     }
 
     function drRenderNav() {
@@ -6865,12 +7332,14 @@
       const isRank = DR.active === 'rank';
       const isSetup = DR.active === 'setup';
       const isRegion = DR.active === 'region';
+      const isDnr = DR.active === 'dnr';
 
       let h = `<button class="dr-top-tab dr-tab-fixed ${isRank ? 'active' : ''}" onclick="drSwitch('rank')">\uD83D\uDCCA Rank</button>` +
               `<button class="dr-top-tab dr-tab-fixed ${isSetup ? 'active' : ''}" onclick="drSwitch('setup')">\uD83D\uDCC2 Data</button>`;
 
       if (DR.computed) {
         h += `<button class="dr-top-tab dr-tab-fixed ${isRegion ? 'active' : ''}" onclick="drSwitch('region')">\uD83C\uDF0D Region</button>`;
+        h += `<button class="dr-top-tab dr-tab-fixed ${isDnr ? 'active' : ''}" onclick="drSwitch('dnr')">\uD83D\uDCE6 DNR</button>`;
         DR.groups.forEach((g, i) => {
           const act = DR.active === 'g' + i;
           h += `<button class="dr-top-tab ${act ? 'active' : ''}" onclick="drSwitch('g${i}')" title="${drEsc(g.resp || g.name)}">${drEsc(g.name)}</button>`;
@@ -6899,16 +7368,19 @@
       DR.active = id;
       const isRank = id === 'rank';
       const isRegion = id === 'region';
+      const isDnr = id === 'dnr';
       const isGroup = id.startsWith('g');
 
       document.body.classList.toggle('view-daily', !isRank);
       document.getElementById('rank-container').style.display = isRank ? '' : 'none';
       document.getElementById('daily-view').style.display = isRank ? 'none' : 'flex';
       document.getElementById('dr-setup').style.display = id === 'setup' ? '' : 'none';
-      document.getElementById('dr-group-view').style.display = (isRegion || isGroup) ? '' : 'none';
+      document.getElementById('dr-group-view').style.display = (isRegion || isDnr || isGroup) ? '' : 'none';
 
       if (isRegion) {
         drRenderRegion(DR.computed);
+      } else if (isDnr) {
+        drRenderDnrTab(DR.computed);
       } else if (isGroup) {
         const g = DR.groups[+id.slice(1)];
         if (g) {
@@ -6942,14 +7414,22 @@
       if (DR.computed) h += `<div style="margin-top:4px;">${DR.groups.length} group tab(s) \u00B7 ${DR.computed.st.size} station(s) found in data</div>`;
       el.innerHTML = h;
       if (DR.computed) document.getElementById('dr-dates-info').textContent =
-        `Yest ${drDayLabel(DR.computed.yest)} \u00B7 DNR yest ${drDayLabel(DR.computed.yDnr)}`;
-      drRenderDatePills();
+        `DA: ${DR.computed.daDateLabel || '-'} \u00B7 DNR: ${DR.computed.dnrDateLabel || '-'}`;
     }
 
     function drRecompute() {
-      if (!DR.files.length) { DR.computed = null; DR.groups = []; DR.warnings = []; DR.daDates = []; DR.ascanDates = []; DR.selectedAscanDates = null; return; }
+      if (!DR.files.length) { DR.computed = null; DR.groups = []; DR.warnings = []; DR.daDates = []; DR.selectedSignedDate = ''; DR.ascanDates = []; DR.selectedAscanDates = null; return; }
       if (!DR.today) DR.today = drLocalToday();
       DR.daDates = drGetDaDates();
+      if (!DR.selectedSignedDate || !DR.daDates.includes(DR.selectedSignedDate)) {
+        const prevDay = drPrevDeliveryDay(DR.today);
+        if (DR.daDates.includes(prevDay)) {
+          DR.selectedSignedDate = prevDay;
+        } else {
+          const beforeToday = DR.daDates.filter(d => d < DR.today);
+          DR.selectedSignedDate = beforeToday.length ? beforeToday[beforeToday.length - 1] : (DR.daDates[DR.daDates.length - 1] || '');
+        }
+      }
       DR.ascanDates = drGetAscanDates();
       if (DR.selectedAscanDates) {
         const valid = new Set(DR.ascanDates);
@@ -6976,9 +7456,10 @@
     }
 
     function drClearData() {
-      DR.sheets = {}; DR.files = []; DR.groups = []; DR.computed = null; DR.warnings = []; DR.daDates = []; DR.ascanDates = []; DR.selectedAscanDates = null; DR.updateTime = '';
+      DR.sheets = {}; DR.files = []; DR.groups = []; DR.computed = null; DR.warnings = []; DR.daDates = []; DR.selectedSignedDate = ''; DR.dnrDimension = 'avg'; DR.ascanDates = []; DR.selectedAscanDates = null; DR.updateTime = '';
       DR.activeStation = '';
       document.getElementById('dr-file-input').value = '';
+      drClearIDB();
       drRenderStatus();
       drSwitch('setup');
     }
@@ -7009,10 +7490,9 @@
             } else {
               DR.today = drLocalToday();
             }
-            const dtSelect = document.getElementById('dr-today-select');
-            if (dtSelect) dtSelect.value = DR.today;
             drRecompute();
             drRenderStatus();
+            drSaveToIDB();
             document.getElementById('dr-file-input').value = '';
             if (DR.groups.length) {
               DR.activeStation = DR.groups[0].stations[0] || '';
@@ -7027,12 +7507,238 @@
       });
     }
 
+    const DR_IDB_NAME = 'STR_DR_DB';
+    const DR_IDB_STORE = 'kv';
+    const DR_IDB_KEY = 'dr_state_v1';
+
+    function drOpenIDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) { reject(new Error('IndexedDB unavailable')); return; }
+        const req = indexedDB.open(DR_IDB_NAME, 1);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(DR_IDB_STORE)) db.createObjectStore(DR_IDB_STORE);
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || new Error('IndexedDB open error'));
+      });
+    }
+
+    function drBuildPayload() {
+      return {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        updateTime: DR.updateTime || drNowHHMM(),
+        files: Array.isArray(DR.files) ? DR.files : [],
+        sheets: DR.sheets || {},
+        selectedAscanDates: DR.selectedAscanDates ? Array.from(DR.selectedAscanDates) : null
+      };
+    }
+
+    async function drSaveToIDB() {
+      try {
+        if (!DR.files.length && !Object.keys(DR.sheets || {}).length) return;
+        const db = await drOpenIDB();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(DR_IDB_STORE, 'readwrite');
+          tx.objectStore(DR_IDB_STORE).put(drBuildPayload(), DR_IDB_KEY);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        console.warn('drSaveToIDB skipped:', e);
+      }
+    }
+
+    async function drLoadFromIDB() {
+      try {
+        const db = await drOpenIDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(DR_IDB_STORE, 'readonly');
+          const req = tx.objectStore(DR_IDB_STORE).get(DR_IDB_KEY);
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function drClearIDB() {
+      try {
+        const db = await drOpenIDB();
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(DR_IDB_STORE, 'readwrite');
+          tx.objectStore(DR_IDB_STORE).delete(DR_IDB_KEY);
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        console.warn('drClearIDB skipped:', e);
+      }
+    }
+
+    function drApplyPayload(payload, targetSt, targetView) {
+      if (!payload || !payload.sheets || typeof payload.sheets !== 'object') return false;
+      const sheetKeys = Object.keys(payload.sheets);
+      if (!sheetKeys.length) return false;
+      DR.sheets = payload.sheets;
+      DR.files = Array.isArray(payload.files) && payload.files.length
+        ? payload.files
+        : Array.from(new Set(sheetKeys.map(k => payload.sheets[k] && payload.sheets[k].file).filter(Boolean)));
+      if (!DR.files.length) DR.files = ['report-data.json'];
+      DR.updateTime = payload.updateTime || drNowHHMM();
+      DR.selectedAscanDates = Array.isArray(payload.selectedAscanDates) && payload.selectedAscanDates.length
+        ? new Set(payload.selectedAscanDates)
+        : null;
+      DR.today = drLocalToday();
+      drRecompute();
+      drRenderStatus();
+
+      const normTarget = targetSt ? drStKey(targetSt) : '';
+      if (normTarget && DR.groups.length) {
+        for (let gi = 0; gi < DR.groups.length; gi++) {
+          const g = DR.groups[gi];
+          const found = g.stations.find(s => drStKey(s) === normTarget || s === targetSt);
+          if (found) {
+            DR.activeStation = found;
+            drSwitch('g' + gi);
+            return true;
+          }
+        }
+        // Fallback: check computed stations even if not in a group
+        if (DR.computed && DR.computed.st) {
+          for (const [k, sObj] of DR.computed.st.entries()) {
+            if (drStKey(k) === normTarget || drStKey(sObj.name) === normTarget) {
+              for (let gi = 0; gi < DR.groups.length; gi++) {
+                if (DR.groups[gi].stations.includes(k)) {
+                  DR.activeStation = k;
+                  drSwitch('g' + gi);
+                  return true;
+                }
+              }
+            }
+          }
+        }
+      }
+      if (targetView === 'dnr' && DR.computed) {
+        drSwitch('dnr');
+        return true;
+      }
+      if (targetView === 'region' && DR.groups.length) {
+        drSwitch('region');
+        return true;
+      }
+      if (DR.groups.length) {
+        DR.activeStation = DR.groups[0].stations[0] || '';
+        drSwitch('g0');
+        return true;
+      }
+      drSwitch('setup');
+      return true;
+    }
+
+    async function drFetchPublishedJson() {
+      const candidates = ['./data/report-data.json', './report-data.json'];
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.sheets) return data;
+          }
+        } catch (e) { /* ignore fetch errors (e.g., file:// or 404) */ }
+      }
+      return null;
+    }
+
+    function drExportDataJson() {
+      if (!DR.files.length && !Object.keys(DR.sheets || {}).length) {
+        showToast('Please upload Daily Report files first');
+        return;
+      }
+      const payload = drBuildPayload();
+      const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'report-data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast('Exported report-data.json');
+    }
+
+    function drGetBaseUrl() {
+      if (window.location.protocol !== 'file:') {
+        return window.location.origin + window.location.pathname;
+      }
+      return window.location.href.split('?')[0].split('#')[0];
+    }
+
+    function drStationShareUrl(stName) {
+      return `${drGetBaseUrl()}?st=${encodeURIComponent(stName)}`;
+    }
+
+    function drCopyText(text, okMsg) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(
+          () => showToast(okMsg),
+          () => { fallbackCopyText(text); showToast(okMsg); }
+        );
+      } else {
+        fallbackCopyText(text);
+        showToast(okMsg);
+      }
+    }
+
+    function drCopyStationLink() {
+      if (!DR.activeStation) {
+        showToast('No station selected');
+        return;
+      }
+      const sObj = DR.computed && DR.computed.st ? DR.computed.st.get(DR.activeStation) : null;
+      const stLabel = (sObj && sObj.name) || DR.activeStation;
+      const url = drStationShareUrl(DR.activeStation);
+      drCopyText(url, `Copied link for ${stLabel}`);
+    }
+
+    function drCopyAllStationLinks() {
+      const stations = [];
+      const seen = new Set();
+      (DR.groups || []).forEach(g => {
+        (g.stations || []).forEach(s => {
+          if (!seen.has(s)) { seen.add(s); stations.push(s); }
+        });
+      });
+      if (!stations.length && DR.computed && DR.computed.st) {
+        for (const s of DR.computed.st.keys()) {
+          if (!seen.has(s)) { seen.add(s); stations.push(s); }
+        }
+      }
+      if (!stations.length) {
+        showToast('No stations loaded yet');
+        return;
+      }
+      const base = drGetBaseUrl();
+      const lines = [`Region: ${base}?view=region`];
+      stations.forEach(s => {
+        const sObj = DR.computed && DR.computed.st ? DR.computed.st.get(s) : null;
+        const label = (sObj && sObj.name) || s;
+        lines.push(`${label}: ${drStationShareUrl(s)}`);
+      });
+      drCopyText(lines.join('\n'), `Copied ${stations.length} station link(s)`);
+    }
+
     function drExportImage() {
       const frame = document.getElementById('dr-report-frame');
       const mmdd = drMD(DR.today).replace('/', '-');
       let filename = `${mmdd}-Report`;
       if (DR.active === 'region') {
         filename = `${mmdd}-Region`;
+      } else if (DR.active === 'dnr') {
+        filename = `${mmdd}-DNR`;
       } else if (DR.active.startsWith('g')) {
         const g = DR.groups[+DR.active.slice(1)];
         const sObj = DR.computed && DR.computed.st ? DR.computed.st.get(DR.activeStation) : null;
@@ -7270,11 +7976,23 @@
 
       // Do not load demo data on page load
 
-      // Daily report: bottom tab bar, default date, drag & drop
+      // Daily report: bottom tab bar, default date, drag & drop, auto-load persisted/published data
       DR.today = drLocalToday();
-      const dtSelect = document.getElementById('dr-today-select');
-      if (dtSelect) dtSelect.value = DR.today;
       drRenderNav();
+      (async () => {
+        const params = new URLSearchParams(window.location.search);
+        const targetSt = params.get('st') || params.get('station') || '';
+        const targetView = params.get('view') || '';
+        let payload = null;
+        if (targetSt || targetView) {
+          payload = await drFetchPublishedJson();
+          if (!payload) payload = await drLoadFromIDB();
+        } else {
+          payload = await drLoadFromIDB();
+          if (!payload) payload = await drFetchPublishedJson();
+        }
+        if (payload) drApplyPayload(payload, targetSt, targetView);
+      })();
       const drZone = document.getElementById('dr-drop-zone');
       ['dragenter', 'dragover'].forEach(ev => drZone.addEventListener(ev, e => { e.preventDefault(); drZone.classList.add('dragover'); }, false));
       ['dragleave', 'drop'].forEach(ev => drZone.addEventListener(ev, e => { e.preventDefault(); drZone.classList.remove('dragover'); }, false));
