@@ -1008,6 +1008,26 @@
       white-space: nowrap;
       color: var(--text-main);
     }
+    .source-table thead th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .source-table thead th.sortable:hover {
+      background: rgba(59, 130, 246, 0.08);
+    }
+    .source-table thead th.sort-active {
+      color: var(--primary);
+    }
+    .source-table thead th .sort-ind {
+      display: inline-block;
+      margin-left: 0.25rem;
+      font-size: 0.62rem;
+      opacity: 0.45;
+    }
+    .source-table thead th.sort-active .sort-ind {
+      opacity: 1;
+    }
     .source-table tbody td {
       padding: 0.2rem 0.4rem;
       border-bottom: 1px solid var(--card-border);
@@ -1333,6 +1353,12 @@
       word-break: break-word;
       overflow-wrap: anywhere;
       vertical-align: top;
+    }
+    #dr-report-frame.is-dnr .dr-table th.dr-dnr-st,
+    #dr-report-frame.is-dnr .dr-table td.dr-dnr-st {
+      white-space: nowrap;
+      word-break: normal;
+      overflow-wrap: normal;
     }
     .dr-region-layout {
       display: flex;
@@ -1899,7 +1925,7 @@
     // --- Source Data Drill-Down Modal & Main Rank Source Map ---
     let rankSourceMap = { lost: [], dnr: [] };
     let rankDrillBuckets = [];
-    let activeSourceModalState = { title: '', rows: [], columns: [], filteredRows: [] };
+    let activeSourceModalState = { title: '', rows: [], columns: [], filteredRows: [], sortKey: null, sortDir: 'asc' };
 
     const SOURCE_COLUMN_PRESETS = {
       pending: [
@@ -1963,7 +1989,9 @@
         title: title || 'Source Data',
         rows: list,
         columns,
-        filteredRows: list
+        filteredRows: list,
+        sortKey: null,
+        sortDir: 'asc'
       };
 
       const titleEl = document.getElementById('source-modal-title');
@@ -1983,38 +2011,85 @@
       if (modal) modal.style.display = 'none';
     }
 
+    function toggleSourceModalSort(key) {
+      if (activeSourceModalState.sortKey === key) {
+        if (activeSourceModalState.sortDir === 'asc') {
+          activeSourceModalState.sortDir = 'desc';
+        } else {
+          activeSourceModalState.sortKey = null;
+          activeSourceModalState.sortDir = 'asc';
+        }
+      } else {
+        activeSourceModalState.sortKey = key;
+        activeSourceModalState.sortDir = 'asc';
+      }
+      renderSourceDataTable();
+    }
+
+    function compareSourceValues(aVal, bVal, key) {
+      const sa = aVal == null ? '' : String(aVal).trim();
+      const sb = bVal == null ? '' : String(bVal).trim();
+      if (!sa && !sb) return 0;
+      if (!sa) return 1;
+      if (!sb) return -1;
+
+      if (key === 'date' || key === 'lastscan' || key === 'deadline' || key === 'cdate') {
+        const ia = typeof drDate === 'function' ? (drDate(sa) || sa) : sa;
+        const ib = typeof drDate === 'function' ? (drDate(sb) || sb) : sb;
+        return ia.localeCompare(ib);
+      }
+      if (key === 'signed' || key === 'times') {
+        const na = Number(sa), nb = Number(sb);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+      }
+      return sa.localeCompare(sb, undefined, { numeric: true, sensitivity: 'base' });
+    }
+
     function renderSourceDataTable() {
-      const { rows, columns } = activeSourceModalState;
+      const { rows, columns, sortKey, sortDir } = activeSourceModalState;
       const searchEl = document.getElementById('source-modal-search');
       const q = (searchEl ? searchEl.value : '').trim().toLowerCase();
 
       const filtered = q
         ? rows.filter(r => columns.some(c => String(r && r[c.key] != null ? r[c.key] : '').toLowerCase().includes(q)))
         : rows;
-      activeSourceModalState.filteredRows = filtered;
+
+      const sorted = sortKey
+        ? [...filtered].sort((a, b) => {
+            const cmp = compareSourceValues(a && a[sortKey], b && b[sortKey], sortKey);
+            return sortDir === 'desc' ? -cmp : cmp;
+          })
+        : filtered;
+
+      activeSourceModalState.filteredRows = sorted;
 
       const countEl = document.getElementById('source-modal-count');
       if (countEl) {
-        countEl.textContent = q ? `${filtered.length} / ${rows.length} records` : `${rows.length} records`;
+        countEl.textContent = q ? `${sorted.length} / ${rows.length} records` : `${rows.length} records`;
       }
 
       const copyBtn = document.getElementById('source-modal-copy-wb');
       if (copyBtn) {
-        const hasWb = filtered.some(r => r && String(r.waybill || '').trim() !== '');
+        const hasWb = sorted.some(r => r && String(r.waybill || '').trim() !== '');
         copyBtn.style.display = hasWb ? 'inline-flex' : 'none';
       }
 
       const wrap = document.getElementById('source-modal-table-wrap');
       if (!wrap) return;
-      if (!filtered.length) {
+      if (!sorted.length) {
         wrap.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">No matching source records</div>';
         return;
       }
 
       let html = '<table class="source-table"><thead><tr><th>#</th>' +
-        columns.map(c => `<th>${escSourceHtml(c.label)}</th>`).join('') +
+        columns.map(c => {
+          const isActive = sortKey === c.key;
+          const ind = isActive ? (sortDir === 'desc' ? '▼' : '▲') : '⇅';
+          const cls = isActive ? 'sortable sort-active' : 'sortable';
+          return `<th class="${cls}" onclick="toggleSourceModalSort('${escSourceHtml(c.key)}')" title="Click to sort">${escSourceHtml(c.label)}<span class="sort-ind">${ind}</span></th>`;
+        }).join('') +
         '</tr></thead><tbody>';
-      filtered.forEach((r, idx) => {
+      sorted.forEach((r, idx) => {
         html += `<tr><td style="color:var(--text-muted);">${idx + 1}</td>` +
           columns.map(c => {
             const rawVal = r && r[c.key] != null ? String(r[c.key]) : '';
@@ -6001,7 +6076,7 @@
           cm.set(th, (cm.get(th) || 0) + 1);
         }
 
-        if (deadline && (deadline === sysYest || deadline === sysToday)) {
+        if (deadline && deadline === sysYest) {
           applyPendingRisk(s, pendItem, rawDrv, false);
         } else if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) {
           applyPendingRisk(s, pendItem, rawDrv, true);
@@ -6058,7 +6133,7 @@
         s.typeCountsPrev.set(type, (s.typeCountsPrev.get(type) || 0) + 1);
         const prevScanType = type.toLowerCase().replace(/\s+/g, ' ');
         const prevIsDrvScan = (prevScanType === 'problem scan' || prevScanType === 'out of warehouse scan');
-        if (deadline && (deadline === sysYest || deadline === sysToday)) {
+        if (deadline && deadline === sysYest) {
           s.prevLostTotal++;
           if (!prevIsDrvScan) s.prevLostByHub++;
           if (drValidDrv(rawDrv)) {
@@ -6087,7 +6162,7 @@
           const d = getDrv(s, rawDrv);
           if (d) {
             d.prevPending++;
-            if (deadline && (deadline === sysYest || deadline === sysToday)) d.prevLost++;
+            if (deadline && deadline === sysYest) d.prevLost++;
             else if (deadline && deadline >= sysWillStart && deadline <= sysWillEnd) d.prevWillLost++;
             if (remark.toLowerCase() === 'da return') d.prevNeedReturn++;
           }
@@ -6208,7 +6283,7 @@
           row.pods.set(podLabel, (row.pods.get(podLabel) || 0) + 1);
         }
       }
-      const dnrTabDates = Array.from(dnrTabDatesSet).sort();
+      const dnrTabDates = Array.from(dnrTabDatesSet).sort((a, b) => b.localeCompare(a));
       const dnrTabDayCount = dnrTabDates.length;
       const drJoinPairs = arr => {
         if (!arr.length) return '-';
@@ -6242,7 +6317,7 @@
         };
       }).sort((a, b) => (b.total - a.total) || a.station.localeCompare(b.station));
 
-      const lastDnrDate = dnrTabDates.length ? dnrTabDates[dnrTabDates.length - 1] : '';
+      const lastDnrDate = dnrTabDates.length ? dnrTabDates[0] : '';
       const dnrTabDrivers = Array.from(dnrTabDrvMap.values()).sort((a, b) => {
         if (b.total !== a.total) return b.total - a.total;
         const aLast = lastDnrDate && a.byDate.has(lastDnrDate) ? a.byDate.get(lastDnrDate).count : 0;
@@ -7189,7 +7264,7 @@
       frame.className = 'is-dnr';
 
       const dateRangeLbl = dates.length
-        ? (dates.length === 1 ? drMD(dates[0]) : `${drMD(dates[0])}-${drMD(dates[dates.length - 1])}`)
+        ? (dates.length === 1 ? drMD(dates[0]) : `${drMD(dates[dates.length - 1])}-${drMD(dates[0])}`)
         : '-';
       const dimLabel = dim === 'avg' ? 'AVG' : (dim === 'total' ? 'Total' : 'Daily');
       let h = `<div class="dr-banner"><span>&#128230; DNR Report (${dimLabel} &middot; Driver &middot; Times=1)</span><span>${dates.length} day(s) &middot; ${driverRows.length} driver(s)</span></div>` +
@@ -7213,9 +7288,9 @@
           dates.forEach((dt, di) => {
             const cell = r.byDate ? r.byDate.get(dt) : null;
             const cnt = cell ? cell.count : 0;
-            const prevCell = (di > 0 && r.byDate) ? r.byDate.get(dates[di - 1]) : null;
+            const prevCell = (di + 1 < dates.length && r.byDate) ? r.byDate.get(dates[di + 1]) : null;
             const prevCnt = prevCell ? prevCell.count : 0;
-            const diffHtml = di > 0 ? drDiffHtml(cnt, prevCnt) : '';
+            const diffHtml = (di + 1 < dates.length) ? drDiffHtml(cnt, prevCnt) : '';
             const md = drMD(dt);
             if (cnt > 0) {
               const podList = Array.from(cell.pods.entries())
@@ -7262,7 +7337,7 @@
       h += `<div class="dr-sec">Driver Detail (${driverRows.length})</div>`;
       if (dim === 'total') {
         h += `<table class="dr-table"><thead><tr>` +
-          `<th class="l" style="width:52px;">Station</th>` +
+          `<th class="l dr-dnr-st" style="width:70px;">Station</th>` +
           `<th class="l" style="width:92px;">Driver</th>` +
           `<th style="width:62px;">Total DNR</th>` +
           `<th class="l">POD Summary</th>` +
@@ -7275,7 +7350,7 @@
             ? Array.from(r.pods.entries()).sort((a, b) => (b[1] - a[1]) || a[0].localeCompare(b[0])).map(([p, c]) => `${drEsc(p)}:${c}`).join(', ')
             : '-';
           h += `<tr>` +
-            `<td class="l"><b>${drEsc(r.station)}</b></td>` +
+            `<td class="l dr-dnr-st"><b>${drEsc(r.station)}</b></td>` +
             `<td class="l">${drEsc(r.driver)}</td>` +
             `<td><b>${totHtml}</b></td>` +
             `<td class="l wrap">${podSummary}</td>` +
@@ -7284,21 +7359,21 @@
         h += `</tbody></table>`;
       } else {
         h += `<table class="dr-table"><thead><tr>` +
-          `<th class="l" style="width:48px;">Station</th>` +
+          `<th class="l dr-dnr-st" style="width:70px;">Station</th>` +
           `<th class="l" style="width:82px;">Driver</th>` +
           dates.map(dt => `<th>${drEsc(drMD(dt))}</th>`).join('') +
           `</tr></thead><tbody>`;
 
         driverRows.forEach(r => {
           h += `<tr>` +
-            `<td class="l"><b>${drEsc(r.station)}</b></td>` +
+            `<td class="l dr-dnr-st"><b>${drEsc(r.station)}</b></td>` +
             `<td class="l">${drEsc(r.driver)}</td>`;
           dates.forEach((dt, di) => {
             const cell = r.byDate.get(dt);
             const cnt = cell ? cell.count : 0;
-            const prevCell = di > 0 ? r.byDate.get(dates[di - 1]) : null;
+            const prevCell = (di + 1 < dates.length) ? r.byDate.get(dates[di + 1]) : null;
             const prevCnt = prevCell ? prevCell.count : 0;
-            const diffHtml = di > 0 ? drDiffHtml(cnt, prevCnt) : '';
+            const diffHtml = (di + 1 < dates.length) ? drDiffHtml(cnt, prevCnt) : '';
             const md = drMD(dt);
 
             if (cnt > 0) {
