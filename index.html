@@ -756,8 +756,8 @@
                         <li><strong>Pre-Filter BAW on Upload</strong>: 文件读取后第一时间仅保留 <strong>Delivery outlet</strong> 包含 <code>"BAW"</code> 且 <strong>Latest scanning point</strong> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）的数据，大幅提升大文件解析与合并速度。</li>
                         <li><strong>48h Shipping records (中文) 兼容与映射</strong>:
                             <ul>
-                                <li><strong>单 Sheet 极速加载</strong>：中文表含 3 个 Sheet，解析时直接读取 Sheet 2 <code>"组件1"</code> 并删除其余 2 个 Sheet，大幅提高计算效率。</li>
-                                <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>，且 <code>派件网点名称</code> 包含 <code>"BAW"</code>，且 <code>最新扫描机构名称</code> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）。</li>
+                                <li><strong>单 Sheet / 超大文件（&gt;100M）极速流式筛除</strong>：中文表含 3 个 Sheet，解析时直接锁定 Sheet 2 <code>"组件1"</code> 并跳过其余 Sheet；若上传文件大于 100MB，优先采用原生流式解压逐行极速筛除（不将整表载入内存），仅保留命中记录后再执行后续全部业务逻辑处理。</li>
+                                <li><strong>前置过滤</strong>：先筛选 <code>区域name = "STUTTGART"</code>、<code>最新扫描类型 &lt;&gt; "快件签收"</code>，且 <code>派件网点名称</code> 包含 <code>"BAW"</code>，且 <code>最新扫描机构名称</code> 包含 <code>"BAW"</code>、<code>"ST"</code> 或 <code>"Yoyi"</code>（不区分大小写）。</li>
                                 <li><strong>字段与状态映射</strong>：<code>运单号 &rarr; waybill</code>、<code>揽收时间 &rarr; Entry time / AscanDate</code>、<code>派件网点名称 &rarr; Delivery outlet</code>、<code>right(三段码, 3) &rarr; postcode</code>、<code>最新扫描机构名称 &rarr; Latest scanning point</code>、<code>最新扫描类型 &rarr; Latest scan type</code>（卸车到件/20&rarr;<code>loaded</code>，派件扫描&rarr;<code>Out of warehouse scan</code>，留仓件入仓&rarr;<code>Warehousing</code>，装车发件&rarr;<code>Outgoing Scan</code>，问题件扫描&rarr;<code>Problem scan</code>，10&rarr;<code>Parcel Pickup</code>，220&rarr;<code>Scan Inbound parcel</code>，30&rarr;<code>Package scan</code>，501&rarr;<code>Loading scan</code>）、<code>最新扫描时间</code>（若<code>接收时间</code>不为空，取<code>最新扫描时间</code>与<code>接收时间</code>中较新者；若<code>接收时间</code>为空，取<code>最新扫描时间</code>）<code> &rarr; Latest scan time / last scan date</code>、<code>订单来源 &rarr; Order source name (client)</code>、<code>最新问题件原因 &rarr; Latest problem reason</code>、<code>派件业务员编号</code> &amp; <code>接收业务员编号</code> &rarr; 用于计算 Pending <code>DriverID</code>；默认 <code>Sign for identification = "Undelivered"</code>、<code>退件标识 = "未退件"</code>。</li>
                                 <li><strong>参与计算范围</strong>：支持单独上传或与英文版合并计算，参与 <code>export Pending</code>、<code>export to get driver</code>、<code>export Final Pending</code> 及 <code>export PUDO</code> 的计算。</li>
                             </ul>
@@ -4645,8 +4645,1222 @@
             return receiveDate.getTime() > lastScanDate.getTime() ? receiveRaw : lastScanRaw;
         }
 
-        // Read Chinese 48h Shipping Excel file: only parse Sheet 2 ("组件1") without formatting/styles, then stream-filter directly from sheet cells
-        function readZhShippingExcelFile(file) {
+        // ---- High-speed streaming pre-filter helpers for Chinese 48h Shipping (>100MB & normal files) ----
+        const ZH_LARGE_FILE_THRESHOLD_BYTES = 100 * 1024 * 1024; // 100 MB
+        const ZH_SS_FLAG_STUTTGART = 1;
+        const ZH_SS_FLAG_SIGNED_ZH = 2;
+        const ZH_SS_FLAG_HAS_BAW = 4;
+        const ZH_SS_FLAG_HAS_POINT = 8;
+
+        function decodeXmlEntitiesFast(str) {
+            if (!str || str.indexOf('&') === -1) return str || '';
+            return str.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, function(m, ent) {
+                if (ent === 'amp') return '&';
+                if (ent === 'lt') return '<';
+                if (ent === 'gt') return '>';
+                if (ent === 'quot') return '"';
+                if (ent === 'apos') return "'";
+                if (ent.charCodeAt(0) === 35) { // '#'
+                    const code = (ent.charCodeAt(1) === 120 || ent.charCodeAt(1) === 88)
+                        ? parseInt(ent.slice(2), 16)
+                        : parseInt(ent.slice(1), 10);
+                    return isNaN(code) ? m : String.fromCodePoint(code);
+                }
+                return m;
+            });
+        }
+
+        function extractXmlTextRuns(inner, tagPrefix) {
+            if (!inner) return '';
+            const openRPh = '<' + tagPrefix + 'rPh';
+            let src = inner;
+            if (src.indexOf(openRPh) !== -1) {
+                const closeRPh = '</' + tagPrefix + 'rPh>';
+                let cleaned = '';
+                let cursor = 0;
+                while (true) {
+                    const rStart = src.indexOf(openRPh, cursor);
+                    if (rStart === -1) {
+                        cleaned += src.slice(cursor);
+                        break;
+                    }
+                    cleaned += src.slice(cursor, rStart);
+                    const rEnd = src.indexOf(closeRPh, rStart);
+                    if (rEnd === -1) break;
+                    cursor = rEnd + closeRPh.length;
+                }
+                src = cleaned;
+            }
+            const openT = '<' + tagPrefix + 't';
+            const closeT = '</' + tagPrefix + 't>';
+            const firstT = src.indexOf(openT);
+            if (firstT === -1) return '';
+            // Fast path: single <t> element (99% of cells)
+            const firstAfter = firstT + openT.length;
+            const firstNc = src.charCodeAt(firstAfter);
+            if (firstNc === 62 || firstNc <= 32 || firstNc === 47) {
+                const firstGt = src.indexOf('>', firstAfter);
+                if (firstGt !== -1) {
+                    if (src.charCodeAt(firstGt - 1) === 47) {
+                        // Self-closing <t/>; fall through if there are more <t> tags
+                        if (src.indexOf(openT, firstGt + 1) === -1) return '';
+                    } else {
+                        const firstClose = src.indexOf(closeT, firstGt + 1);
+                        if (firstClose !== -1 && src.indexOf(openT, firstClose + closeT.length) === -1) {
+                            return decodeXmlEntitiesFast(src.slice(firstGt + 1, firstClose));
+                        }
+                    }
+                }
+            }
+            // Multi-run rich text path
+            let out = '';
+            let p = firstT;
+            while (p !== -1) {
+                const after = p + openT.length;
+                const nc = src.charCodeAt(after);
+                if (nc !== 62 && nc !== 47 && nc > 32) {
+                    p = src.indexOf(openT, after);
+                    continue;
+                }
+                const gt = src.indexOf('>', after);
+                if (gt === -1) break;
+                if (src.charCodeAt(gt - 1) === 47) {
+                    p = src.indexOf(openT, gt + 1);
+                    continue;
+                }
+                const cl = src.indexOf(closeT, gt + 1);
+                if (cl === -1) break;
+                out += decodeXmlEntitiesFast(src.slice(gt + 1, cl));
+                p = src.indexOf(openT, cl + closeT.length);
+            }
+            return out;
+        }
+
+        function parseXmlAttrValue(tagStr, attrName) {
+            const len = tagStr.length;
+            const aLen = attrName.length;
+            let pos = 0;
+            while (pos < len) {
+                const idx = tagStr.indexOf(attrName, pos);
+                if (idx === -1) return null;
+                if (idx > 0 && tagStr.charCodeAt(idx - 1) > 32) {
+                    pos = idx + 1;
+                    continue;
+                }
+                let q = idx + aLen;
+                while (q < len && tagStr.charCodeAt(q) <= 32) q++;
+                if (q >= len || tagStr.charCodeAt(q) !== 61) { // '='
+                    pos = idx + 1;
+                    continue;
+                }
+                q++;
+                while (q < len && tagStr.charCodeAt(q) <= 32) q++;
+                if (q >= len) return null;
+                const quote = tagStr.charCodeAt(q);
+                if (quote !== 34 && quote !== 39) {
+                    pos = q;
+                    continue;
+                }
+                const end = tagStr.indexOf(quote === 34 ? '"' : "'", q + 1);
+                if (end === -1) return null;
+                return decodeXmlEntitiesFast(tagStr.slice(q + 1, end));
+            }
+            return null;
+        }
+
+        function resolveOoxmlRelTarget(baseDir, target) {
+            let raw = String(target || '').replace(/\\/g, '/').trim();
+            if (!raw) return '';
+            if (raw.startsWith('/')) {
+                raw = raw.replace(/^\/+/, '');
+            } else if (!raw.startsWith(baseDir)) {
+                raw = baseDir + raw;
+            }
+            const parts = raw.split('/');
+            const norm = [];
+            for (let i = 0; i < parts.length; i++) {
+                const seg = parts[i];
+                if (!seg || seg === '.') continue;
+                if (seg === '..') norm.pop();
+                else norm.push(seg);
+            }
+            return norm.join('/');
+        }
+
+        async function parseZipCentralDirectoryFromFile(file) {
+            const fileSize = file.size;
+            if (fileSize < 22) throw new Error("ZIP 文件不完整");
+            const tailSize = Math.min(fileSize, 65557);
+            const tailOffset = fileSize - tailSize;
+            const tailBuf = await file.slice(tailOffset, fileSize).arrayBuffer();
+            const tailDv = new DataView(tailBuf);
+
+            let eocdPos = -1;
+            for (let i = tailBuf.byteLength - 22; i >= 0; i--) {
+                if (tailDv.getUint32(i, true) === 0x06054b50) {
+                    const commentLen = tailDv.getUint16(i + 20, true);
+                    if (i + 22 + commentLen === tailBuf.byteLength) {
+                        eocdPos = i;
+                        break;
+                    }
+                }
+            }
+            if (eocdPos === -1) throw new Error("无法识别 XLSX ZIP 目录结构");
+
+            let totalEntries = tailDv.getUint16(eocdPos + 10, true);
+            let cdSize = tailDv.getUint32(eocdPos + 12, true);
+            let cdOffset = tailDv.getUint32(eocdPos + 16, true);
+
+            // Handle ZIP64 End of Central Directory if present
+            if (cdOffset === 0xFFFFFFFF || cdSize === 0xFFFFFFFF || totalEntries === 0xFFFF) {
+                const locPos = eocdPos - 20;
+                if (locPos >= 0 && tailDv.getUint32(locPos, true) === 0x07064b50) {
+                    const z64Offset = Number(tailDv.getBigUint64(locPos + 8, true));
+                    const z64Buf = await file.slice(z64Offset, z64Offset + 56).arrayBuffer();
+                    const z64Dv = new DataView(z64Buf);
+                    if (z64Dv.getUint32(0, true) === 0x06064b50) {
+                        totalEntries = Number(z64Dv.getBigUint64(32, true));
+                        cdSize = Number(z64Dv.getBigUint64(40, true));
+                        cdOffset = Number(z64Dv.getBigUint64(48, true));
+                    }
+                }
+            }
+
+            const cdBuf = await file.slice(cdOffset, cdOffset + cdSize).arrayBuffer();
+            const cdBytes = new Uint8Array(cdBuf);
+            const cdDv = new DataView(cdBuf);
+            const nameDecoder = new TextDecoder('utf-8');
+            const entries = new Map();
+            const entriesLower = new Map();
+
+            let pos = 0;
+            while (pos + 46 <= cdBytes.length) {
+                if (cdDv.getUint32(pos, true) !== 0x02014b50) break;
+                const method = cdDv.getUint16(pos + 10, true);
+                let compSize = cdDv.getUint32(pos + 20, true);
+                let uncompSize = cdDv.getUint32(pos + 24, true);
+                const nameLen = cdDv.getUint16(pos + 28, true);
+                const extraLen = cdDv.getUint16(pos + 30, true);
+                const commentLen = cdDv.getUint16(pos + 32, true);
+                let localHeaderOffset = cdDv.getUint32(pos + 42, true);
+
+                const nameStart = pos + 46;
+                const name = nameDecoder.decode(cdBytes.subarray(nameStart, nameStart + nameLen))
+                    .replace(/\\/g, '/')
+                    .replace(/^\/+/, '');
+
+                // Parse ZIP64 extra field (0x0001) when 32-bit fields overflow
+                if (uncompSize === 0xFFFFFFFF || compSize === 0xFFFFFFFF || localHeaderOffset === 0xFFFFFFFF) {
+                    let exPos = nameStart + nameLen;
+                    const exEnd = exPos + extraLen;
+                    while (exPos + 4 <= exEnd) {
+                        const headerId = cdDv.getUint16(exPos, true);
+                        const dataSize = cdDv.getUint16(exPos + 2, true);
+                        let fPos = exPos + 4;
+                        if (headerId === 0x0001) {
+                            if (uncompSize === 0xFFFFFFFF && fPos + 8 <= exPos + 4 + dataSize) {
+                                uncompSize = Number(cdDv.getBigUint64(fPos, true));
+                                fPos += 8;
+                            }
+                            if (compSize === 0xFFFFFFFF && fPos + 8 <= exPos + 4 + dataSize) {
+                                compSize = Number(cdDv.getBigUint64(fPos, true));
+                                fPos += 8;
+                            }
+                            if (localHeaderOffset === 0xFFFFFFFF && fPos + 8 <= exPos + 4 + dataSize) {
+                                localHeaderOffset = Number(cdDv.getBigUint64(fPos, true));
+                            }
+                            break;
+                        }
+                        exPos += 4 + dataSize;
+                    }
+                }
+
+                const entry = { name, method, compSize, uncompSize, localHeaderOffset };
+                entries.set(name, entry);
+                entriesLower.set(name.toLowerCase(), entry);
+                pos = nameStart + nameLen + extraLen + commentLen;
+            }
+            return { entries, entriesLower };
+        }
+
+        async function openZipEntryStreamFromFile(file, entry) {
+            const lhBuf = await file.slice(entry.localHeaderOffset, entry.localHeaderOffset + 30).arrayBuffer();
+            const lhDv = new DataView(lhBuf);
+            if (lhDv.getUint32(0, true) !== 0x04034b50) {
+                throw new Error("无效的 ZIP Local File Header: " + entry.name);
+            }
+            const lhNameLen = lhDv.getUint16(26, true);
+            const lhExtraLen = lhDv.getUint16(28, true);
+            const dataStart = entry.localHeaderOffset + 30 + lhNameLen + lhExtraLen;
+            const rawStream = file.slice(dataStart, dataStart + entry.compSize).stream();
+            if (entry.method === 0) return rawStream;
+            if (entry.method === 8) return rawStream.pipeThrough(new DecompressionStream('deflate-raw'));
+            throw new Error("不支持的 ZIP 压缩方式: " + entry.method);
+        }
+
+        async function readZipEntryTextFromFile(file, entry) {
+            const stream = await openZipEntryStreamFromFile(file, entry);
+            const reader = stream.getReader();
+            const decoder = new TextDecoder('utf-8');
+            let text = '';
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                text += decoder.decode(value, { stream: true });
+            }
+            text += decoder.decode();
+            return text;
+        }
+
+        async function parseZhSharedStringsStream(stream, onProgress) {
+            const reader = stream.getReader();
+            const decoder = new TextDecoder('utf-8');
+            const sharedStrings = [];
+            let ssFlags = new Uint8Array(65536);
+            let ssCount = 0;
+
+            let buf = '';
+            let prefixDetected = false;
+            let tagPrefix = '';
+            let openSi = '<si';
+            let closeSi = '</si>';
+            let lastYieldTs = performance.now();
+
+            const pushSharedString = (s) => {
+                if (ssCount >= ssFlags.length) {
+                    const next = new Uint8Array(ssFlags.length * 2);
+                    next.set(ssFlags);
+                    ssFlags = next;
+                }
+                const trimmed = s.trim();
+                let flag = 0;
+                if (trimmed !== '') {
+                    if (trimmed === "快件签收") {
+                        flag |= ZH_SS_FLAG_SIGNED_ZH;
+                    } else {
+                        const upper = trimmed.toUpperCase();
+                        if (upper === "STUTTGART") flag |= ZH_SS_FLAG_STUTTGART;
+                        if (upper.indexOf("BAW") !== -1) {
+                            flag |= (ZH_SS_FLAG_HAS_BAW | ZH_SS_FLAG_HAS_POINT);
+                        } else if (upper.indexOf("ST") !== -1 || upper.indexOf("YOYI") !== -1) {
+                            flag |= ZH_SS_FLAG_HAS_POINT;
+                        }
+                    }
+                }
+                sharedStrings.push(s);
+                ssFlags[ssCount++] = flag;
+            };
+
+            while (true) {
+                const { value, done } = await reader.read();
+                if (!done && value) {
+                    buf += decoder.decode(value, { stream: true });
+                } else {
+                    buf += decoder.decode();
+                }
+
+                if (!prefixDetected && buf.length > 0) {
+                    const sstMatch = buf.match(/<([a-zA-Z0-9_-]+:)?sst\b([^>]*)>/);
+                    if (sstMatch) {
+                        prefixDetected = true;
+                        tagPrefix = sstMatch[1] || '';
+                        openSi = '<' + tagPrefix + 'si';
+                        closeSi = '</' + tagPrefix + 'si>';
+                        const ucStr = parseXmlAttrValue(sstMatch[2] || '', 'uniqueCount');
+                        const uc = ucStr ? parseInt(ucStr, 10) : 0;
+                        if (uc > ssFlags.length && uc < 50000000) {
+                            ssFlags = new Uint8Array(uc + 1024);
+                        }
+                        buf = buf.slice(sstMatch.index + sstMatch[0].length);
+                    } else if (done) {
+                        prefixDetected = true;
+                    }
+                }
+
+                if (prefixDetected) {
+                    let pos = 0;
+                    const len = buf.length;
+                    while (pos < len) {
+                        const siStart = buf.indexOf(openSi, pos);
+                        if (siStart === -1) {
+                            pos = Math.max(pos, len - openSi.length - 8);
+                            break;
+                        }
+                        const afterOpen = siStart + openSi.length;
+                        if (afterOpen >= len) {
+                            pos = siStart;
+                            break;
+                        }
+                        const nc = buf.charCodeAt(afterOpen);
+                        if (nc !== 62 && nc !== 47 && nc > 32) {
+                            pos = afterOpen;
+                            continue;
+                        }
+                        const tagEnd = buf.indexOf('>', afterOpen);
+                        if (tagEnd === -1) {
+                            pos = siStart;
+                            break;
+                        }
+                        if (buf.charCodeAt(tagEnd - 1) === 47) {
+                            pushSharedString('');
+                            pos = tagEnd + 1;
+                            continue;
+                        }
+                        const siClose = buf.indexOf(closeSi, tagEnd + 1);
+                        if (siClose === -1) {
+                            pos = siStart;
+                            break;
+                        }
+                        pushSharedString(extractXmlTextRuns(buf.slice(tagEnd + 1, siClose), tagPrefix));
+                        pos = siClose + closeSi.length;
+                    }
+                    if (pos > 0) buf = buf.slice(pos);
+                }
+
+                if (done) break;
+                const now = performance.now();
+                if (now - lastYieldTs >= 55) {
+                    lastYieldTs = now;
+                    if (onProgress) onProgress('ss', ssCount, 0);
+                    await new Promise(r => setTimeout(r, 0));
+                }
+            }
+            return { sharedStrings, ssFlags, ssCount };
+        }
+
+        function resolveZhHeaderColumnIndices(normalizedHeaders) {
+            const idx = (name) => normalizedHeaders.findIndex(x => x === name.toLowerCase());
+            const lastIdx = (name) => {
+                const target = name.toLowerCase();
+                for (let i = normalizedHeaders.length - 1; i >= 0; i--) {
+                    if (normalizedHeaders[i] === target) return i;
+                }
+                return -1;
+            };
+            const cols = {
+                iWaybill: idx("运单号"),
+                iAscan: idx("揽收时间"),
+                iRegion: idx("区域name"),
+                iOutlet: idx("派件网点名称"),
+                iZip: idx("三段码"),
+                iReturn: idx("退件标识"),
+                iPoint: idx("最新扫描机构名称"),
+                iType: idx("最新扫描类型"),
+                iLastTime: lastIdx("最新扫描时间"),
+                iReceiveTime: idx("接收时间"),
+                iOrderSource: idx("订单来源"),
+                iProblemReason: idx("最新问题件原因"),
+                iDispatchDriverId: idx("派件业务员编号"),
+                iReceiveDriverId: idx("接收业务员编号")
+            };
+            const missing = [];
+            [["运单号", cols.iWaybill], ["揽收时间", cols.iAscan], ["区域name", cols.iRegion], ["派件网点名称", cols.iOutlet], ["三段码", cols.iZip],
+             ["最新扫描机构名称", cols.iPoint], ["最新扫描类型", cols.iType], ["最新扫描时间", cols.iLastTime]].forEach(p => {
+                if (p[1] === -1) missing.push(p[0]);
+            });
+            if (missing.length > 0) throw new Error("中文表缺少列: " + missing.join(", "));
+            return cols;
+        }
+
+        function buildZhStandardRow(waybill, ascanVal, outlet, zipRaw, pointVal, rawType, lastTimeVal, receiveTimeVal, retRawVal, orderSourceVal, problemReasonVal, dispatchDriverIdVal, receiveDriverIdVal) {
+            const zip = String(zipRaw === undefined || zipRaw === null ? '' : zipRaw).trim();
+            const mappedType = Object.prototype.hasOwnProperty.call(SHIPPING_ZH_SCAN_TYPE_MAP, rawType)
+                ? SHIPPING_ZH_SCAN_TYPE_MAP[rawType]
+                : rawType;
+            const retRaw = String(retRawVal === undefined || retRawVal === null ? '' : retRawVal).trim();
+            const orderSource = String(orderSourceVal === undefined || orderSourceVal === null ? '' : orderSourceVal).trim();
+            const problemReason = String(problemReasonVal === undefined || problemReasonVal === null ? '' : problemReasonVal).trim();
+            const dispatchDriverId = String(dispatchDriverIdVal === undefined || dispatchDriverIdVal === null ? '' : dispatchDriverIdVal).trim();
+            const receiveDriverId = String(receiveDriverIdVal === undefined || receiveDriverIdVal === null ? '' : receiveDriverIdVal).trim();
+            const resolvedLastTime = resolveZhLatestScanTime(lastTimeVal, receiveTimeVal);
+
+            const nr = [
+                waybill,
+                ascanVal === undefined || ascanVal === null ? '' : ascanVal,
+                outlet,
+                zip.slice(-3),
+                pointVal,
+                mappedType,
+                resolvedLastTime,
+                "Undelivered",
+                retRaw === "" ? "未退件" : retRaw,
+                orderSource,
+                problemReason,
+                dispatchDriverId,
+                receiveDriverId
+            ];
+            nr._skipSignedMetrics = true;
+            return nr;
+        }
+
+        // Native streaming XLSX pre-filter: reads ONLY Sheet 2 ("组件1") from ZIP via DecompressionStream,
+        // filtering out non-matching rows on the fly with zero SheetJS object allocation.
+        async function streamFilterZhShippingXlsxFile(file, onProgress) {
+            const { entries, entriesLower } = await parseZipCentralDirectoryFromFile(file);
+            const getEntry = (p) => entries.get(p) || entriesLower.get(p.toLowerCase()) || null;
+
+            const wbEntry = getEntry('xl/workbook.xml');
+            if (!wbEntry) throw new Error("XLSX 缺少 xl/workbook.xml");
+            const wbXml = await readZipEntryTextFromFile(file, wbEntry);
+
+            const sheets = [];
+            const sheetTagRe = /<(?:[a-zA-Z0-9_-]+:)?sheet\b([^>]*)\/?>/g;
+            let sm;
+            while ((sm = sheetTagRe.exec(wbXml)) !== null) {
+                const attrs = sm[1] || '';
+                const name = parseXmlAttrValue(attrs, 'name') || '';
+                let rId = parseXmlAttrValue(attrs, 'r:id');
+                if (!rId) {
+                    const ridMatch = attrs.match(/\s[a-zA-Z0-9_-]+:id\s*=\s*["']([^"']+)["']/);
+                    if (ridMatch) rId = decodeXmlEntitiesFast(ridMatch[1]);
+                }
+                sheets.push({ name, rId });
+            }
+            if (sheets.length === 0) {
+                return { header: SHIPPING_ZH_STD_HEADER.slice(), data: [], scannedRows: 0 };
+            }
+
+            let targetSheet = sheets.find(s => s.name.trim() === "组件1");
+            if (!targetSheet) targetSheet = sheets.find(s => s.name.includes("组件1"));
+            if (!targetSheet) targetSheet = sheets.length >= 2 ? sheets[1] : sheets[0];
+
+            let sheetEntry = null;
+            const relsEntry = getEntry('xl/_rels/workbook.xml.rels');
+            if (relsEntry && targetSheet.rId) {
+                const relsXml = await readZipEntryTextFromFile(file, relsEntry);
+                const relRe = /<(?:[a-zA-Z0-9_-]+:)?Relationship\b([^>]*)\/?>/g;
+                let rm;
+                while ((rm = relRe.exec(relsXml)) !== null) {
+                    const attrs = rm[1] || '';
+                    if (parseXmlAttrValue(attrs, 'Id') === targetSheet.rId) {
+                        const target = parseXmlAttrValue(attrs, 'Target');
+                        const resolved = resolveOoxmlRelTarget('xl/', target);
+                        sheetEntry = getEntry(resolved);
+                        break;
+                    }
+                }
+            }
+            if (!sheetEntry) {
+                const sheetIdx = sheets.indexOf(targetSheet) + 1;
+                sheetEntry = getEntry('xl/worksheets/sheet' + sheetIdx + '.xml') || getEntry('xl/worksheets/sheet2.xml') || getEntry('xl/worksheets/sheet1.xml');
+            }
+            if (!sheetEntry) throw new Error("未找到中文表目标 Sheet XML");
+
+            // Load sharedStrings (if present) into flat string array + 1-byte filter bitmask
+            let sharedStrings = [];
+            let ssFlags = new Uint8Array(0);
+            let ssCount = 0;
+            const ssEntry = getEntry('xl/sharedStrings.xml');
+            if (ssEntry) {
+                if (onProgress) onProgress('ss', 0, 0);
+                const ssStream = await openZipEntryStreamFromFile(file, ssEntry);
+                const ssResult = await parseZhSharedStringsStream(ssStream, onProgress);
+                sharedStrings = ssResult.sharedStrings;
+                ssFlags = ssResult.ssFlags;
+                ssCount = ssResult.ssCount;
+            }
+
+            const sheetStream = await openZipEntryStreamFromFile(file, sheetEntry);
+            const reader = sheetStream.getReader();
+            const decoder = new TextDecoder('utf-8');
+
+            const out = [];
+            let buf = '';
+            let prefixDetected = false;
+            let inSheetData = false;
+            let doneSheetData = false;
+            let tagPrefix = '';
+            let openSheetData = '<sheetData';
+            let closeSheetData = '</sheetData>';
+            let openRow = '<row';
+            let closeRow = '</row>';
+            let openC = '<c';
+            let closeC = '</c>';
+            let openV = '<v';
+            let closeV = '</v>';
+
+            let headerFound = false;
+            let headerScanCount = 0;
+            let cols = null;
+            let maxNeededCol = -1;
+            // Slot mapping for the 14 columns we care about:
+            // 0:region, 1:type, 2:outlet, 3:point, 4:waybill, 5:ascan, 6:zip,
+            // 7:return, 8:lastTime, 9:receiveTime, 10:orderSource, 11:problemReason,
+            // 12:dispatchDriverId, 13:receiveDriverId
+            const SLOT_COUNT = 14;
+            let colToSlot = null; // Int8Array(maxNeededCol + 1), -1 if unused
+            const slotValType = new Int8Array(SLOT_COUNT); // 0=empty, 1=ss, 2=num, 3=str, 4=inlineStr, 5=bool
+            const slotSsIdx = new Int32Array(SLOT_COUNT);
+            const slotStart = new Int32Array(SLOT_COUNT);
+            const slotEnd = new Int32Array(SLOT_COUNT);
+
+            let scannedRows = 0;
+            let lastYieldTs = performance.now();
+
+            // Helper: parse cell type & value span inside rowInner [cTagEnd+1, cClose)
+            const findVValueSpan = (rowInner, from, limit) => {
+                let p = from;
+                while (p < limit) {
+                    const vs = rowInner.indexOf(openV, p);
+                    if (vs === -1 || vs >= limit) return null;
+                    const after = vs + openV.length;
+                    const nc = rowInner.charCodeAt(after);
+                    if (nc !== 62 && nc !== 47 && nc > 32) {
+                        p = after;
+                        continue;
+                    }
+                    const gt = rowInner.indexOf('>', after);
+                    if (gt === -1 || gt >= limit) return null;
+                    if (rowInner.charCodeAt(gt - 1) === 47) return null; // <v/>
+                    const ve = rowInner.indexOf(closeV, gt + 1);
+                    if (ve === -1 || ve > limit) return null;
+                    return [gt + 1, ve];
+                }
+                return null;
+            };
+
+            const parseCellAttrsFast = (rowInner, attrStart, attrEnd, prevColIdx) => {
+                let colIdx = prevColIdx + 1;
+                let typeCode = 2; // default numeric
+                let i = attrStart;
+                while (i < attrEnd) {
+                    const ch = rowInner.charCodeAt(i);
+                    if (ch <= 32) { i++; continue; }
+                    // Check 'r=' or 't=' preceded by whitespace
+                    if (i > attrStart && rowInner.charCodeAt(i - 1) <= 32) {
+                        if (ch === 114 && i + 1 < attrEnd && rowInner.charCodeAt(i + 1) === 61) { // r=
+                            const qChar = rowInner.charCodeAt(i + 2);
+                            if (qChar === 34 || qChar === 39) {
+                                let k = i + 3;
+                                let cNum = 0;
+                                let hasLetter = false;
+                                while (k < attrEnd) {
+                                    const lc = rowInner.charCodeAt(k);
+                                    if (lc >= 65 && lc <= 90) { cNum = cNum * 26 + (lc - 64); hasLetter = true; k++; }
+                                    else if (lc >= 97 && lc <= 122) { cNum = cNum * 26 + (lc - 96); hasLetter = true; k++; }
+                                    else break;
+                                }
+                                if (hasLetter) colIdx = cNum - 1;
+                                const qEnd = rowInner.indexOf(qChar === 34 ? '"' : "'", k);
+                                i = (qEnd !== -1 && qEnd < attrEnd) ? qEnd + 1 : attrEnd;
+                                continue;
+                            }
+                        } else if (ch === 116 && i + 1 < attrEnd && rowInner.charCodeAt(i + 1) === 61) { // t=
+                            const qChar = rowInner.charCodeAt(i + 2);
+                            if (qChar === 34 || qChar === 39) {
+                                const valS = i + 3;
+                                const qEnd = rowInner.indexOf(qChar === 34 ? '"' : "'", valS);
+                                if (qEnd !== -1 && qEnd < attrEnd) {
+                                    const vLen = qEnd - valS;
+                                    const c0 = rowInner.charCodeAt(valS);
+                                    if (vLen === 1) {
+                                        if (c0 === 115) typeCode = 1;      // s
+                                        else if (c0 === 110) typeCode = 2; // n
+                                        else if (c0 === 98) typeCode = 5;  // b
+                                        else if (c0 === 101) typeCode = 6; // e
+                                    } else if (vLen === 3 && c0 === 115 && rowInner.charCodeAt(valS + 1) === 116 && rowInner.charCodeAt(valS + 2) === 114) {
+                                        typeCode = 3; // str
+                                    } else if (vLen === 9 && c0 === 105 && rowInner.slice(valS, qEnd) === 'inlineStr') {
+                                        typeCode = 4; // inlineStr
+                                    }
+                                    i = qEnd + 1;
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                    i++;
+                }
+                return { colIdx, typeCode };
+            };
+
+            const materializeSlotValue = (rowInner, slot) => {
+                const t = slotValType[slot];
+                if (t === 0) return '';
+                if (t === 1) {
+                    const si = slotSsIdx[slot];
+                    return (si >= 0 && si < ssCount) ? sharedStrings[si] : '';
+                }
+                const s = slotStart[slot];
+                const e = slotEnd[slot];
+                if (t === 2) {
+                    if (s >= e) return '';
+                    const num = Number(rowInner.slice(s, e));
+                    return isNaN(num) ? rowInner.slice(s, e) : num;
+                }
+                if (t === 3) return decodeXmlEntitiesFast(rowInner.slice(s, e));
+                if (t === 4) return extractXmlTextRuns(rowInner.slice(s, e), tagPrefix);
+                if (t === 5) return rowInner.charCodeAt(s) === 49;
+                return '';
+            };
+
+            const parseAllHeaderCells = (rowInner) => {
+                const rowArr = [];
+                let p = 0;
+                const rLen = rowInner.length;
+                let prevCol = -1;
+                while (p < rLen) {
+                    const cs = rowInner.indexOf(openC, p);
+                    if (cs === -1) break;
+                    const after = cs + openC.length;
+                    const nc = rowInner.charCodeAt(after);
+                    if (nc !== 62 && nc !== 47 && nc > 32) { p = after; continue; }
+                    const cTagEnd = rowInner.indexOf('>', after);
+                    if (cTagEnd === -1) break;
+                    const selfClosing = rowInner.charCodeAt(cTagEnd - 1) === 47;
+                    const { colIdx, typeCode } = parseCellAttrsFast(rowInner, after, selfClosing ? cTagEnd - 1 : cTagEnd, prevCol);
+                    prevCol = colIdx;
+                    if (selfClosing) {
+                        p = cTagEnd + 1;
+                        continue;
+                    }
+                    const cClose = rowInner.indexOf(closeC, cTagEnd + 1);
+                    if (cClose === -1) break;
+                    let val = '';
+                    if (typeCode === 4) {
+                        val = extractXmlTextRuns(rowInner.slice(cTagEnd + 1, cClose), tagPrefix);
+                    } else if (typeCode !== 6) {
+                        const span = findVValueSpan(rowInner, cTagEnd + 1, cClose);
+                        if (span) {
+                            if (typeCode === 1) {
+                                const si = parseInt(rowInner.slice(span[0], span[1]), 10);
+                                val = (si >= 0 && si < ssCount) ? sharedStrings[si] : '';
+                            } else if (typeCode === 3) {
+                                val = decodeXmlEntitiesFast(rowInner.slice(span[0], span[1]));
+                            } else if (typeCode === 5) {
+                                val = rowInner.charCodeAt(span[0]) === 49;
+                            } else {
+                                const num = Number(rowInner.slice(span[0], span[1]));
+                                val = isNaN(num) ? rowInner.slice(span[0], span[1]) : num;
+                            }
+                        }
+                    }
+                    rowArr[colIdx] = val;
+                    p = cClose + closeC.length;
+                }
+                return rowArr;
+            };
+
+            const processRowInner = (rowInner) => {
+                if (!headerFound) {
+                    headerScanCount++;
+                    const cells = parseAllHeaderCells(rowInner);
+                    let hasWaybillHeader = false;
+                    for (let c = 0; c < cells.length; c++) {
+                        if (cells[c] !== undefined && cells[c] !== null) {
+                            const s = String(cells[c]).trim();
+                            if (s === "运单号" || s.includes("运单号")) {
+                                hasWaybillHeader = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasWaybillHeader) {
+                        const normalized = new Array(cells.length);
+                        for (let c = 0; c < cells.length; c++) {
+                            normalized[c] = (cells[c] !== undefined && cells[c] !== null)
+                                ? String(cells[c]).replace(/\s+/g, '').trim().toLowerCase()
+                                : '';
+                        }
+                        cols = resolveZhHeaderColumnIndices(normalized);
+                        const colList = [
+                            cols.iRegion, cols.iType, cols.iOutlet, cols.iPoint, cols.iWaybill,
+                            cols.iAscan, cols.iZip, cols.iReturn, cols.iLastTime, cols.iReceiveTime,
+                            cols.iOrderSource, cols.iProblemReason, cols.iDispatchDriverId, cols.iReceiveDriverId
+                        ];
+                        maxNeededCol = -1;
+                        for (let k = 0; k < colList.length; k++) {
+                            if (colList[k] > maxNeededCol) maxNeededCol = colList[k];
+                        }
+                        colToSlot = new Int8Array(maxNeededCol + 1);
+                        colToSlot.fill(-1);
+                        for (let k = 0; k < colList.length; k++) {
+                            if (colList[k] !== -1) colToSlot[colList[k]] = k;
+                        }
+                        headerFound = true;
+                    } else if (headerScanCount >= 15) {
+                        throw new Error("中文表（Sheet2 组件1）未找到表头“运单号”");
+                    }
+                    return;
+                }
+
+                scannedRows++;
+                slotValType.fill(0);
+                let passedRegion = false;
+                let passedOutlet = false;
+                let passedPoint = false;
+                let passedWaybill = false;
+                let rejected = false;
+
+                let p = 0;
+                const rLen = rowInner.length;
+                let prevCol = -1;
+
+                while (p < rLen) {
+                    const cs = rowInner.indexOf(openC, p);
+                    if (cs === -1) break;
+                    const after = cs + openC.length;
+                    const nc = rowInner.charCodeAt(after);
+                    if (nc !== 62 && nc !== 47 && nc > 32) { p = after; continue; }
+                    const cTagEnd = rowInner.indexOf('>', after);
+                    if (cTagEnd === -1) break;
+                    const selfClosing = rowInner.charCodeAt(cTagEnd - 1) === 47;
+                    const { colIdx, typeCode } = parseCellAttrsFast(rowInner, after, selfClosing ? cTagEnd - 1 : cTagEnd, prevCol);
+                    prevCol = colIdx;
+
+                    if (colIdx > maxNeededCol) break;
+
+                    const slot = colToSlot[colIdx];
+                    if (selfClosing) {
+                        // Empty cell in a required filter column -> reject immediately!
+                        if (slot === 0 || slot === 2 || slot === 3 || slot === 4) {
+                            rejected = true;
+                            break;
+                        }
+                        p = cTagEnd + 1;
+                        continue;
+                    }
+
+                    const cClose = rowInner.indexOf(closeC, cTagEnd + 1);
+                    if (cClose === -1) break;
+
+                    if (slot === -1) {
+                        p = cClose + closeC.length;
+                        continue;
+                    }
+
+                    // Record raw cell location without slicing/allocating unless needed for filter
+                    let ssIdx = -1;
+                    let vS = 0;
+                    let vE = 0;
+                    let resolvedType = 0;
+
+                    if (typeCode === 4) {
+                        resolvedType = 4;
+                        vS = cTagEnd + 1;
+                        vE = cClose;
+                    } else if (typeCode !== 6) {
+                        const span = findVValueSpan(rowInner, cTagEnd + 1, cClose);
+                        if (span && span[0] < span[1]) {
+                            if (typeCode === 1) {
+                                let n = 0;
+                                let hasDigit = false;
+                                for (let k = span[0]; k < span[1]; k++) {
+                                    const d = rowInner.charCodeAt(k) - 48;
+                                    if (d >= 0 && d <= 9) { n = n * 10 + d; hasDigit = true; }
+                                }
+                                if (hasDigit) {
+                                    resolvedType = 1;
+                                    ssIdx = n;
+                                }
+                            } else {
+                                resolvedType = typeCode;
+                                vS = span[0];
+                                vE = span[1];
+                            }
+                        }
+                    }
+
+                    slotValType[slot] = resolvedType;
+                    slotSsIdx[slot] = ssIdx;
+                    slotStart[slot] = vS;
+                    slotEnd[slot] = vE;
+
+                    // Immediate early-reject checks on the 4 filter columns + waybill
+                    if (slot === 0) {
+                        // Filter 1: 区域name = "STUTTGART" (case-insensitive)
+                        if (resolvedType === 1) {
+                            if (ssIdx < 0 || ssIdx >= ssCount || (ssFlags[ssIdx] & ZH_SS_FLAG_STUTTGART) === 0) {
+                                rejected = true;
+                                break;
+                            }
+                        } else if (resolvedType === 0) {
+                            rejected = true;
+                            break;
+                        } else {
+                            const v = String(materializeSlotValue(rowInner, 0)).trim().toUpperCase();
+                            if (v !== "STUTTGART") { rejected = true; break; }
+                        }
+                        passedRegion = true;
+                    } else if (slot === 1) {
+                        // Filter 2: 最新扫描类型 <> "快件签收"
+                        if (resolvedType === 1) {
+                            if (ssIdx >= 0 && ssIdx < ssCount && (ssFlags[ssIdx] & ZH_SS_FLAG_SIGNED_ZH) !== 0) {
+                                rejected = true;
+                                break;
+                            }
+                        } else if (resolvedType === 3 || resolvedType === 4) {
+                            const v = String(materializeSlotValue(rowInner, 1)).trim();
+                            if (v === "快件签收") { rejected = true; break; }
+                        }
+                    } else if (slot === 2) {
+                        // Filter 3: 派件网点名称 contains "BAW" (case-insensitive)
+                        if (resolvedType === 1) {
+                            if (ssIdx < 0 || ssIdx >= ssCount || (ssFlags[ssIdx] & ZH_SS_FLAG_HAS_BAW) === 0) {
+                                rejected = true;
+                                break;
+                            }
+                        } else if (resolvedType === 0) {
+                            rejected = true;
+                            break;
+                        } else {
+                            const v = String(materializeSlotValue(rowInner, 2)).trim().toUpperCase();
+                            if (v.indexOf("BAW") === -1) { rejected = true; break; }
+                        }
+                        passedOutlet = true;
+                    } else if (slot === 3) {
+                        // Filter 4: 最新扫描机构名称 contains "BAW", "ST", or "Yoyi" (case-insensitive)
+                        if (resolvedType === 1) {
+                            if (ssIdx < 0 || ssIdx >= ssCount || (ssFlags[ssIdx] & ZH_SS_FLAG_HAS_POINT) === 0) {
+                                rejected = true;
+                                break;
+                            }
+                        } else if (resolvedType === 0) {
+                            rejected = true;
+                            break;
+                        } else {
+                            const v = String(materializeSlotValue(rowInner, 3)).trim().toUpperCase();
+                            if (v.indexOf("BAW") === -1 && v.indexOf("ST") === -1 && v.indexOf("YOYI") === -1) {
+                                rejected = true;
+                                break;
+                            }
+                        }
+                        passedPoint = true;
+                    } else if (slot === 4) {
+                        // Valid waybill check
+                        if (resolvedType === 0) { rejected = true; break; }
+                        const wb = String(materializeSlotValue(rowInner, 4)).trim();
+                        if (wb === "" || wb.includes("运单号")) { rejected = true; break; }
+                        passedWaybill = true;
+                    }
+
+                    p = cClose + closeC.length;
+                }
+
+                if (rejected || !passedRegion || !passedOutlet || !passedPoint || !passedWaybill) {
+                    return;
+                }
+
+                // Row passed ALL pre-filters -> materialize remaining columns and build standard row
+                const waybill = String(materializeSlotValue(rowInner, 4)).trim();
+                const outlet = String(materializeSlotValue(rowInner, 2)).trim();
+                const pointVal = String(materializeSlotValue(rowInner, 3)).trim();
+                const rawType = String(materializeSlotValue(rowInner, 1)).trim();
+                if (rawType === "快件签收") return;
+
+                out.push(buildZhStandardRow(
+                    waybill,
+                    materializeSlotValue(rowInner, 5),
+                    outlet,
+                    materializeSlotValue(rowInner, 6),
+                    pointVal,
+                    rawType,
+                    materializeSlotValue(rowInner, 8),
+                    materializeSlotValue(rowInner, 9),
+                    materializeSlotValue(rowInner, 7),
+                    materializeSlotValue(rowInner, 10),
+                    materializeSlotValue(rowInner, 11),
+                    materializeSlotValue(rowInner, 12),
+                    materializeSlotValue(rowInner, 13)
+                ));
+            };
+
+            try {
+                while (!doneSheetData) {
+                    const { value, done } = await reader.read();
+                    if (!done && value) {
+                        buf += decoder.decode(value, { stream: true });
+                    } else {
+                        buf += decoder.decode();
+                    }
+
+                    if (!prefixDetected && buf.length > 0) {
+                        const wsMatch = buf.match(/<([a-zA-Z0-9_-]+:)?worksheet\b/);
+                        if (wsMatch) {
+                            prefixDetected = true;
+                            tagPrefix = wsMatch[1] || '';
+                            openSheetData = '<' + tagPrefix + 'sheetData';
+                            closeSheetData = '</' + tagPrefix + 'sheetData>';
+                            openRow = '<' + tagPrefix + 'row';
+                            closeRow = '</' + tagPrefix + 'row>';
+                            openC = '<' + tagPrefix + 'c';
+                            closeC = '</' + tagPrefix + 'c>';
+                            openV = '<' + tagPrefix + 'v';
+                            closeV = '</' + tagPrefix + 'v>';
+                        } else if (done) {
+                            prefixDetected = true;
+                        }
+                    }
+
+                    if (prefixDetected && !inSheetData) {
+                        const sdIdx = buf.indexOf(openSheetData);
+                        if (sdIdx !== -1) {
+                            const sdGt = buf.indexOf('>', sdIdx + openSheetData.length);
+                            if (sdGt !== -1) {
+                                if (buf.charCodeAt(sdGt - 1) === 47) {
+                                    doneSheetData = true;
+                                } else {
+                                    inSheetData = true;
+                                    buf = buf.slice(sdGt + 1);
+                                }
+                            }
+                        } else if (buf.length > 64) {
+                            buf = buf.slice(buf.length - 64);
+                        }
+                    }
+
+                    if (inSheetData && !doneSheetData) {
+                        let pos = 0;
+                        const bLen = buf.length;
+                        while (pos < bLen) {
+                            const rowStart = buf.indexOf(openRow, pos);
+                            if (rowStart === -1) {
+                                if (buf.indexOf(closeSheetData, pos) !== -1) {
+                                    doneSheetData = true;
+                                } else {
+                                    pos = Math.max(pos, bLen - openRow.length - 32);
+                                }
+                                break;
+                            }
+                            const after = rowStart + openRow.length;
+                            if (after >= bLen) {
+                                pos = rowStart;
+                                break;
+                            }
+                            const nc = buf.charCodeAt(after);
+                            if (nc !== 62 && nc !== 47 && nc > 32) {
+                                pos = after;
+                                continue;
+                            }
+                            const tagEnd = buf.indexOf('>', after);
+                            if (tagEnd === -1) {
+                                pos = rowStart;
+                                break;
+                            }
+                            if (buf.charCodeAt(tagEnd - 1) === 47) {
+                                pos = tagEnd + 1;
+                                continue;
+                            }
+                            const rowEnd = buf.indexOf(closeRow, tagEnd + 1);
+                            if (rowEnd === -1) {
+                                pos = rowStart;
+                                break;
+                            }
+                            processRowInner(buf.slice(tagEnd + 1, rowEnd));
+                            pos = rowEnd + closeRow.length;
+                        }
+                        if (pos > 0) buf = buf.slice(pos);
+                    }
+
+                    if (done) break;
+                    const now = performance.now();
+                    if (now - lastYieldTs >= 55) {
+                        lastYieldTs = now;
+                        if (onProgress) onProgress('rows', scannedRows, out.length);
+                        await new Promise(r => setTimeout(r, 0));
+                    }
+                }
+            } finally {
+                try { await reader.cancel(); } catch (_) {}
+                sharedStrings = null;
+                ssFlags = null;
+            }
+
+            if (!headerFound && scannedRows === 0 && out.length === 0) {
+                throw new Error("中文表（Sheet2 组件1）未找到表头“运单号”");
+            }
+            return { header: SHIPPING_ZH_STD_HEADER.slice(), data: out, scannedRows };
+        }
+
+        // Native streaming CSV pre-filter (handles >100MB UTF-8 / GB18030 CSV files with near-zero RAM)
+        async function streamFilterZhShippingCsvFile(file, onProgress) {
+            // Detect encoding (UTF-8 vs GB18030) from first 64KB
+            const sampleSize = Math.min(file.size, 65536);
+            const sampleBytes = new Uint8Array(await file.slice(0, sampleSize).arrayBuffer());
+            let encoding = 'utf-8';
+            const hasUtf8Bom = sampleBytes.length >= 3 && sampleBytes[0] === 0xEF && sampleBytes[1] === 0xBB && sampleBytes[2] === 0xBF;
+            if (!hasUtf8Bom && sampleBytes.length > 0) {
+                // Trim up to 3 trailing bytes in case sample slices mid-character
+                let safeLen = sampleBytes.length;
+                if (sampleSize < file.size) {
+                    while (safeLen > 0 && (sampleBytes[safeLen - 1] & 0xC0) === 0x80) safeLen--;
+                    if (safeLen > 0 && (sampleBytes[safeLen - 1] & 0x80) !== 0) safeLen--;
+                }
+                try {
+                    new TextDecoder('utf-8', { fatal: true }).decode(sampleBytes.subarray(0, safeLen));
+                } catch (_) {
+                    encoding = 'gb18030';
+                }
+            }
+
+            const sampleText = new TextDecoder(encoding).decode(sampleBytes);
+            const firstLine = sampleText.split(/\r?\n/)[0] || '';
+            let delim = ',';
+            if (firstLine.indexOf(',') === -1) {
+                if (firstLine.indexOf('\t') !== -1) delim = '\t';
+                else if (firstLine.indexOf(';') !== -1) delim = ';';
+            }
+
+            const out = [];
+            let headerFound = false;
+            let headerScanCount = 0;
+            let cols = null;
+            let scannedRows = 0;
+
+            const processCsvRow = (fields) => {
+                if (!headerFound) {
+                    headerScanCount++;
+                    let hasWaybillHeader = false;
+                    for (let c = 0; c < fields.length; c++) {
+                        const s = String(fields[c] || '').replace(/^\uFEFF/, '').trim();
+                        if (s === "运单号" || s.includes("运单号")) {
+                            hasWaybillHeader = true;
+                            break;
+                        }
+                    }
+                    if (hasWaybillHeader) {
+                        const normalized = fields.map(v => String(v || '').replace(/^\uFEFF/, '').replace(/\s+/g, '').trim().toLowerCase());
+                        cols = resolveZhHeaderColumnIndices(normalized);
+                        headerFound = true;
+                    } else if (headerScanCount >= 15) {
+                        throw new Error("中文 CSV 表未找到表头“运单号”");
+                    }
+                    return;
+                }
+
+                scannedRows++;
+                // Filter 1: 区域name = "STUTTGART"
+                const regionRaw = fields[cols.iRegion];
+                if (!regionRaw || String(regionRaw).trim().toUpperCase() !== "STUTTGART") return;
+
+                // Filter 2: 最新扫描类型 <> "快件签收"
+                const rawType = String(fields[cols.iType] || '').trim();
+                if (rawType === "快件签收") return;
+
+                // Filter 3: 派件网点名称 contains "BAW"
+                const outlet = String(fields[cols.iOutlet] || '').trim();
+                if (!outlet || !outlet.toUpperCase().includes("BAW")) return;
+
+                // Filter 4: 最新扫描机构名称 contains "BAW", "ST", or "Yoyi"
+                const pointVal = String(fields[cols.iPoint] || '').trim();
+                if (!pointVal) return;
+                const pointUpper = pointVal.toUpperCase();
+                if (!pointUpper.includes("BAW") && !pointUpper.includes("ST") && !pointUpper.includes("YOYI")) return;
+
+                // Filter 5: valid waybill
+                const waybill = String(fields[cols.iWaybill] || '').trim();
+                if (!waybill || waybill.includes("运单号")) return;
+
+                out.push(buildZhStandardRow(
+                    waybill,
+                    fields[cols.iAscan] || '',
+                    outlet,
+                    fields[cols.iZip] || '',
+                    pointVal,
+                    rawType,
+                    fields[cols.iLastTime] || '',
+                    cols.iReceiveTime !== -1 ? (fields[cols.iReceiveTime] || '') : '',
+                    cols.iReturn !== -1 ? (fields[cols.iReturn] || '') : '',
+                    cols.iOrderSource !== -1 ? (fields[cols.iOrderSource] || '') : '',
+                    cols.iProblemReason !== -1 ? (fields[cols.iProblemReason] || '') : '',
+                    cols.iDispatchDriverId !== -1 ? (fields[cols.iDispatchDriverId] || '') : '',
+                    cols.iReceiveDriverId !== -1 ? (fields[cols.iReceiveDriverId] || '') : ''
+                ));
+            };
+
+            const decoder = new TextDecoder(encoding);
+            const delimCode = delim.charCodeAt(0);
+            let fields = [];
+            let curField = '';
+            let inQuotes = false;
+            let pendingQuote = false;
+            let lastYieldTs = performance.now();
+
+            const feedChunk = (text, isFinal) => {
+                for (let i = 0; i < text.length; i++) {
+                    const ch = text.charCodeAt(i);
+                    if (pendingQuote) {
+                        if (ch === 34) { // escaped ""
+                            curField += '"';
+                            pendingQuote = false;
+                            continue;
+                        } else {
+                            inQuotes = false;
+                            pendingQuote = false;
+                        }
+                    }
+                    if (inQuotes) {
+                        if (ch === 34) {
+                            pendingQuote = true;
+                        } else {
+                            curField += text[i];
+                        }
+                    } else {
+                        if (ch === 34 && curField.length === 0) {
+                            inQuotes = true;
+                        } else if (ch === delimCode) {
+                            fields.push(curField);
+                            curField = '';
+                        } else if (ch === 13) {
+                            // CR: ignore, LF will flush (or handle lone CR)
+                            if (i + 1 < text.length && text.charCodeAt(i + 1) === 10) i++;
+                            fields.push(curField);
+                            curField = '';
+                            if (fields.length > 1 || fields[0] !== '') processCsvRow(fields);
+                            fields = [];
+                        } else if (ch === 10) {
+                            fields.push(curField);
+                            curField = '';
+                            if (fields.length > 1 || fields[0] !== '') processCsvRow(fields);
+                            fields = [];
+                        } else {
+                            curField += text[i];
+                        }
+                    }
+                }
+                if (isFinal && (fields.length > 0 || curField.length > 0)) {
+                    fields.push(curField);
+                    curField = '';
+                    if (fields.length > 1 || fields[0] !== '') processCsvRow(fields);
+                    fields = [];
+                }
+            };
+
+            if (typeof file.stream === 'function') {
+                const reader = file.stream().getReader();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (!done && value) {
+                        feedChunk(decoder.decode(value, { stream: true }), false);
+                    } else {
+                        feedChunk(decoder.decode(), true);
+                        break;
+                    }
+                    const now = performance.now();
+                    if (now - lastYieldTs >= 55) {
+                        lastYieldTs = now;
+                        if (onProgress) onProgress('rows', scannedRows, out.length);
+                        await new Promise(r => setTimeout(r, 0));
+                    }
+                }
+            } else {
+                const SLICE_SIZE = 4 * 1024 * 1024;
+                for (let offset = 0; offset < file.size; offset += SLICE_SIZE) {
+                    const chunkBuf = await file.slice(offset, Math.min(offset + SLICE_SIZE, file.size)).arrayBuffer();
+                    const isLast = offset + SLICE_SIZE >= file.size;
+                    feedChunk(decoder.decode(new Uint8Array(chunkBuf), { stream: !isLast }), false);
+                    if (isLast) feedChunk(decoder.decode(), true);
+                    if (onProgress) onProgress('rows', scannedRows, out.length);
+                    await new Promise(r => setTimeout(r, 0));
+                }
+            }
+
+            if (!headerFound) throw new Error("中文 CSV 表未找到表头“运单号”");
+            return { header: SHIPPING_ZH_STD_HEADER.slice(), data: out, scannedRows };
+        }
+
+        // Fallback SheetJS parser for legacy .xls or non-standard workbooks
+        function readZhShippingViaSheetJS(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -4656,7 +5870,7 @@
                             const metaWb = XLSX.read(data, { type: 'array', bookSheets: true });
                             const sheetNames = (metaWb && Array.isArray(metaWb.SheetNames)) ? metaWb.SheetNames : [];
                             if (sheetNames.length === 0) {
-                                resolve({ header: SHIPPING_ZH_STD_HEADER.slice(), data: [] });
+                                resolve({ header: SHIPPING_ZH_STD_HEADER.slice(), data: [], scannedRows: 0 });
                                 return;
                             }
                             let targetSheetName = sheetNames.find(n => String(n).trim() === "组件1");
@@ -4692,9 +5906,52 @@
             });
         }
 
-        // Stream-filter directly from SheetJS sheet cells (avoids full sheet_to_json allocation & yields to UI)
+        // Unified Chinese 48h Shipping reader:
+        // Uses ultra-fast native streaming pre-filter for .xlsx (via ZIP + DecompressionStream) and .csv
+        // (essential for >100MB files to rapidly discard non-matching rows before any business logic).
+        async function readZhShippingExcelFile(file, onProgress) {
+            const nameLower = String(file.name || '').toLowerCase();
+            const isLargeFile = file.size > ZH_LARGE_FILE_THRESHOLD_BYTES;
+
+            if (nameLower.endsWith('.csv')) {
+                return await streamFilterZhShippingCsvFile(file, onProgress);
+            }
+
+            // Sniff first 4 bytes to detect ZIP-based .xlsx/.xlsm
+            let isZip = false;
+            try {
+                const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+                isZip = head.length >= 4 && head[0] === 0x50 && head[1] === 0x4B && head[2] === 0x03 && head[3] === 0x04;
+            } catch (_) {
+                isZip = false;
+            }
+
+            const canNativeStreamXlsx = isZip
+                && typeof DecompressionStream === 'function'
+                && typeof file.slice(0, 1).stream === 'function';
+
+            if (canNativeStreamXlsx) {
+                try {
+                    return await streamFilterZhShippingXlsxFile(file, onProgress);
+                } catch (streamErr) {
+                    // Propagate explicit missing-header / missing-column validation errors directly
+                    if (streamErr && /中文表|表头|缺少列/.test(String(streamErr.message || ''))) {
+                        throw streamErr;
+                    }
+                    // For >100MB files, SheetJS full-workbook load would risk browser OOM; surface clear error
+                    if (isLargeFile) {
+                        throw new Error("大文件(>100M)极速流式筛除失败: " + (streamErr ? streamErr.message : streamErr));
+                    }
+                    console.warn("Streaming XLSX parser fallback to SheetJS:", streamErr);
+                }
+            }
+
+            return await readZhShippingViaSheetJS(file);
+        }
+
+        // Stream-filter directly from SheetJS sheet cells (fallback path, keeps identical filter rules)
         async function extractZhShippingRowsFromSheet(sheet) {
-            if (!sheet || !sheet['!ref']) return { header: SHIPPING_ZH_STD_HEADER.slice(), data: [] };
+            if (!sheet || !sheet['!ref']) return { header: SHIPPING_ZH_STD_HEADER.slice(), data: [], scannedRows: 0 };
             const range = XLSX.utils.decode_range(sheet['!ref']);
             const maxCol = range.e.c;
             const colLetters = new Array(maxCol + 1);
@@ -4722,46 +5979,22 @@
                     ? String(cell.v).replace(/\s+/g, '').trim().toLowerCase()
                     : '';
             }
-            const idx = (name) => h.findIndex(x => x === name.toLowerCase());
-            const lastIdx = (name) => {
-                const target = name.toLowerCase();
-                for (let i = h.length - 1; i >= 0; i--) if (h[i] === target) return i;
-                return -1;
-            };
+            const cols = resolveZhHeaderColumnIndices(h);
 
-            const iWaybill = idx("运单号");
-            const iAscan = idx("揽收时间");
-            const iRegion = idx("区域name");
-            const iOutlet = idx("派件网点名称");
-            const iZip = idx("三段码");
-            const iReturn = idx("退件标识");
-            const iPoint = idx("最新扫描机构名称");
-            const iType = idx("最新扫描类型");
-            const iLastTime = lastIdx("最新扫描时间");
-            const iReceiveTime = idx("接收时间");
-            const iOrderSource = idx("订单来源");
-            const iProblemReason = idx("最新问题件原因");
-            const iDispatchDriverId = idx("派件业务员编号");
-            const iReceiveDriverId = idx("接收业务员编号");
-            const missing = [];
-            [["运单号", iWaybill], ["揽收时间", iAscan], ["区域name", iRegion], ["派件网点名称", iOutlet], ["三段码", iZip],
-             ["最新扫描机构名称", iPoint], ["最新扫描类型", iType], ["最新扫描时间", iLastTime]].forEach(p => { if (p[1] === -1) missing.push(p[0]); });
-            if (missing.length > 0) throw new Error("中文表缺少列: " + missing.join(", "));
-
-            const colWaybill = colLetters[iWaybill];
-            const colAscan = colLetters[iAscan];
-            const colRegion = colLetters[iRegion];
-            const colOutlet = colLetters[iOutlet];
-            const colZip = colLetters[iZip];
-            const colReturn = iReturn !== -1 ? colLetters[iReturn] : null;
-            const colPoint = colLetters[iPoint];
-            const colType = colLetters[iType];
-            const colLastTime = colLetters[iLastTime];
-            const colReceiveTime = iReceiveTime !== -1 ? colLetters[iReceiveTime] : null;
-            const colOrderSource = iOrderSource !== -1 ? colLetters[iOrderSource] : null;
-            const colProblemReason = iProblemReason !== -1 ? colLetters[iProblemReason] : null;
-            const colDispatchDriverId = iDispatchDriverId !== -1 ? colLetters[iDispatchDriverId] : null;
-            const colReceiveDriverId = iReceiveDriverId !== -1 ? colLetters[iReceiveDriverId] : null;
+            const colWaybill = colLetters[cols.iWaybill];
+            const colAscan = colLetters[cols.iAscan];
+            const colRegion = colLetters[cols.iRegion];
+            const colOutlet = colLetters[cols.iOutlet];
+            const colZip = colLetters[cols.iZip];
+            const colReturn = cols.iReturn !== -1 ? colLetters[cols.iReturn] : null;
+            const colPoint = colLetters[cols.iPoint];
+            const colType = colLetters[cols.iType];
+            const colLastTime = colLetters[cols.iLastTime];
+            const colReceiveTime = cols.iReceiveTime !== -1 ? colLetters[cols.iReceiveTime] : null;
+            const colOrderSource = cols.iOrderSource !== -1 ? colLetters[cols.iOrderSource] : null;
+            const colProblemReason = cols.iProblemReason !== -1 ? colLetters[cols.iProblemReason] : null;
+            const colDispatchDriverId = cols.iDispatchDriverId !== -1 ? colLetters[cols.iDispatchDriverId] : null;
+            const colReceiveDriverId = cols.iReceiveDriverId !== -1 ? colLetters[cols.iReceiveDriverId] : null;
 
             const getCellVal = (colLetter, rowNum) => {
                 if (!colLetter) return '';
@@ -4771,98 +6004,132 @@
 
             const out = [];
             const CHUNK_SIZE = 15000;
+            let scannedRows = 0;
             for (let r = headerRowIdx + 1, processed = 0; r <= range.e.r; r++, processed++) {
                 if (processed > 0 && processed % CHUNK_SIZE === 0) {
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
+                scannedRows++;
                 const rowNum = r + 1;
 
                 // Filter 1: STUTTGART only (touches only 1 cell per skipped row)
                 const regionRaw = getCellVal(colRegion, rowNum);
                 if (regionRaw === '' || String(regionRaw).trim().toUpperCase() !== "STUTTGART") continue;
 
-                // Filter 2: BAW outlet only
+                // Filter 2: 最新扫描类型 <> "快件签收"
+                const rawType = String(getCellVal(colType, rowNum)).trim();
+                if (rawType === "快件签收") continue;
+
+                // Filter 3: BAW outlet only
                 const outletRaw = getCellVal(colOutlet, rowNum);
                 if (outletRaw === '') continue;
                 const outlet = String(outletRaw).trim();
                 if (!outlet.toLowerCase().includes("baw")) continue;
 
-                // Filter 3: valid waybill
-                const waybillRaw = getCellVal(colWaybill, rowNum);
-                if (waybillRaw === '') continue;
-                const waybill = String(waybillRaw).trim();
-                if (waybill === "" || waybill.includes("运单号")) continue;
-
-                // Filter 4: 最新扫描机构名称 contains "BAW", "ST", or "Yoyi"
+                // Filter 4: 最新扫描机构名称 contains "BAW", "ST", or "Yoyi" (case-insensitive)
                 const pointRaw = getCellVal(colPoint, rowNum);
                 if (pointRaw === '') continue;
                 const pointVal = String(pointRaw).trim();
                 const pointUpper = pointVal.toUpperCase();
                 if (!pointUpper.includes("BAW") && !pointUpper.includes("ST") && !pointUpper.includes("YOYI")) continue;
 
-                const zip = String(getCellVal(colZip, rowNum)).trim();
-                const rawType = String(getCellVal(colType, rowNum)).trim();
-                const mappedType = Object.prototype.hasOwnProperty.call(SHIPPING_ZH_SCAN_TYPE_MAP, rawType) ? SHIPPING_ZH_SCAN_TYPE_MAP[rawType] : rawType;
-                const retRaw = String(getCellVal(colReturn, rowNum)).trim();
-                const orderSource = String(getCellVal(colOrderSource, rowNum)).trim();
-                const problemReason = String(getCellVal(colProblemReason, rowNum)).trim();
-                const dispatchDriverId = String(getCellVal(colDispatchDriverId, rowNum)).trim();
-                const receiveDriverId = String(getCellVal(colReceiveDriverId, rowNum)).trim();
+                // Filter 5: valid waybill
+                const waybillRaw = getCellVal(colWaybill, rowNum);
+                if (waybillRaw === '') continue;
+                const waybill = String(waybillRaw).trim();
+                if (waybill === "" || waybill.includes("运单号")) continue;
 
-                const resolvedLastTime = resolveZhLatestScanTime(
-                    getCellVal(colLastTime, rowNum),
-                    getCellVal(colReceiveTime, rowNum)
-                );
-
-                const nr = [
+                out.push(buildZhStandardRow(
                     waybill,
                     getCellVal(colAscan, rowNum),
                     outlet,
-                    zip.slice(-3),
+                    getCellVal(colZip, rowNum),
                     pointVal,
-                    mappedType,
-                    resolvedLastTime,
-                    "Undelivered",
-                    retRaw === "" ? "未退件" : retRaw,
-                    orderSource,
-                    problemReason,
-                    dispatchDriverId,
-                    receiveDriverId
-                ];
-                nr._skipSignedMetrics = true;
-                out.push(nr);
+                    rawType,
+                    getCellVal(colLastTime, rowNum),
+                    getCellVal(colReceiveTime, rowNum),
+                    getCellVal(colReturn, rowNum),
+                    getCellVal(colOrderSource, rowNum),
+                    getCellVal(colProblemReason, rowNum),
+                    getCellVal(colDispatchDriverId, rowNum),
+                    getCellVal(colReceiveDriverId, rowNum)
+                ));
             }
-            return { header: SHIPPING_ZH_STD_HEADER.slice(), data: out };
+            return { header: SHIPPING_ZH_STD_HEADER.slice(), data: out, scannedRows };
         }
 
-        function handleShippingZhFile(input) {
-            const files = input.files;
-            if (!files || files.length === 0) return;
+        async function handleShippingZhFile(input) {
+            const fileList = input.files;
+            if (!fileList || fileList.length === 0) return;
+            const files = [];
             const names = [];
-            for (let i = 0; i < files.length; i++) names.push(files[i].name);
-            document.getElementById('name-shipping-zh').textContent = names.join(", ");
-            document.getElementById('status-shipping-zh').textContent = "Loading & filtering STUTTGART/BAW records...";
-
-            const promises = [];
-            for (let i = 0; i < files.length; i++) {
-                promises.push(readZhShippingExcelFile(files[i]));
+            for (let i = 0; i < fileList.length; i++) {
+                files.push(fileList[i]);
+                names.push(fileList[i].name);
             }
-            Promise.all(promises)
-                .then(all => {
-                    shippingZhCleanedFiles = all;
-                    rebuildShippingFromSources();
-                    let n = 0;
-                    all.forEach(f => { n += (f && f.data) ? f.data.length : 0; });
-                    document.getElementById('status-shipping-zh').textContent = "Loaded " + n + " records (STUTTGART + BAW)";
-                })
-                .catch(error => {
-                    alert('Failed to parse Chinese file. Error: ' + error.message);
-                    shippingZhCleanedFiles = [];
-                    document.getElementById('file-shipping-zh').value = '';
-                    document.getElementById('name-shipping-zh').textContent = 'No file chosen';
-                    document.getElementById('status-shipping-zh').textContent = '';
-                    rebuildShippingFromSources();
-                });
+            document.getElementById('name-shipping-zh').textContent = names.join(", ");
+            const statusEl = document.getElementById('status-shipping-zh');
+
+            // Prioritize >100MB files first so massive files are rapidly pre-filtered sequentially before any other logic
+            const orderedFiles = files.slice().sort((a, b) => {
+                const aLarge = a.size > ZH_LARGE_FILE_THRESHOLD_BYTES ? 1 : 0;
+                const bLarge = b.size > ZH_LARGE_FILE_THRESHOLD_BYTES ? 1 : 0;
+                return bLarge - aLarge;
+            });
+
+            const hasLargeFile = orderedFiles.some(f => f.size > ZH_LARGE_FILE_THRESHOLD_BYTES);
+            statusEl.textContent = hasLargeFile
+                ? "检测到大于100M文件，正在极速流式筛除无关数据..."
+                : "Loading & filtering STUTTGART/BAW/非签收 records...";
+
+            try {
+                const all = [];
+                let totalRetained = 0;
+                let totalScanned = 0;
+                const totalFiles = orderedFiles.length;
+
+                for (let i = 0; i < totalFiles; i++) {
+                    const f = orderedFiles[i];
+                    const isLarge = f.size > ZH_LARGE_FILE_THRESHOLD_BYTES;
+                    const sizeMB = (f.size / (1024 * 1024)).toFixed(1);
+                    const filePrefix = totalFiles > 1 ? `[${i + 1}/${totalFiles}] ` : '';
+
+                    if (isLarge) {
+                        statusEl.textContent = `${filePrefix}大文件(${sizeMB} MB)极速筛除中...`;
+                    }
+
+                    const cleaned = await readZhShippingExcelFile(f, (phase, scanned, kept) => {
+                        if (isLarge || scanned >= 50000) {
+                            const tag = isLarge ? `大文件(${sizeMB} MB)极速筛除中` : "极速筛除中";
+                            if (phase === 'ss') {
+                                statusEl.textContent = `${filePrefix}${tag}：正在读取字符索引 (${scanned.toLocaleString()})...`;
+                            } else {
+                                statusEl.textContent = `${filePrefix}${tag}：已扫描 ${scanned.toLocaleString()} 行，保留 ${kept.toLocaleString()} 条...`;
+                            }
+                        }
+                    });
+                    all.push(cleaned);
+                    totalRetained += (cleaned && cleaned.data) ? cleaned.data.length : 0;
+                    totalScanned += (cleaned && cleaned.scannedRows) ? cleaned.scannedRows : 0;
+                }
+
+                // Rapid pre-filter finished for all files -> now run downstream business logic on retained rows only
+                statusEl.textContent = `筛除完成（保留 ${totalRetained.toLocaleString()} 条），正在执行逻辑处理...`;
+                await new Promise(r => setTimeout(r, 0));
+
+                shippingZhCleanedFiles = all;
+                rebuildShippingFromSources();
+                statusEl.textContent = totalScanned > 0
+                    ? `Loaded ${totalRetained.toLocaleString()} / ${totalScanned.toLocaleString()} records (STUTTGART + BAW + 非签收)`
+                    : `Loaded ${totalRetained.toLocaleString()} records (STUTTGART + BAW + 非签收)`;
+            } catch (error) {
+                alert('Failed to parse Chinese file. Error: ' + (error ? error.message : error));
+                shippingZhCleanedFiles = [];
+                document.getElementById('file-shipping-zh').value = '';
+                document.getElementById('name-shipping-zh').textContent = 'No file chosen';
+                statusEl.textContent = '';
+                rebuildShippingFromSources();
+            }
         }
 
         // Merge English-version files and converted Chinese-version files, then run the normal Shipping pipeline
